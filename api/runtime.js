@@ -1,6 +1,6 @@
 const MODEL = process.env.OPENAI_MODEL || "gpt-6-luna";
-const INPUT_USD_PER_M = Number(process.env.OPENAI_INPUT_USD_PER_M || "0.05");
-const OUTPUT_USD_PER_M = Number(process.env.OPENAI_OUTPUT_USD_PER_M || "0.25");
+const INPUT_USD_PER_M = Number(process.env.OPENAI_INPUT_USD_PER_M || "0.10");
+const OUTPUT_USD_PER_M = Number(process.env.OPENAI_OUTPUT_USD_PER_M || "0.50");
 const MAX_OUTPUT = Number(process.env.OPENAI_MAX_OUTPUT_TOKENS || "2400");
 
 function setCors(req, res) {
