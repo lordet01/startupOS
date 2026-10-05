@@ -1,7 +1,8 @@
 {
+  "fluid": true,
   "functions": {
     "api/runtime.js": { "maxDuration": 60 },
-    "api/build.js": { "maxDuration": 60 },
+    "api/build.js": { "maxDuration": 90 },
     "api/publish.js": { "maxDuration": 30 }
   },
   "headers": [
