@@ -161,6 +161,7 @@ module.exports = async function handler(req, res) {
   setCors(req, res);
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method === "GET") {
+    console.log(JSON.stringify({event:"venture_runtime_success",mode,model:data.model||MODEL,latency_ms:Date.now()-started,input_tokens:inputTokens,output_tokens:outputTokens}));
     return res.status(200).json({ ok: true, service: "Startup OS Runtime", model: MODEL, api: "OpenAI Responses API" });
   }
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
@@ -183,6 +184,9 @@ module.exports = async function handler(req, res) {
   ];
 
   const started = Date.now();
+  console.log(JSON.stringify({event:"venture_runtime_start",mode,model:MODEL,payload_bytes:serialized.length}));
+  const controller = new AbortController();
+  const upstreamTimer = setTimeout(() => controller.abort(), 55000);
   try {
     const upstream = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
@@ -190,6 +194,7 @@ module.exports = async function handler(req, res) {
         "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/json"
       },
+      signal: controller.signal,
       body: JSON.stringify({
         model: MODEL,
         input,
@@ -205,6 +210,7 @@ module.exports = async function handler(req, res) {
       })
     });
 
+    clearTimeout(upstreamTimer);
     const data = await upstream.json();
     if (!upstream.ok) {
       return res.status(upstream.status).json({ error: data.error?.message || "OpenAI API error", provider_status: upstream.status });
@@ -235,6 +241,12 @@ module.exports = async function handler(req, res) {
       analysis
     });
   } catch (err) {
-    return res.status(500).json({ error: err && err.message ? err.message : "Runtime failure" });
+    clearTimeout(upstreamTimer);
+    const isTimeout = err && (err.name === "AbortError" || /aborted/i.test(err.message || ""));
+    console.error(JSON.stringify({event:"venture_runtime_error",mode,latency_ms:Date.now()-started,error:err && err.message ? err.message : "Runtime failure"}));
+    return res.status(isTimeout ? 504 : 500).json({
+      error: isTimeout ? "OpenAI response exceeded 55 seconds. Please retry." : (err && err.message ? err.message : "Runtime failure"),
+      stage: "openai_request"
+    });
   }
 };
