@@ -10,8 +10,10 @@ module.exports=async function handler(req,res){
   if(req.method!=="POST") return res.status(405).json({error:"Method not allowed"});
   const token=process.env.VERCEL_PUBLISH_TOKEN;
   const teamId=process.env.VERCEL_TEAM_ID;
-  if(!token||!teamId) return res.status(503).json({
-    error:"Publishing is not configured. Set VERCEL_PUBLISH_TOKEN and VERCEL_TEAM_ID in StartupOS Vercel environment variables.",
+  const hostProjectId=process.env.VERCEL_HOST_PROJECT_ID || "prj_lPHRFDHd3Ob6rkOuMTnpTqJqrxQh";
+  const hostProjectName=process.env.VERCEL_HOST_PROJECT_NAME || "startup-os";
+  if(!token) return res.status(503).json({
+    error:"Publishing is not configured. Set VERCEL_PUBLISH_TOKEN in StartupOS Vercel environment variables.",
     code:"PUBLISH_NOT_CONFIGURED"
   });
   let body=req.body;
@@ -31,21 +33,54 @@ module.exports=async function handler(req,res){
     {file:"icon.svg",data:Buffer.from(iconSvg(build.app_name),"utf8").toString("base64"),encoding:"base64"}
   ];
   try{
-    const upstream=await fetch(`https://api.vercel.com/v13/deployments?teamId=${encodeURIComponent(teamId)}`,{
-      method:"POST",
-      headers:{"Authorization":`Bearer ${token}`,"Content-Type":"application/json"},
-      body:JSON.stringify({
-        name:projectName,
-        files,
-        target:"production",
-        projectSettings:{framework:null,skipGitConnectDuringLink:true}
-      })
-    });
-    const data=await upstream.json();
-    if(!upstream.ok) return res.status(upstream.status).json({error:data.error?.message||"Vercel publish error",code:data.error?.code});
+    const payload={
+      name:hostProjectName,
+      project:hostProjectId,
+      files,
+      meta:{startupOsSessionId:sessionId,startupOsGeneratedApp:"true"},
+      projectSettings:{framework:null,skipGitConnectDuringLink:true}
+    };
+
+    async function attempt(url,label){
+      const r=await fetch(url,{
+        method:"POST",
+        headers:{"Authorization":`Bearer ${token}`,"Content-Type":"application/json"},
+        body:JSON.stringify(payload)
+      });
+      const data=await r.json().catch(()=>({}));
+      return {ok:r.ok,status:r.status,data,label};
+    }
+
+    // First try project-scoped auth without a team query. This works with
+    // tokens restricted to the existing StartupOS project.
+    let result=await attempt("https://api.vercel.com/v13/deployments","existing-project");
+
+    // Some account tokens require an explicit team scope.
+    if(!result.ok && teamId){
+      result=await attempt(`https://api.vercel.com/v13/deployments?teamId=${encodeURIComponent(teamId)}`,"existing-project-team");
+    }
+
+    if(!result.ok){
+      const detail=result.data&&result.data.error?result.data.error:{};
+      return res.status(result.status||403).json({
+        error:detail.message||"Vercel publish authorization failed",
+        code:detail.code||"VERCEL_AUTH_FAILED",
+        stage:"create_preview_deployment",
+        strategy:result.label,
+        hint:"VERCEL_PUBLISH_TOKEN must be allowed to deploy the existing startup-os project. A project-scoped token for startup-os is sufficient; a token scoped to another project is not."
+      });
+    }
+
+    const data=result.data;
     return res.status(200).json({
       ok:true,
-      deployment:{id:data.id,url:data.url?`https://${data.url}`:null,readyState:data.readyState||data.state||"QUEUED",projectName}
+      deployment:{
+        id:data.id,
+        url:data.url?`https://${data.url}`:null,
+        readyState:data.readyState||data.state||"QUEUED",
+        projectName:hostProjectName,
+        mode:"preview"
+      }
     });
   }catch(err){
     return res.status(500).json({error:err.message||"Publish failed"});
