@@ -7,6 +7,33 @@ function iconSvg(letter){
 }
 module.exports=async function handler(req,res){
   res.setHeader("Cache-Control","no-store");
+  if(req.method==="GET"){
+    const token=process.env.VERCEL_PUBLISH_TOKEN;
+    const teamId=process.env.VERCEL_TEAM_ID;
+    if(!token) return res.status(200).json({ok:false,configured:false,error:"VERCEL_PUBLISH_TOKEN is missing"});
+    async function inspect(url){
+      try{
+        const r=await fetch(url,{headers:{"Authorization":`Bearer ${token}`}});
+        const data=await r.json().catch(()=>({}));
+        return {ok:r.ok,status:r.status,data};
+      }catch(e){return {ok:false,status:0,data:{error:{message:e.message}}}}
+    }
+    const user=await inspect("https://api.vercel.com/v2/user");
+    const teams=await inspect("https://api.vercel.com/v2/teams?limit=100");
+    const list=Array.isArray(teams.data&&teams.data.teams)?teams.data.teams:[];
+    const hasTeam=list.some(t=>t.id===teamId);
+    return res.status(200).json({
+      ok:user.ok&&hasTeam,
+      configured:true,
+      token_auth_ok:user.ok,
+      token_user:user.ok?{id:user.data.user&&user.data.user.id,username:user.data.user&&user.data.user.username,email:user.data.user&&user.data.user.email}:null,
+      teams_query_ok:teams.ok,
+      accessible_teams:list.map(t=>({id:t.id,slug:t.slug,name:t.name})),
+      target_team_id:teamId,
+      target_team_access:hasTeam,
+      diagnosis:!user.ok?"Token is invalid or expired":(!hasTeam?"Token is valid but is not scoped to the StartupOS team":"Token can access the StartupOS team")
+    });
+  }
   if(req.method!=="POST") return res.status(405).json({error:"Method not allowed"});
   const token=process.env.VERCEL_PUBLISH_TOKEN;
   const teamId=process.env.VERCEL_TEAM_ID;
@@ -62,12 +89,26 @@ module.exports=async function handler(req,res){
 
     if(!result.ok){
       const detail=result.data&&result.data.error?result.data.error:{};
+      let authDiagnosis=null;
+      try{
+        const tr=await fetch("https://api.vercel.com/v2/teams?limit=100",{headers:{"Authorization":`Bearer ${token}`}});
+        const td=await tr.json().catch(()=>({}));
+        const teams=Array.isArray(td&&td.teams)?td.teams:[];
+        authDiagnosis={
+          teams_query_status:tr.status,
+          target_team_access:teams.some(t=>t.id===teamId),
+          accessible_team_slugs:teams.map(t=>t.slug)
+        };
+      }catch(_){}
       return res.status(result.status||403).json({
         error:detail.message||"Vercel publish authorization failed",
         code:detail.code||"VERCEL_AUTH_FAILED",
         stage:"create_preview_deployment",
         strategy:result.label,
-        hint:"VERCEL_PUBLISH_TOKEN must be allowed to deploy the existing startup-os project. A project-scoped token for startup-os is sufficient; a token scoped to another project is not."
+        auth:authDiagnosis,
+        hint:authDiagnosis&&authDiagnosis.target_team_access
+          ?"Token sees the team but cannot create deployments. Replace it with an Account Token that has deployment access."
+          :"Replace VERCEL_PUBLISH_TOKEN with a Vercel Account Token scoped to the kmjeon-5238s-projects team. Do not use a project OIDC token or a token scoped to another project."
       });
     }
 
