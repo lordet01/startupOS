@@ -20,24 +20,62 @@
 var TRAVEL_TEMPLATE={
   name:"TripTodo Travel Planner",
   idea:"나만의 여행계획 특화 ToDo List 플래너 개발",
-  customer:"자유여행을 준비하며 일정·예약·준비물을 여러 앱과 메모로 흩어 관리하는 20~40대 여행자",
-  problem:"여행 준비 할 일, 예약 정보, 날짜별 일정, 짐 목록이 분산되어 출발 전 누락과 일정 관리 스트레스가 생긴다.",
-  model:"Freemium + 구독",
-  price:2.99,
+  customer:"출발 1~8주 전부터 항공·숙소·준비물·예약·현지 할 일을 여러 앱/메모에 흩어 관리하는 20~40대 자유여행자",
+  problem:"여행 준비 정보가 메신저, 메모, 캘린더, 예약 앱에 흩어져 있어 중요한 예약·준비물을 놓치고 출발 직전 반복 확인에 시간을 쓴다.",
+  model:"무료 기본 + 여행 1회 Pro $3.99 / 연간 $14.99",
+  price:3.99,
   budget:100,
   stage:"Validation",
-  score:68,
+  score:76,
   metrics:{visitors:0,activation:0,trial:0,paid:0,mrr:0},
   costs:[],
-  decisions:["예시 템플릿 로드: 실제 GPT 분석 실행 전 초기 가설"],
-  mvpFeatures:["여행 생성","날짜별 ToDo","준비물 체크리스트","예약 링크/메모"],
-  techStack:[],
-  risks:["여행 플래너 시장의 높은 경쟁","무료 대체재 대비 명확한 가치 필요"],
-  launchGates:["여행 생성→체크 완료 흐름","모바일 UX","데이터 저장"],
-  nextExperiment:"여행 준비 중인 사용자 10명에게 클릭 가능한 프로토타입을 보여주고 반복 사용 의향을 확인",
-  summary:"여행 준비 업무를 일정과 체크리스트 중심으로 한곳에 묶는 경량 모바일 웹 플래너",
-  agentNotes:{}
-};
+  decisions:[
+    "샘플 기준분석: 반복 사용이 낮은 여행 서비스 특성상 월 구독보다 여행 단위 결제를 우선 검증",
+    "MVP에서 지도·항공권 검색·호텔 예약 연동은 제외",
+    "AI는 핵심 기능이 아니라 여행 조건 기반 체크리스트 초안 생성에만 선택적으로 사용"
+  ],
+  mvpFeatures:[
+    "여행 생성: 목적지·기간·출발일",
+    "출발일까지 남은 날짜 기반 ToDo 타임라인",
+    "준비물 체크리스트와 사용자 템플릿",
+    "항공·숙소·티켓 예약 정보/링크 보관",
+    "여행 동행자와 읽기 전용 공유",
+    "선택형 AI 준비 체크리스트 생성"
+  ],
+  techStack:[
+    {area:"Frontend",service:"GitHub Pages / PWA",reason:"정적 모바일 웹으로 초기 호스팅 비용 0",monthly_cost_usd:0},
+    {area:"Backend",service:"Firebase Auth + Firestore",reason:"사용자·여행·체크리스트 동기화, 무료 구간 활용",monthly_cost_usd:0},
+    {area:"AI optional",service:"OpenAI GPT-6 Luna",reason:"목적지·기간 기반 준비 체크리스트 초안만 생성",monthly_cost_usd:1},
+    {area:"Payment",service:"Stripe Checkout",reason:"여행 단위 Pro 결제 검증",monthly_cost_usd:0},
+    {area:"Analytics",service:"PostHog",reason:"여행 생성→첫 체크 완료→결제 퍼널 측정",monthly_cost_usd:0},
+    {area:"Email",service:"Resend",reason:"출발 D-7/D-1 리마인드",monthly_cost_usd:0}
+  ],
+  risks:[
+    "Wanderlog·TripIt·Notion·Todoist 등 무료 대체재가 많아 단순 ToDo만으로는 결제 이유가 약함",
+    "여행은 사용 빈도가 낮아 월 구독 유지율이 낮을 가능성이 큼",
+    "예약 메일 자동 파싱을 초기부터 넣으면 개인정보·이메일 권한과 개발 범위가 급증"
+  ],
+  launchGates:[
+    "사용자가 60초 이내 첫 여행과 첫 ToDo를 만들 수 있음",
+    "모바일에서 오프라인/불안정 네트워크에서도 체크 상태 보존",
+    "여행 1개 완료까지 핵심 데이터 유실 없음",
+    "결제 전 무료 가치 경험이 명확함",
+    "삭제·개인정보 정책 제공"
+  ],
+  nextExperiment:"여행 예정자가 들어오는 랜딩 페이지에서 ‘목적지+출발일 입력 → 즉시 개인화 준비 체크리스트 미리보기’를 제공하고 100명 중 여행 저장률 ≥25%, Pro 구매의향 클릭 ≥5%를 검증",
+  summary:"일정표 자체보다 ‘여행 전에 무엇을 언제까지 해야 하는가’를 해결하는 모바일 체크리스트에 집중한다. 시장에 무료 대체재가 많으므로 지도/예약 검색을 따라가기보다 출발일 역산 ToDo, 준비물 템플릿, 예약 누락 방지에 특화한다. 월 구독보다 여행 단위 Pro 결제가 초기 가설에 더 적합하다.",
+  estimatedMvpCost:25,
+  estimatedOpsCost:5,
+  agentNotes:{
+    ceo:"지도·예약 플랫폼과 경쟁하지 말고 여행 준비 완료율이라는 좁은 문제를 먼저 검증한다.",
+    market:"Wanderlog·TripIt·Notion·Todoist가 대체재다. ‘여행 전 체크 완료’에서 차별화가 필요하다.",
+    product:"첫 화면은 목적지와 출발일 입력 후 즉시 해야 할 일 목록이 생기는 경험이어야 한다.",
+    finance:"월 구독보다 여행당 $3.99와 연간 $14.99를 비교 테스트한다.",
+    tech:"PWA + Firebase로 시작하고 AI는 옵션 기능에만 사용해 고정 운영비를 최소화한다.",
+    legal:"예약정보·여권정보 같은 민감 데이터를 MVP에서는 수집하지 않거나 최소화한다.",
+    growth:"여행 출발 1~8주 전 검색/커뮤니티 유입을 목표로 무료 체크리스트 템플릿을 acquisition hook으로 쓴다."
+  }
+}
 var DEFAULT=JSON.parse(JSON.stringify(TRAVEL_TEMPLATE));
 var state={view:"overview",p:load(),running:false,modal:false,runtimeStatus:"unknown"};
 function clone(x){return JSON.parse(JSON.stringify(x))}
