@@ -57,3 +57,18 @@ The former GitHub Pages URL is deprecated and redirects to the Vercel production
 6. Real analytics ingestion (PostHog)
 7. Scheduler with durable jobs and approval workflow
 8. Multi-tenant workspaces
+
+
+## Venture Session lifecycle
+
+Each **New Venture** creates an isolated Venture Session. All artifacts and costs stay scoped to that session:
+
+`Brief → Blueprint → Build → Deploy → Phone Test → Iterate`
+
+- Blueprint: business flow, external services/APIs, costs and build phases
+- Build: OpenAI Builder generates a functional single-file mobile web/PWA artifact
+- Deploy: generated artifact is published as a separate Vercel project when internal publisher credentials are configured
+- Phone Test: founder opens the deployed URL, installs it to the home screen, and stores real-use feedback in the same session
+- Iterate: feedback becomes input to the next venture cycle
+
+Internal publishing requires `VERCEL_PUBLISH_TOKEN` and `VERCEL_TEAM_ID` in the StartupOS Vercel project. These are operator credentials, never customer settings.
