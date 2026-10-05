@@ -1,7 +1,7 @@
 const MODEL = process.env.OPENAI_MODEL || "gpt-6-luna";
 const INPUT_USD_PER_M = Number(process.env.OPENAI_INPUT_USD_PER_M || "0.10");
 const OUTPUT_USD_PER_M = Number(process.env.OPENAI_OUTPUT_USD_PER_M || "0.50");
-const MAX_OUTPUT = Number(process.env.OPENAI_MAX_OUTPUT_TOKENS || "2400");
+const MAX_OUTPUT = Number(process.env.OPENAI_MAX_OUTPUT_TOKENS || "3400");
 
 function setCors(req, res) {
   const origin = req.headers.origin || "";
@@ -55,6 +55,54 @@ function schema() {
         minItems: 4,
         maxItems: 8
       },
+      service_flow: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            step: { type: "integer", minimum: 1 },
+            title: { type: "string" },
+            user_action: { type: "string" },
+            system_action: { type: "string" }
+          },
+          required: ["step","title","user_action","system_action"],
+          additionalProperties: false
+        },
+        minItems: 3,
+        maxItems: 7
+      },
+      build_plan: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            phase: { type: "integer", minimum: 1 },
+            title: { type: "string" },
+            deliverable: { type: "string" },
+            estimated_external_cost_usd: { type: "number", minimum: 0 }
+          },
+          required: ["phase","title","deliverable","estimated_external_cost_usd"],
+          additionalProperties: false
+        },
+        minItems: 3,
+        maxItems: 6
+      },
+      cost_breakdown: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            item: { type: "string" },
+            cost_type: { type: "string" },
+            estimated_cost_usd: { type: "number", minimum: 0 },
+            note: { type: "string" }
+          },
+          required: ["item","cost_type","estimated_cost_usd","note"],
+          additionalProperties: false
+        },
+        minItems: 3,
+        maxItems: 8
+      },
       estimated_mvp_external_cost_usd: { type: "number", minimum: 0 },
       estimated_monthly_ops_usd_at_1000_mau: { type: "number", minimum: 0 },
       risks: { type: "array", items: { type: "string" }, minItems: 2, maxItems: 6 },
@@ -78,8 +126,8 @@ function schema() {
     },
     required: [
       "venture_name","executive_summary","venture_score","target_customer","problem","value_proposition",
-      "monetization","recommended_price_usd","mvp_features","tech_stack","estimated_mvp_external_cost_usd",
-      "estimated_monthly_ops_usd_at_1000_mau","risks","launch_gates","next_experiment","next_action","agent_notes"
+      "monetization","recommended_price_usd","mvp_features","tech_stack","service_flow","build_plan","cost_breakdown",
+      "estimated_mvp_external_cost_usd","estimated_monthly_ops_usd_at_1000_mau","risks","launch_gates","next_experiment","next_action","agent_notes"
     ],
     additionalProperties: false
   };
@@ -95,14 +143,18 @@ Hard product constraints:
 - AI must be consumed through APIs; do not propose self-hosting or model training for the MVP.
 - Prefer deterministic rules, database lookup, or simple code when AI is unnecessary.
 - Prefer free tiers and usage-based services for early validation.
-- Recommend concrete third-party services where useful (for example Vercel, Firebase/Supabase, Stripe, PostHog, Resend, OpenAI).
+- Recommend concrete third-party services where useful (for example Vercel, Firebase/Supabase, Stripe, PostHog, Resend, OpenAI). Every service must have a practical reason and an estimated early-stage monthly cost.
+- Design the actual end-user service flow step by step: what the user does, what the system does, and what output is produced.
+- Produce an implementation plan in build order. Each phase must have one concrete deliverable and a realistic external cash cost. Do not include founder labor as an external cash cost.
+- Produce a cost breakdown that distinguishes one-time/setup, monthly fixed, and usage-based costs where relevant.
+- If the founder leaves monetization, price, technology, or flow uncertain, choose the simplest testable option instead of inheriting assumptions from unrelated ventures.
 - Separate assumptions from evidence.
 - Keep the MVP small enough for one founder to validate.
 - Consider privacy, copyright, platform policy, and user-data risks.
 - Write all human-facing content in Korean. Product/service names may stay in English.
 - Be concise and actionable.
 
-For mode="${mode}", produce a structured venture decision. If this is a cycle, use current metrics and prior decisions to identify the single biggest bottleneck and the cheapest next experiment. Do not expand scope without a measurable reason.`;
+For mode="${mode}", produce a structured venture decision that a founder can directly use to build the product. Avoid vague labels such as "AI backend" or "cloud"; name the concrete service/API and where it is used. If this is a cycle, use current metrics and prior decisions to identify the single biggest bottleneck and the cheapest next experiment. Do not expand scope without a measurable reason.`;
 }
 
 module.exports = async function handler(req, res) {
