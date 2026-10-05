@@ -242,7 +242,8 @@ function applyAnalysis(data){var a=data.analysis||{};if(a.venture_name)state.p.n
 async function run(mode){if(state.running)return;state.running=true;render();try{var data=await callRuntime(mode||"cycle");applyAnalysis(data);toast("GPT venture decision complete · "+money(data.cost.provider_usd)+" API cost")}catch(e){state.runtimeStatus="error";toast(e.message)}finally{state.running=false;render()}}
 function captureThesis(){["name","idea","customer","problem","model","price","budget"].forEach(function(k){var el=document.getElementById(k);if(!el)return;state.p[k]=(k==="price"||k==="budget")?Number(el.value):el.value});save()}
 async function testRuntime(){var url=runtimeUrl();if(!url){toast("Runtime endpoint를 먼저 저장하세요");return}try{var r=await fetch(url);var d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||"Runtime unavailable");state.runtimeStatus="live";render();toast("Runtime live · "+d.model)}catch(e){state.runtimeStatus="error";render();toast("Runtime test failed: "+e.message)}}
-function loadTravelTemplate(){state.p=clone(TRAVEL_TEMPLATE);save();state.modal=false;state.view="venture";render();toast("Travel ToDo template loaded")}\nfunction loadOcrTemplate(){state.p=clone(OCR_LEDGER_TEMPLATE);save();state.modal=false;state.view="venture";render();toast("OCR 가계부 template loaded")}
+function loadTravelTemplate(){state.p=clone(TRAVEL_TEMPLATE);save();state.modal=false;state.view="venture";render();toast("Travel ToDo template loaded")}
+function loadOcrTemplate(){state.p=clone(OCR_LEDGER_TEMPLATE);save();state.modal=false;state.view="venture";render();toast("OCR 가계부 template loaded")}
 
 function bind(){
 document.querySelectorAll("[data-view]").forEach(function(b){b.onclick=function(){state.view=b.dataset.view;render()}});
