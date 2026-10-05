@@ -113,6 +113,89 @@ var TRAVEL_TEMPLATE={
     growth:"여행 출발 1~8주 전 검색/커뮤니티 유입을 목표로 무료 체크리스트 템플릿을 acquisition hook으로 쓴다."
   }
 }
+var OCR_LEDGER_TEMPLATE={
+  name:"ReceiptLens OCR 가계부",
+  idea:"영수증을 사진으로 찍으면 가격과 품목을 OCR로 인지하여 자동으로 가계부를 써주는 서비스",
+  customer:"카드 사용내역의 상호명·총액보다 실제 무엇을 샀는지 품목 단위로 알고 싶은 개인과 가족",
+  problem:"카드 사용내역에는 상호명과 총액만 남아 식료품·생활용품 등 실제 소비 품목을 알 수 없고, 직접 가계부를 입력하는 것은 번거롭다.",
+  desiredOutcome:"영수증 한 장을 찍으면 품목·수량·가격·카테고리가 자동 정리되고 가족의 실제 소비구조를 확인한다.",
+  model:"무료 기본 + 월 Pro $2.99",
+  price:2.99,
+  budget:100,
+  constraints:"모바일 웹/PWA, 스마트폰 카메라 사용, 별도 HW 없음, OCR/AI는 API 사용, 월 운영비 최소화",
+  stage:"Validation",
+  score:75,
+  metrics:{visitors:0,activation:0,trial:0,paid:0,mrr:0},
+  costs:[],
+  decisions:[
+    "OCR 정확도보다 사용자가 5초 안에 틀린 품목을 수정할 수 있는 UX를 함께 설계",
+    "MVP에서는 카드사 연동·은행 Open Banking을 제외하고 영수증 촬영에 집중",
+    "OCR과 품목 정규화를 분리하여 OCR 공급자 교체가 가능하도록 설계"
+  ],
+  mvpFeatures:[
+    "스마트폰 카메라 영수증 촬영/업로드",
+    "상호·날짜·총액·품목·가격 OCR 추출",
+    "품목명 정규화와 소비 카테고리 자동 분류",
+    "OCR 결과 빠른 수정/승인 UX",
+    "월별·카테고리별·품목별 지출 리포트",
+    "가족 단위 공유 가계부"
+  ],
+  serviceFlow:[
+    {step:1,title:"영수증 촬영",user_action:"결제 후 영수증을 카메라로 찍는다.",system_action:"이미지를 압축·보정하고 OCR 요청용 이미지로 준비한다."},
+    {step:2,title:"OCR 추출",user_action:"잠시 결과를 기다린다.",system_action:"OCR API가 상호·일자·총액·품목·가격 텍스트를 추출한다."},
+    {step:3,title:"구조화·분류",user_action:"자동 생성된 품목 목록을 확인한다.",system_action:"품목명을 정규화하고 식비·생활·육아 등 카테고리로 분류한다."},
+    {step:4,title:"빠른 수정",user_action:"잘못 읽힌 품목만 탭해서 수정 후 저장한다.",system_action:"수정값을 최종 거래 데이터로 저장한다."},
+    {step:5,title:"소비 리포트",user_action:"월별 소비와 자주 사는 품목을 본다.",system_action:"가족·카테고리·품목별 지출을 집계해 보여준다."}
+  ],
+  buildPlan:[
+    {phase:1,title:"OCR Proof",deliverable:"카메라 촬영 → OCR → 품목/가격 JSON 추출",estimated_external_cost_usd:5},
+    {phase:2,title:"Correction UX",deliverable:"OCR 결과 수정·승인과 Firestore 저장",estimated_external_cost_usd:0},
+    {phase:3,title:"Ledger",deliverable:"카테고리 분류 + 월별/품목별 소비 리포트",estimated_external_cost_usd:2},
+    {phase:4,title:"Family & Pay",deliverable:"가족 공유 + Pro 결제 + Analytics",estimated_external_cost_usd:0}
+  ],
+  costBreakdown:[
+    {item:"Vercel",cost_type:"월 고정",estimated_cost_usd:0,note:"초기 무료 구간에서 UI/API 운영"},
+    {item:"Firebase",cost_type:"사용량",estimated_cost_usd:0,note:"초기 Auth/Firestore 무료 구간 활용"},
+    {item:"OCR API",cost_type:"사용량",estimated_cost_usd:3,note:"영수증 장수에 비례, 공급자 교체 가능하게 추상화"},
+    {item:"OpenAI",cost_type:"사용량",estimated_cost_usd:1,note:"품목 정규화·카테고리 분류가 규칙으로 부족할 때만 사용"},
+    {item:"Stripe",cost_type:"거래 수수료",estimated_cost_usd:0,note:"Pro 결제 발생 시에만"}
+  ],
+  techStack:[
+    {area:"Frontend",service:"Vercel Static + PWA",reason:"스마트폰 카메라 접근과 모바일 UX를 별도 앱 설치 없이 검증",monthly_cost_usd:0},
+    {area:"OCR",service:"Google Cloud Vision OCR 또는 동급 Receipt OCR API",reason:"영수증 텍스트 추출을 직접 모델 개발하지 않고 API로 처리",monthly_cost_usd:3},
+    {area:"Normalization",service:"OpenAI GPT-6 Luna + 규칙 기반 전처리",reason:"OCR 품목명을 표준명·카테고리로 정리하되 단순 품목은 규칙으로 비용 절감",monthly_cost_usd:1},
+    {area:"Backend",service:"Firebase Auth + Firestore",reason:"개인/가족 가계부 데이터 동기화와 빠른 MVP 구축",monthly_cost_usd:0},
+    {area:"Analytics",service:"PostHog",reason:"촬영→OCR 성공→수정→저장 퍼널과 정확도 이탈을 측정",monthly_cost_usd:0},
+    {area:"Payment",service:"Stripe Checkout",reason:"Pro 결제 검증",monthly_cost_usd:0}
+  ],
+  risks:[
+    "영수증 레이아웃·인쇄 품질에 따라 품목 단위 OCR 정확도가 크게 달라질 수 있음",
+    "OCR 오류 수정이 번거로우면 자동화의 가치가 사라지므로 수정 UX가 핵심",
+    "영수증에는 구매내역·매장·시간 등 개인정보가 포함될 수 있어 저장 최소화와 삭제정책 필요",
+    "카테고리 자동분류가 틀릴 때 사용자가 쉽게 교정할 수 있어야 함"
+  ],
+  launchGates:[
+    "일반 마트/편의점 영수증에서 총액·품목 추출 성공률을 샘플셋으로 측정",
+    "촬영부터 저장까지 평균 15초 이내",
+    "오인식 품목을 5초 이내 수정 가능",
+    "OCR 원가가 무료 사용자의 허용 원가 범위를 넘지 않음",
+    "영수증 원본 삭제 및 개인정보 정책 제공"
+  ],
+  nextExperiment:"실제 서로 다른 매장 영수증 50장을 수집해 OCR 추출률과 품목 수정시간을 측정하고, 10명의 사용자에게 1주일간 사용시켜 수기 입력 대비 계속 사용할 의향을 검증",
+  summary:"카드 내역이 제공하지 못하는 품목 단위 소비정보를 영수증 사진 한 장으로 자동화한다. 성공의 핵심은 OCR 자체보다 ‘틀린 결과를 매우 빠르게 고칠 수 있는 UX’와 낮은 장당 처리비용이다. MVP에서는 금융 연동보다 영수증 촬영→구조화→소비 리포트 한 흐름에 집중한다.",
+  estimatedMvpCost:7,
+  estimatedOpsCost:4,
+  agentNotes:{
+    ceo:"은행·카드 연동보다 영수증 OCR의 품목 단위 가치가 실제 반복 사용을 만드는지 먼저 검증한다.",
+    market:"기존 가계부는 결제처·금액 중심이다. 품목 단위 소비정보가 차별점이 되어야 한다.",
+    product:"OCR 정확도 100%보다 5초 수정 UX가 더 중요하다.",
+    finance:"무료 사용량 한도를 두고 OCR 장당 원가가 유료 전환과 맞는지 먼저 본다.",
+    tech:"OCR 공급자와 품목 정규화 계층을 분리해 API 교체가 가능하게 한다.",
+    legal:"영수증 원본 보관을 최소화하고 사용자 삭제 기능과 데이터 보존정책을 명확히 한다.",
+    growth:"‘이번 달 커피/육아/식료품에 실제 얼마 썼나’를 즉시 보여주는 리포트를 첫 공유 포인트로 쓴다."
+  }
+};
+
 var DEFAULT=JSON.parse(JSON.stringify(TRAVEL_TEMPLATE));
 var state={view:"overview",p:load(),running:false,modal:false,modalMode:"new",runtimeStatus:"unknown"};
 function clone(x){return JSON.parse(JSON.stringify(x))}
@@ -130,7 +213,7 @@ function metric(t,v,n,c){return '<div class="card metric"><span>'+t+'</span><b c
 function agents(){var notes=state.p.agentNotes||{};var a=[["CEO","ceo","Goal / priority / gate"],["Market","market","Customer / competition"],["Product","product","MVP / UX / conversion"],["Finance","finance","Cost / pricing / margin"],["Tech","tech","Architecture / APIs"],["Builder","tech","Implementation / deploy"],["Legal","legal","Privacy / IP / policy"],["Growth","growth","Acquisition / experiments"]];return '<div class="agents">'+a.map(function(x,i){var note=notes[x[1]]||x[2];return '<div class="agent"><div class="head"><b>'+x[0]+' Agent</b><span class="tag '+(state.runtimeStatus==="live"?"ok":"")+'">'+(state.running&&i<4?"Running":state.runtimeStatus==="live"?"Synced":"Ready")+'</span></div><p>'+esc(note)+'</p></div>'}).join("")+'</div>'}
 
 function gates(){return '<div class="gate"><div class="pass">✓<br><b>Problem</b></div><div class="pass">✓<br><b>Customer</b></div><div class="pass">✓<br><b>MVP</b></div><div>!<br><b>Payment</b></div><div>!<br><b>Legal</b></div></div>'}
-function overview(){var p=state.p,s=spend(),ready=Math.min(100,Math.round((p.score+18)/1.18));var summary=p.summary||"아직 실제 AI 분석을 실행하지 않았습니다.";return shell('<section class="hero"><div class="eyebrow">AI Venture Operating System</div><h1>아이디어가 아니라 <span style="color:#89a8ff">수익화되는 사업</span>을 만듭니다.</h1><p>'+esc(p.idea)+'</p><div class="row" style="margin-top:20px"><button class="btn primary" id="runCycle">'+(state.running?"GPT agents running…":"Run next venture cycle")+'</button><button class="btn" id="analyzeNow">Analyze with GPT</button><button class="btn" id="loadTravel">Load travel planner template</button></div></section><section class="section grid g4">'+metric("Venture Score",p.score+"/100","시장성 · 실행성 · 원가 · 위험",p.score>=70?"green":"amber")+metric("MVP Readiness",ready+"%","Launch gate 기준",ready>=80?"green":"")+metric("External Cost",money(s),"실제 API 사용 원가")+metric("Startup OS Fee",money(fee()),"외부 실비의 5%")+'</section><section class="section grid g2"><div class="card"><div class="head"><h2>Latest AI decision</h2><span class="tag '+(state.runtimeStatus==="live"?"ok":"")+'">'+(state.runtimeStatus==="live"?"OpenAI live":"Template")+'</span></div><div class="callout">'+esc(summary)+'</div><div class="list" style="margin-top:10px">'+item("Next experiment",p.nextExperiment||"GPT 분석 후 생성")+item("Target customer",p.customer)+item("Problem",p.problem)+item("Monetization",p.model+" · "+money(p.price))+'</div></div><div class="card"><h2>Recommended stack</h2><div class="stack">'+stackServices().map(function(x){return '<span class="chip"><strong>'+esc(x).charAt(0)+'</strong>'+esc(x)+'</span>'}).join("")+'</div><div class="callout" style="margin-top:14px">AI가 불필요한 기능은 일반 코드/DB로 처리하고, AI 호출은 실제 토큰 비용을 Ledger에 기록합니다.</div></div></section><section class="section"><div class="head"><div><h2>Agent board</h2><div class="small">한 번의 저비용 structured call로 CEO 위원회 판단을 만들고 역할별 결과를 분리합니다.</div></div><button class="btn" data-view="agents">Open agents</button></div>'+agents()+'</section><section class="section grid g2"><div class="card"><h2>MVP features</h2><div class="list">'+(p.mvpFeatures||[]).map(function(x){return item(x,"MVP scope")}).join("")+'</div></div><div class="card"><h2>Decision log</h2><div class="list">'+p.decisions.slice(0,8).map(function(x,i){return item((i+1)+". "+x,"Venture CEO decision")}).join("")+'</div></div></section>')}
+function overview(){var p=state.p,s=spend(),ready=Math.min(100,Math.round((p.score+18)/1.18));var summary=p.summary||"아직 실제 AI 분석을 실행하지 않았습니다.";return shell('<section class="hero"><div class="eyebrow">AI Venture Operating System</div><h1>아이디어가 아니라 <span style="color:#89a8ff">수익화되는 사업</span>을 만듭니다.</h1><p>'+esc(p.idea)+'</p><div class="row" style="margin-top:20px"><button class="btn primary" id="runCycle">'+(state.running?"GPT agents running…":"Run next venture cycle")+'</button><button class="btn" id="analyzeNow">Analyze with GPT</button><button class="btn" id="loadTravel">Example · Travel ToDo</button><button class="btn" id="loadOcr">Example · OCR Ledger</button></div></section><section class="section grid g4">'+metric("Venture Score",p.score+"/100","시장성 · 실행성 · 원가 · 위험",p.score>=70?"green":"amber")+metric("MVP Readiness",ready+"%","Launch gate 기준",ready>=80?"green":"")+metric("External Cost",money(s),"실제 API 사용 원가")+metric("Startup OS Fee",money(fee()),"외부 실비의 5%")+'</section><section class="section grid g2"><div class="card"><div class="head"><h2>Latest AI decision</h2><span class="tag '+(state.runtimeStatus==="live"?"ok":"")+'">'+(state.runtimeStatus==="live"?"OpenAI live":"Template")+'</span></div><div class="callout">'+esc(summary)+'</div><div class="list" style="margin-top:10px">'+item("Next experiment",p.nextExperiment||"GPT 분석 후 생성")+item("Target customer",p.customer)+item("Problem",p.problem)+item("Monetization",p.model+" · "+money(p.price))+'</div></div><div class="card"><h2>Recommended stack</h2><div class="stack">'+stackServices().map(function(x){return '<span class="chip"><strong>'+esc(x).charAt(0)+'</strong>'+esc(x)+'</span>'}).join("")+'</div><div class="callout" style="margin-top:14px">AI가 불필요한 기능은 일반 코드/DB로 처리하고, AI 호출은 실제 토큰 비용을 Ledger에 기록합니다.</div></div></section><section class="section"><div class="head"><div><h2>Agent board</h2><div class="small">한 번의 저비용 structured call로 CEO 위원회 판단을 만들고 역할별 결과를 분리합니다.</div></div><button class="btn" data-view="agents">Open agents</button></div>'+agents()+'</section><section class="section grid g2"><div class="card"><h2>MVP features</h2><div class="list">'+(p.mvpFeatures||[]).map(function(x){return item(x,"MVP scope")}).join("")+'</div></div><div class="card"><h2>Decision log</h2><div class="list">'+p.decisions.slice(0,8).map(function(x,i){return item((i+1)+". "+x,"Venture CEO decision")}).join("")+'</div></div></section>')}
 
 function item(a,b){return '<div class="item"><div><b>'+esc(a)+'</b><div>'+esc(b)+'</div></div></div>'}
 function serviceFlowView(p){var flow=p.serviceFlow||[];if(!flow.length)return '<div class="loadingPanel"><b>서비스 흐름을 설계 중입니다.</b>GPT 분석 후 실제 사용자 동작과 시스템 처리가 단계별로 표시됩니다.</div>';return '<div class="flowList">'+flow.map(function(x,i){return '<div class="flowStep"><div class="flowNum">'+esc(x.step||i+1)+'</div><div><h3>'+esc(x.title)+'</h3><div class="flowCols"><div><b>사용자</b>'+esc(x.user_action)+'</div><div><b>시스템</b>'+esc(x.system_action)+'</div></div></div></div>'}).join("")+'</div>'}
@@ -149,7 +232,7 @@ function settings(){var ru=runtimeUrl();return shell('<div class="grid g2"><div 
 function modal(){
 var edit=state.modalMode==="edit",p=edit?state.p:{},model=p.model||"";
 function opt(v,label){return '<option value="'+esc(v)+'" '+(model===v?"selected":"")+'>'+esc(label||v)+'</option>'}
-return '<div class="modalWrap"><div class="modal wide"><div class="head"><div><div class="eyebrow">'+(edit?"Edit founder brief":"New venture · Step 1")+'</div><h2>'+(edit?"사업 입력값을 수정하세요":"새 사업을 있는 그대로 입력하세요")+'</h2><div class="small">기술이나 수익모델을 몰라도 됩니다. 모르는 항목은 AI가 제안합니다.</div></div><button class="btn" id="closeModal">×</button></div><div class="wizardSteps"><div class="wizardStep active"><b>1 · 입력</b>문제·고객·원하는 결과</div><div class="wizardStep"><b>2 · AI 설계</b>서비스 흐름·기술·비용</div><div class="wizardStep"><b>3 · Build plan</b>MVP 구현 순서</div></div><div class="form"><div class="field"><label>서비스 이름</label><input id="newName" placeholder="예: 영수증 가계부" value="'+esc(p.name||"")+'"></div><div class="field"><label>최대 MVP 예산 (USD)</label><input id="newBudget" type="number" value="'+Number(p.budget||100)+'"><div class="helper">외부 API·클라우드·결제 등 현금 지출 한도</div></div><div class="field full"><label>무엇을 만들고 싶나요? *</label><textarea id="newIdea" placeholder="예: 영수증을 사진으로 찍으면 가격과 품목을 OCR로 읽어 자동으로 가계부를 써주는 서비스">'+esc(p.idea||"")+'</textarea></div><div class="field"><label>누가 쓰나요? *</label><input id="newCustomer" placeholder="예: 나와 가족들" value="'+esc(p.customer||"")+'"></div><div class="field"><label>사용자가 얻어야 하는 결과</label><input id="newOutcome" placeholder="예: 영수증 촬영만으로 지출이 품목별 자동 정리" value="'+esc(p.desiredOutcome||"")+'"></div><div class="field full"><label>지금 겪는 문제 *</label><textarea id="newProblem" placeholder="예: 카드 내역만으로는 무엇을 샀는지 몰라 실제 소비 품목을 관리하기 어렵다">'+esc(p.problem||"")+'</textarea></div><div class="field"><label>생각 중인 수익모델</label><select id="newModel">'+opt("","AI가 추천")+opt("무료 + 유료 기능")+opt("월 구독")+opt("건당 결제")+opt("광고")+opt("아직 모름")+'</select></div><div class="field"><label>예상 판매가격 (USD)</label><input id="newPrice" type="number" step=".01" placeholder="모르면 비워두기" value="'+(p.price||"")+'"></div><div class="field full"><label>반드시 포함하거나 피해야 할 조건</label><textarea id="newConstraints" placeholder="예: 모바일 웹만, 카메라 사용, 월 운영비 최소화, 별도 HW 없음">'+esc(p.constraints||"")+'</textarea></div></div><div class="callout" style="margin-top:14px"><b>다음 단계에서 자동 설계</b><br>사용자 흐름 → MVP 기능 → OCR/AI/DB/결제 등 필요한 기술 → 구체 SaaS/API → 초기비/월비용 → 구현 Phase → 첫 시장검증까지 생성합니다.</div><div class="row" style="justify-content:space-between;margin-top:16px"><button class="btn" id="loadTravel">예시: 여행 ToDo 불러오기</button><button class="btn primary" id="createVenture">'+(edit?"Save & re-design with GPT →":"Create & design with GPT →")+'</button></div></div></div>'
+return '<div class="modalWrap"><div class="modal wide"><div class="head"><div><div class="eyebrow">'+(edit?"Edit founder brief":"New venture · Step 1")+'</div><h2>'+(edit?"사업 입력값을 수정하세요":"새 사업을 있는 그대로 입력하세요")+'</h2><div class="small">기술이나 수익모델을 몰라도 됩니다. 모르는 항목은 AI가 제안합니다.</div></div><button class="btn" id="closeModal">×</button></div><div class="wizardSteps"><div class="wizardStep active"><b>1 · 입력</b>문제·고객·원하는 결과</div><div class="wizardStep"><b>2 · AI 설계</b>서비스 흐름·기술·비용</div><div class="wizardStep"><b>3 · Build plan</b>MVP 구현 순서</div></div><div class="form"><div class="field"><label>서비스 이름</label><input id="newName" placeholder="예: 영수증 가계부" value="'+esc(p.name||"")+'"></div><div class="field"><label>최대 MVP 예산 (USD)</label><input id="newBudget" type="number" value="'+Number(p.budget||100)+'"><div class="helper">외부 API·클라우드·결제 등 현금 지출 한도</div></div><div class="field full"><label>무엇을 만들고 싶나요? *</label><textarea id="newIdea" placeholder="예: 영수증을 사진으로 찍으면 가격과 품목을 OCR로 읽어 자동으로 가계부를 써주는 서비스">'+esc(p.idea||"")+'</textarea></div><div class="field"><label>누가 쓰나요? *</label><input id="newCustomer" placeholder="예: 나와 가족들" value="'+esc(p.customer||"")+'"></div><div class="field"><label>사용자가 얻어야 하는 결과</label><input id="newOutcome" placeholder="예: 영수증 촬영만으로 지출이 품목별 자동 정리" value="'+esc(p.desiredOutcome||"")+'"></div><div class="field full"><label>지금 겪는 문제 *</label><textarea id="newProblem" placeholder="예: 카드 내역만으로는 무엇을 샀는지 몰라 실제 소비 품목을 관리하기 어렵다">'+esc(p.problem||"")+'</textarea></div><div class="field"><label>생각 중인 수익모델</label><select id="newModel">'+opt("","AI가 추천")+opt("무료 + 유료 기능")+opt("월 구독")+opt("건당 결제")+opt("광고")+opt("아직 모름")+'</select></div><div class="field"><label>예상 판매가격 (USD)</label><input id="newPrice" type="number" step=".01" placeholder="모르면 비워두기" value="'+(p.price||"")+'"></div><div class="field full"><label>반드시 포함하거나 피해야 할 조건</label><textarea id="newConstraints" placeholder="예: 모바일 웹만, 카메라 사용, 월 운영비 최소화, 별도 HW 없음">'+esc(p.constraints||"")+'</textarea></div></div><div class="callout" style="margin-top:14px"><b>다음 단계에서 자동 설계</b><br>사용자 흐름 → MVP 기능 → OCR/AI/DB/결제 등 필요한 기술 → 구체 SaaS/API → 초기비/월비용 → 구현 Phase → 첫 시장검증까지 생성합니다.</div><div class="row" style="justify-content:space-between;margin-top:16px"><div class="row"><button class="btn" id="loadTravel">예시 · 여행 ToDo</button><button class="btn" id="loadOcr">예시 · OCR 가계부</button></div><button class="btn primary" id="createVenture">'+(edit?"Save & re-design with GPT →":"Create & design with GPT →")+'</button></div></div></div>'
 }
 
 function render(){var map={overview:overview,venture:venture,agents:agentView,cost:costView,launch:launch,growth:growth,settings:settings};document.getElementById("app").innerHTML=(map[state.view]||overview)()+(state.modal?modal():"");bind()}
@@ -159,7 +242,7 @@ function applyAnalysis(data){var a=data.analysis||{};if(a.venture_name)state.p.n
 async function run(mode){if(state.running)return;state.running=true;render();try{var data=await callRuntime(mode||"cycle");applyAnalysis(data);toast("GPT venture decision complete · "+money(data.cost.provider_usd)+" API cost")}catch(e){state.runtimeStatus="error";toast(e.message)}finally{state.running=false;render()}}
 function captureThesis(){["name","idea","customer","problem","model","price","budget"].forEach(function(k){var el=document.getElementById(k);if(!el)return;state.p[k]=(k==="price"||k==="budget")?Number(el.value):el.value});save()}
 async function testRuntime(){var url=runtimeUrl();if(!url){toast("Runtime endpoint를 먼저 저장하세요");return}try{var r=await fetch(url);var d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||"Runtime unavailable");state.runtimeStatus="live";render();toast("Runtime live · "+d.model)}catch(e){state.runtimeStatus="error";render();toast("Runtime test failed: "+e.message)}}
-function loadTravelTemplate(){state.p=clone(TRAVEL_TEMPLATE);save();state.modal=false;state.view="venture";render();toast("Travel planner template loaded")}
+function loadTravelTemplate(){state.p=clone(TRAVEL_TEMPLATE);save();state.modal=false;state.view="venture";render();toast("Travel ToDo template loaded")}\nfunction loadOcrTemplate(){state.p=clone(OCR_LEDGER_TEMPLATE);save();state.modal=false;state.view="venture";render();toast("OCR 가계부 template loaded")}
 
 function bind(){
 document.querySelectorAll("[data-view]").forEach(function(b){b.onclick=function(){state.view=b.dataset.view;render()}});
@@ -167,7 +250,7 @@ var n=document.getElementById("newVenture");if(n)n.onclick=function(){state.moda
 var cbtn=document.getElementById("closeModal");if(cbtn)cbtn.onclick=function(){state.modal=false;render()};
 document.querySelectorAll("#runCycle").forEach(function(r){r.onclick=function(){run("cycle")}});
 document.querySelectorAll("#analyzeNow").forEach(function(r){r.onclick=function(){captureThesis();run("analyze")}});
-document.querySelectorAll("#loadTravel").forEach(function(r){r.onclick=loadTravelTemplate});
+document.querySelectorAll("#loadTravel").forEach(function(r){r.onclick=loadTravelTemplate});document.querySelectorAll("#loadOcr").forEach(function(r){r.onclick=loadOcrTemplate});
 document.querySelectorAll("[data-toast]").forEach(function(b){b.onclick=function(){toast(b.dataset.toast)}});
 var s=document.getElementById("saveThesis");if(s)s.onclick=function(){captureThesis();toast("Venture thesis saved")};
 var a=document.getElementById("addCost");if(a)a.onclick=function(){state.p.costs.unshift(["Manual test","External API","Test",1.25]);save();render()};
