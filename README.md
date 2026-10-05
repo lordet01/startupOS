@@ -13,7 +13,7 @@ Startup OS is an AI-native venture operating system for non-developers. The pilo
 - Launch gates and human-approval points
 - Growth funnel / experiment simulator
 - Local persistence via `localStorage`
-- GitHub Pages deployment workflow
+- Vercel production deployment
 - Responsive mobile-first UI
 
 ## Why the pilot runs in Demo Runtime
@@ -37,11 +37,15 @@ python3 -m http.server 8080
 
 No build step or package install is required.
 
-## GitHub Pages
+## Production service
 
-The included `.github/workflows/pages.yml` deploys this repository as a static site using GitHub Pages Actions.
+Canonical service URL:
 
-For the repository's first deployment, GitHub Pages may need to be enabled in **Settings → Pages → Source: GitHub Actions** depending on account/repository policy.
+https://startup-os-beige.vercel.app/
+
+Vercel serves both the static Startup OS UI and the same-origin `/api/runtime` Serverless Function. GitHub is used as the source repository and deployment trigger only.
+
+The former GitHub Pages URL is deprecated and redirects to the Vercel production service.
 
 ## Next production milestones
 
