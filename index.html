@@ -94,8 +94,6 @@ var saveRt=document.getElementById("saveRuntime");if(saveRt)saveRt.onclick=funct
 var testRt=document.getElementById("testRuntime");if(testRt)testRt.onclick=testRuntime;
 var create=document.getElementById("createVenture");if(create)create.onclick=function(){var idea=document.getElementById("newIdea").value.trim();if(!idea){toast("아이디어를 입력해주세요");return}state.p=clone(TRAVEL_TEMPLATE);state.p.name=idea.replace(/[^가-힣a-zA-Z0-9 ]/g," ").trim().split(/\s+/).slice(0,3).join(" ")||"New Venture";state.p.idea=idea;state.p.customer=document.getElementById("newCustomer").value||"초기 검증 고객";state.p.budget=Number(document.getElementById("newBudget").value||100);state.p.score=60;state.p.metrics={visitors:0,activation:0,trial:0,paid:0,mrr:0};state.p.costs=[];state.p.decisions=["새 Venture 생성: GPT 분석 대기"];state.p.summary="";state.p.techStack=[];state.p.agentNotes={};save();state.modal=false;state.view="venture";render();run("analyze")};
 }
-
-}
 render();
 })();
 </script>
