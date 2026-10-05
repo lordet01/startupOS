@@ -1,8 +1,8 @@
 {
   "functions": {
-    "api/runtime.js": {
-      "maxDuration": 60
-    }
+    "api/runtime.js": { "maxDuration": 60 },
+    "api/build.js": { "maxDuration": 60 },
+    "api/publish.js": { "maxDuration": 30 }
   },
   "headers": [
     {
