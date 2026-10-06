@@ -8,8 +8,6 @@
     "test:browser": "node tests/browser.mjs",
     "test:all": "npm test && npm run test:browser"
   },
-  "devDependencies": {
-    "playwright": "1.56.1"
-  },
+  "devDependencies": { "playwright": "1.63.0" },
   "engines": { "node": ">=20" }
 }
