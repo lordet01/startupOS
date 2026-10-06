@@ -2,15 +2,14 @@
   "fluid": true,
   "functions": {
     "api/runtime.js": { "maxDuration": 60 },
-    "api/build.js": { "maxDuration": 90 },
-    "api/publish.js": { "maxDuration": 30 }
+    "api/build.js": { "maxDuration": 60, "includeFiles": "{capabilities/**,lib/**}" },
+    "api/build-preview.js": { "maxDuration": 30, "includeFiles": "{capabilities/**,lib/**}" },
+    "api/publish.js": { "maxDuration": 30, "includeFiles": "{capabilities/**,lib/**}" },
+    "api/receipt-ocr.js": { "maxDuration": 60 }
   },
   "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-store" }
-      ]
-    }
+    { "source": "/api/(.*)", "headers": [ { "key": "Cache-Control", "value": "no-store" }, { "key": "X-Content-Type-Options", "value": "nosniff" } ] },
+    { "source": "/builder/(.*)", "headers": [ { "key": "Cache-Control", "value": "no-cache" }, { "key": "Referrer-Policy", "value": "no-referrer" } ] },
+    { "source": "/config.js", "headers": [ { "key": "Cache-Control", "value": "no-cache" } ] }
   ]
 }

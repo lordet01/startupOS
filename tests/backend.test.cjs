@@ -1,0 +1,46 @@
+'use strict';
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+process.env.STARTUP_OS_BUILD_KEY='local-test-only-not-a-deployment-secret';
+process.env.OPENAI_API_KEY='test-only-never-sent-to-provider';
+const B=require('../lib/build-contract'),A=require('../lib/assemble'),D=require('../capabilities/data'),O=require('../lib/receipt-service'),F=require('../lib/receipt-fixture');
+const buildHandler=require('../api/build'),publishHandler=require('../api/publish');
+function desc(kind='receipt',sid='vs_unit_test_a'){return B.descriptor({_sessionId:sid,name:'Test App'},kind,true);}
+const good=()=>({merchant:'VERIFY MART',purchase_date:'2026-10-06',currency:'KRW',total_amount:5500,items:[{name:'APPLE',quantity:2,unit_price:2000,line_total:4000,category:'식료품'},{name:'WATER',quantity:1,unit_price:1500,line_total:1500,category:'식료품'}],warnings:[]});
+function upstream(result=good(),extra={}){return {id:'resp_test_fixture',status:'completed',model:'gpt-4.1-mini',output:[{type:'message',content:[{type:'output_text',text:JSON.stringify(result)}]}],usage:{input_tokens:200,output_tokens:100,input_tokens_details:{cached_tokens:0}},...extra};}
+function invoke(handler,{method='POST',body={},headers={},query={}}={}){return new Promise((resolve,reject)=>{const res={code:200,headers:{},setHeader(k,v){this.headers[k]=v;},status(n){this.code=n;return this;},json(value){resolve({status:this.code,body:value,headers:this.headers});return this;},send(value){resolve({status:this.code,body:value,headers:this.headers});return this;},end(){resolve({status:this.code,headers:this.headers});return this;}};Promise.resolve(handler({method,body,headers,query},res)).catch(reject);});}
+for(const outcome of D.selfTests())test('domain: '+outcome.id,()=>assert.equal(outcome.status,'passed',outcome.message));
+test('unknown capability is blocked rather than rendered as a form',()=>assert.throws(()=>B.descriptor({_sessionId:'vs_unsupported'},'unknown',true),/구현하지 않은/));
+test('scope exclusions must be explicitly approved',()=>assert.throws(()=>B.descriptor({_sessionId:'vs_test_scope'},'receipt',false),/범위와 제외/));
+test('session identity is mandatory',()=>assert.throws(()=>B.descriptor({},'receipt',true),/Session ID/));
+test('signed build validates unchanged source',()=>{const d=desc();assert.deepEqual(B.verifyBuild(B.sign('build',{descriptor:d})),d);});
+test('signed proof cannot be edited',()=>{const token=B.sign('build',{descriptor:desc()});assert.throws(()=>B.verifyBuild('X'+token),/서명 검증 실패/);});
+test('wrong proof purpose rejected',()=>assert.throws(()=>B.readToken(B.sign('app',{sid:'vs_x'}),'build'),/만료/));
+test('expired proof rejected',()=>assert.throws(()=>B.readToken(B.sign('build',{descriptor:desc()},-1),'build'),/만료/));
+test('build proof bound to reviewed source',()=>{const d={...desc(),sourceHash:'outdated'};assert.throws(()=>B.verifyBuild(B.sign('build',{descriptor:d})),/코드가 변경/);});
+test('verification binds session and artifact',()=>{const d=desc(),proof=B.sign('verified',{sid:d.sid,sourceHash:d.sourceHash,artifactHash:B.artifactHash(d),status:'INTEGRATION_VERIFIED'});B.verifyGate(proof,d);assert.throws(()=>B.verifyGate(proof,desc('receipt','vs_other_session')),/같은 Build/);});
+test('packaging includes same-origin OCR backend and dependencies',()=>{const files=A.pack(desc());for(const name of ['index.html','api/receipt-ocr.js','lib/receipt-service.js','lib/build-contract.js','capabilities/data.js','icon-192.png','icon-512.png'])assert.ok(files.some(x=>x.file===name),name);});
+test('travel has no unnecessary OCR server',()=>assert.equal(A.pack(desc('travel')).some(x=>x.file==='api/receipt-ocr.js'),false));
+test('generated PNG icons have PNG magic and correct width',()=>{for(const n of [192,512]){const png=A.png(n);assert.equal(png.toString('hex',0,8),'89504e470d0a1a0a');assert.equal(png.readUInt32BE(16),n);}});
+test('all packaged scripts compile',()=>assert.ok(A.validateArtifacts(desc()).every(c=>c.status==='passed')));
+test('preview contains working camera code but no provider or signing secret',()=>{const html=A.html(desc(),true);assert.ok(!html.includes(process.env.OPENAI_API_KEY));assert.ok(!html.includes(process.env.STARTUP_OS_BUILD_KEY));assert.ok(html.includes('getUserMedia'));});
+test('valid artificial receipt image accepted',()=>assert.match(O.imageData(F.fixture().image).digest,/^[a-f0-9]{64}$/));
+test('invalid file data cannot masquerade as image',()=>assert.throws(()=>O.imageData('data:image/png;base64,'+Buffer.alloc(200).toString('base64')),/유효하지/));
+test('oversized image rejected before API call',()=>assert.throws(()=>O.imageData('x'.repeat(3500001)),/2.5MB/));
+test('OCR schema validates numbers and flags reconciliation',()=>{const r=good();r.total_amount=6000;assert.equal(O.validateResult(r).reconciliation.requiresReview,true);});
+test('OCR does not fabricate unreadable item amounts',()=>{const r=good();r.items[0].line_total=null;const result=O.validateResult(r);assert.equal(result.items[0].line_total,null);assert.equal(result.reconciliation.requiresReview,true);});
+test('empty OCR receipt is not a successful capability',()=>assert.throws(()=>O.validateResult({...good(),items:[]}),/읽지 못했습니다/));
+test('provider request uses image input and store:false',async()=>{let submitted;const result=await O.recognize(F.fixture().image,{fetchImpl:async(url,options)=>{assert.equal(url,'https://api.openai.com/v1/responses');submitted=JSON.parse(options.body);return Response.json(upstream());}});assert.equal(submitted.store,false);assert.equal(submitted.input[1].content[1].type,'input_image');assert.ok(submitted.input[1].content[1].image_url.startsWith('data:image/png'));assert.equal(result.result.total_amount,5500);assert.ok(result.cost.provider_usd>0);assert.equal(F.assertResult(result),true);});
+test('incomplete provider output fails without fake fallback',async()=>{await assert.rejects(O.recognize(F.fixture().image,{fetchImpl:async()=>Response.json(upstream(good(),{status:'incomplete'}))}),/완료되지/);});
+test('provider refusal is a failure',async()=>{await assert.rejects(O.recognize(F.fixture().image,{fetchImpl:async()=>Response.json(upstream(good(),{output:[{type:'message',content:[{type:'refusal',refusal:'test'}]}]}))}),/분석할 수 없습니다/);});
+test('non-JSON provider error is visible',async()=>{await assert.rejects(O.recognize(F.fixture().image,{fetchImpl:async()=>new Response('<html>timeout</html>',{status:504})}),/JSON이 아닌/);});
+test('provider authorization failures are not masked',async()=>{await assert.rejects(O.recognize(F.fixture().image,{fetchImpl:async()=>Response.json({error:{message:'Test credential failure'}},{status:401})}),/credential failure/);});
+test('OCR rejects missing app proof without a paid request',async()=>{const r=await invoke(O.handler,{body:{consent:true,sessionId:'vs_fake',image:F.fixture().image}});assert.equal(r.status,403);});
+test('OCR rejects cross-session token',async()=>{const r=await invoke(O.handler,{headers:{'x-startupos-app':B.sign('app',{sid:'vs_a',kind:'receipt'})},body:{consent:true,sessionId:'vs_b',image:F.fixture().image}});assert.equal(r.status,403);});
+test('OCR requires explicit image transmission consent',async()=>{const r=await invoke(O.handler,{headers:{'x-startupos-app':B.sign('app',{sid:'vs_a',kind:'receipt'})},body:{sessionId:'vs_a',image:F.fixture().image}});assert.equal(r.status,422);assert.equal(r.body.code,'CONSENT_REQUIRED');});
+test('legacy shell build API disabled',async()=>{const r=await invoke(buildHandler,{body:{project:{_sessionId:'vs_test'}}});assert.equal(r.status,422);assert.equal(r.body.code,'LEGACY_BUILDER_DISABLED');});
+test('assembled artifact is implemented, not verified',async()=>{const r=await invoke(buildHandler,{body:{action:'assemble',project:{_sessionId:'vs_backend_test'},kind:'receipt',acceptedScope:true}});assert.equal(r.status,200);assert.equal(r.body.build.status,'IMPLEMENTED');assert.equal(r.body.build.verification,null);});
+test('legacy client HTML cannot be published',async()=>{const r=await invoke(publishHandler,{body:{sessionId:'vs_test',build:{index_html:'legacy HTML'}}});assert.equal(r.status,422);assert.equal(r.body.code,'UNVERIFIED_BUILD');});
+test('signed but unverified build cannot be published',async()=>{const d=desc();const r=await invoke(publishHandler,{body:{sessionId:d.sid,approved:true,buildTicket:B.sign('build',{descriptor:d})}});assert.equal(r.status,422);});
+test('publish approval must be explicit',async()=>{const d=desc();const r=await invoke(publishHandler,{body:{sessionId:d.sid,buildTicket:B.sign('build',{descriptor:d}),verificationTicket:B.sign('verified',{sid:d.sid,artifactHash:B.artifactHash(d),sourceHash:d.sourceHash,status:'INTEGRATION_VERIFIED'})}});assert.equal(r.status,422);assert.equal(r.body.code,'APPROVAL_REQUIRED');});
+test('published session must match verified session',async()=>{const d=desc();const r=await invoke(publishHandler,{body:{sessionId:'vs_wrong',approved:true,buildTicket:B.sign('build',{descriptor:d}),verificationTicket:B.sign('verified',{sid:d.sid,artifactHash:B.artifactHash(d),sourceHash:d.sourceHash,status:'INTEGRATION_VERIFIED'})}});assert.equal(r.status,409);});
