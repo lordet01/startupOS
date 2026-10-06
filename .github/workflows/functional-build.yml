@@ -1,0 +1,38 @@
+name: Functional Build regression
+on:
+  push:
+    branches: [main, feat/functional-build-v3]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: functional-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Check committed browser evidence matches capability source
+        run: node -e "const assert=require('node:assert/strict');const B=require('./lib/build-contract');const r=require('./lib/browser-evidence.json');assert.equal(r.sourceHash,B.sourceHash());assert.ok(r.checks.length>=18 && r.checks.every(x=>x.status==='passed'));"
+      - name: Domain, API and authorization tests
+        run: npm test
+      - run: npx playwright install --with-deps chromium
+      - name: Mobile browser workflows (mocked OCR transport; not live provider)
+        run: npm run test:browser
+      - name: Session continuity and operator setup
+        run: node tests/studio.mjs && node tests/setup.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: functional-build-test-evidence
+          path: test-results/
+          retention-days: 14
