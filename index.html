@@ -65,6 +65,37 @@
 .navState{width:10px;height:10px;border-radius:50%;flex:0 0 10px;border:1.6px solid #617591;background:transparent}
 .navState.done{background:#45d7aa;border-color:#45d7aa;box-shadow:0 0 0 3px rgba(69,215,170,.08)}
 .navText{min-width:0}
+
+.navIcon{width:18px;display:inline-grid;place-items:center;font-size:14px;line-height:1}
+.inlineWork{position:relative;overflow:hidden}
+.inlineWork.running{cursor:progress;background:#15284a!important;border-color:#567dff!important}
+.inlineWork.running:after{content:"";position:absolute;left:0;bottom:0;height:3px;width:34%;background:linear-gradient(90deg,#668dff,#8b6eff,#668dff);animation:inlineWorkBar 1.15s ease-in-out infinite}
+.inlineWork .workInner{position:relative;z-index:2;display:inline-flex;align-items:center;gap:7px}
+.inlineWork .workSpin{width:10px;height:10px;border-radius:50%;border:2px solid #7489ad;border-top-color:#fff;animation:inlineSpin .8s linear infinite}
+@keyframes inlineWorkBar{0%{transform:translateX(-110%)}100%{transform:translateX(330%)}}
+@keyframes inlineSpin{to{transform:rotate(360deg)}}
+.stepIcon{font-size:14px;margin-bottom:4px}
+@media(max-width:760px){
+  .shell{display:block;min-height:100vh;padding-bottom:76px}
+  .side{position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;height:auto;z-index:50;padding:6px 8px calc(6px + env(safe-area-inset-bottom));border-right:0;border-top:1px solid var(--line);background:#08111ff2;backdrop-filter:blur(14px)}
+  .brand,.side>.small{display:none}
+  .nav{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain}.nav::-webkit-scrollbar{display:none}
+  .nav button{flex:0 0 72px;min-width:72px;height:54px;padding:5px 4px;border-radius:10px;text-align:center;font-size:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+  .nav button.stageNav{gap:3px;position:relative}.nav button.stageNav .navState{position:absolute;right:12px;top:7px;width:7px;height:7px;flex-basis:7px;border-width:1.2px}
+  .navText{white-space:nowrap;max-width:68px;overflow:hidden;text-overflow:ellipsis}.navIcon{font-size:16px;height:18px}
+  .top{height:auto;min-height:58px;padding:8px 12px;gap:8px;align-items:center}.top>.row:first-child{min-width:0;flex:1}.top>.row:first-child .small{display:none}.top #sessionSelect{max-width:none!important;width:100%;min-width:0;height:42px;padding:8px 10px;font-size:12px}
+  .top>.row:last-child .tag{display:none}.top #newVenture{width:42px;height:42px;padding:0;font-size:0}.top #newVenture:after{content:"＋";font-size:22px}
+  .content{padding:14px 12px 22px;max-width:100%}
+  .projectHead{padding:16px;border-radius:15px}.projectHead h1{font-size:22px}.projectHead .desc{font-size:12px}.quickActions{display:grid;grid-template-columns:1fr 1fr;gap:7px;width:100%}.quickActions .btn{width:100%;min-height:44px;font-size:12px}
+  .statusGrid{grid-template-columns:1fr 1fr;gap:8px}.statusCard{padding:12px}.statusCard b{font-size:15px}
+  .coreGrid{grid-template-columns:1fr}.compactCard{padding:14px}
+  .wizardSteps{display:flex!important;grid-template-columns:none!important;overflow-x:auto;gap:8px;margin:0 -12px 14px;padding:0 12px 5px;scroll-snap-type:x mandatory;scrollbar-width:none}.wizardSteps::-webkit-scrollbar{display:none}
+  .wizardStep{flex:0 0 124px;min-width:124px;scroll-snap-align:start;padding:10px;border-radius:12px;font-size:9px}.wizardStep b{font-size:11px}
+  .blueprintHero,.phaseGrid,.serviceGrid,.costSummary,.flowCols{grid-template-columns:1fr!important}
+  .head{align-items:flex-start;flex-wrap:wrap}.head>.row{width:100%}.head>.row .btn{flex:1;min-height:44px}
+  .runPanel{padding:13px}.runSteps{display:flex;overflow-x:auto;gap:7px}.runStep{min-width:118px}
+  .modal.wide{width:calc(100vw - 16px);max-height:92vh;padding:14px}.form{grid-template-columns:1fr!important}
+}
 </style>
 </head>
 <body>
@@ -306,12 +337,12 @@ function sessionStageStatus(p){
   return {venture:blueprint,build:build,deploy:deploy,phone:phone};
 }
 function nav(){
-  var a=[["sessions","Sessions"],["overview","Overview"],["venture","Venture Lab"],["build","Build · 기능 검증"],["deploy","Deploy"],["phone","Phone Test"],["agents","Agents"],["cost","Cost Ledger"],["growth","Growth"],["settings","Settings"]];
+  var a=[["sessions","Sessions","▦"],["overview","Overview","⌂"],["venture","Venture","✦"],["build","Build","🛠"],["deploy","Deploy","🚀"],["phone","Phone","📱"],["agents","Agents","◎"],["cost","Cost","$"],["growth","Growth","↗"],["settings","Settings","⚙"]];
   var stages=sessionStageStatus(state.p);
   var tracked={venture:true,build:true,deploy:true,phone:true};
   return '<aside class="side"><div class="brand"><i>S</i>Startup OS</div><div class="nav">'+a.map(function(x){
     var dot=tracked[x[0]]?'<span class="navState '+(stages[x[0]]?"done":"")+'" aria-hidden="true"></span>':'';
-    return '<button data-view="'+x[0]+'" class="'+(state.view===x[0]?"on ":"")+(tracked[x[0]]?"stageNav":"")+'">'+dot+'<span class="navText">'+x[1]+'</span></button>';
+    return '<button data-view="'+x[0]+'" class="'+(state.view===x[0]?"on ":"")+(tracked[x[0]]?"stageNav":"")+'">'+dot+'<span class="navIcon" aria-hidden="true">'+x[2]+'</span><span class="navText">'+x[1]+'</span></button>';
   }).join("")+'</div><div class="small">StartupOS<br>Functional Build</div></aside>'
 }
 function shell(body){var live=state.runtimeStatus==="live";var badge=state.running?"GPT running…":(live?"Live GPT Runtime":(runtimeUrl()?"Runtime ready":"Runtime not linked"));var opts=sessionPack.sessions.map(function(s){return '<option value="'+esc(s._sessionId)+'" '+(s._sessionId===state.p._sessionId?"selected":"")+'>'+esc(s.name||"Untitled")+' · '+shortSessionId(s)+'</option>'}).join("");return '<div class="shell">'+nav()+'<main class="main"><header class="top"><div class="row"><select id="sessionSelect" class="btn" style="max-width:280px">'+opts+'</select><span class="small">Session '+shortSessionId(state.p)+' · '+esc(state.p._phase||state.p.stage||"brief")+'</span></div><div class="row"><span class="tag '+(live?"ok":"")+'">'+badge+'</span><button class="btn" id="newVenture">+ New venture</button></div></header><div class="content">'+body+'</div></main></div>'}
@@ -320,7 +351,7 @@ function agents(){var notes=state.p.agentNotes||{};var a=[["CEO","ceo","Goal / p
 
 function gates(){return '<div class="gate"><div class="pass">✓<br><b>Problem</b></div><div class="pass">✓<br><b>Customer</b></div><div class="pass">✓<br><b>MVP</b></div><div>!<br><b>Payment</b></div><div>!<br><b>Legal</b></div></div>'}
 function sessionsView(){var rows=sessionPack.sessions;return shell('<div class="head"><div><h2 style="font-size:27px">Venture Sessions</h2><div class="small">New Venture마다 독립 세션이 생성되고 Brief → Blueprint → Build → Deploy → Phone Test → Iterate 전체 이력이 이 세션에 묶입니다.</div></div><button class="btn primary" id="newVenture">+ New venture</button></div><div class="grid g2">'+rows.map(function(s){var phase=s._phase||"brief";return '<div class="card"><div class="head"><div><h2>'+esc(s.name||"Untitled venture")+'</h2><div class="small">Session '+shortSessionId(s)+' · '+esc(phase)+' · '+new Date(s._updatedAt||s._createdAt).toLocaleString()+'</div></div><span class="tag '+(s.runtimeLast?"ok":"")+'">'+(s.runtimeLast?"AI synced":"Local")+'</span></div><p class="small" style="line-height:1.6">'+esc(s.idea||"")+'</p><div class="row"><button class="btn primary openSession" data-session="'+esc(s._sessionId)+'">Open session</button></div></div>'}).join("")+'</div>')}
-function lifecycleStepper(p){var phases=[["brief","1 · Brief","문제·고객"],["blueprint","2 · Blueprint","흐름·기술·비용"],["build","3 · Build","실제 구현"],["deploy","4 · Deploy","웹 배포"],["test","5 · Phone Test","PWA 설치·사용"],["iterate","6 · Iterate","피드백·개선"]];var rank={brief:0,blueprint:1,build:2,deploy:3,test:4,iterate:5};var cur=rank[p._phase||"brief"]||0;return '<div class="wizardSteps" style="grid-template-columns:repeat(6,1fr)">'+phases.map(function(x,i){return '<div class="wizardStep '+(i<=cur?"active":"")+'"><b>'+x[1]+'</b>'+x[2]+'</div>'}).join("")+'</div>'}
+function lifecycleStepper(p){var phases=[["brief","📝","1 · Brief","문제·고객"],["blueprint","🧩","2 · Blueprint","흐름·기술·비용"],["build","🛠","3 · Build","실제 구현"],["deploy","🚀","4 · Deploy","웹 배포"],["test","📱","5 · Phone","PWA 설치·사용"],["iterate","↻","6 · Iterate","피드백·개선"]];var rank={brief:0,blueprint:1,build:2,deploy:3,test:4,iterate:5};var cur=rank[p._phase||"brief"]||0;return '<div class="wizardSteps" style="grid-template-columns:repeat(6,1fr)">'+phases.map(function(x,i){return '<div class="wizardStep '+(i<=cur?"active":"")+'"><div class="stepIcon">'+x[1]+'</div><b>'+x[2]+'</b>'+x[3]+'</div>'}).join("")+'</div>'}
 function overview(){
 var p=state.p,s=spend(),fb=p.functionalBuild||null,ver=fb&&fb.verification,dep=fb&&fb.deployment;
 var buildState=ver&&ver.status==="INTEGRATION_VERIFIED"?"Verified":fb?"Built":"Not built";
