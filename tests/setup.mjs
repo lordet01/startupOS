@@ -3,7 +3,7 @@ import http from 'node:http';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 const checks=[];
-const seed={activeId:'vs_setup_test',sessions:[{_sessionId:'vs_setup_test',name:'OCR setup test',idea:'영수증 OCR',problem:'품목 기록',costs:[],functionalScopeApproved:'receipt'}]};
+const seed={activeId:'vs_setup_test',sessions:[{_sessionId:'vs_setup_test',name:'OCR setup test',idea:'영수증 OCR',problem:'품목 기록',costs:[]}]};
 const server=http.createServer((req,res)=>{
   if(req.url==='/api/build'){
     res.setHeader('Content-Type','application/json');
@@ -23,12 +23,14 @@ async function check(id,fn){try{await fn();checks.push({id,status:'passed'});con
 try{
   await page.goto('http://127.0.0.1:'+server.address().port+'/');
   await check('no_custom_signing_setup_required',async()=>{
-    await page.getByRole('heading',{name:'1. 기능 계약을 먼저 확정합니다'}).waitFor();
+    await page.getByRole('heading',{name:'Build',exact:true}).waitFor();
     assert.equal(await page.locator('#operator-setup').count(),0);
     assert.equal(await page.getByText('STARTUP_OS_BUILD_KEY',{exact:false}).count(),0);
   });
-  await check('build_is_enabled_after_scope_approval_without_secret_generation',async()=>{
-    await page.locator('#kind').selectOption('receipt');
+  await check('build_is_enabled_after_auto_mapping_and_scope_approval',async()=>{
+    assert.equal(await page.locator('#kind').count(),0);
+    await page.getByText('카메라 OCR 가계부',{exact:true}).waitFor();
+    assert.equal(await page.locator('#assemble').isDisabled(),true);
     await page.locator('#scope').check();
     assert.equal(await page.locator('#assemble').isEnabled(),true);
     assert.equal(posts,0);
