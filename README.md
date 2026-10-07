@@ -24,18 +24,17 @@ Family cloud sharing, banks/payments, booking integrations, and push notificatio
 - `READY`: Vercel deployment actually finished; deployment acceptance is not treated as completion.
 - `PENDING_PHYSICAL_PHONE`: hardware camera and standalone install still need physical-device confirmation. User reports stay separate from automated evidence.
 
-The server signs the session ID, build ID, reviewed-source hash, artifact identity and verification result. Publish rejects unsigned/legacy/unverified builds. It packages the actual OCR server dependencies with the app and ignores client-submitted HTML.
+The server does not trust client verification flags. It revalidates the current source hash and capability descriptor, and Publish reruns the same verification before deployment. It packages the actual OCR server dependencies with the app and ignores client-submitted HTML.
 
 ## Internal operator configuration
 
 These are StartupOS operator settings, not customer requirements:
 
 - `OPENAI_API_KEY`: existing server-side provider key.
-- `STARTUP_OS_BUILD_KEY`: independent random 32-byte signing secret, Sensitive in both Production and Preview.
 - `VERCEL_PUBLISH_TOKEN` and `VERCEL_TEAM_ID`: existing publisher settings.
 - Optional `OPENAI_OCR_MODEL`: default `gpt-4.1-mini`; a different model must pass the same live test.
 
-The Studio detects a missing signing key and blocks assembly with a visible setup panel. It can generate a key locally in the operator's browser for direct copying into Vercel. It never stores or transmits that generated key itself. Redeploy after setting environment variables.
+No custom StartupOS custom build key is required. Build integrity comes from deterministic server assembly plus verification re-run immediately before publish.
 
 ## Reproducible tests
 

@@ -21,7 +21,7 @@ const server=http.createServer(async(req,res)=>{
  const url=new URL(req.url,'http://localhost');
  if(url.pathname==='/api/receipt-ocr'){
   let raw='';for await(const chunk of req)raw+=chunk;
-  const body=JSON.parse(raw);assert.equal(body.consent,true);assert.equal(body.sessionId,receipt.sid);assert.ok(body.image.startsWith('data:image/jpeg;base64,'));assert.ok(req.headers['x-startupos-app']);ocrCalls++;
+  const body=JSON.parse(raw);assert.equal(body.consent,true);assert.equal(body.sessionId,receipt.sid);assert.equal(body.buildId,receipt.bid);assert.equal(body.sourceHash,receipt.sourceHash);assert.ok(body.image.startsWith('data:image/jpeg;base64,'));ocrCalls++;
   if(mode==='failure'){res.writeHead(503,{'Content-Type':'application/json'});res.end(JSON.stringify({ok:false,error:'TEST provider unavailable'}));return;}
   res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(ocrResult));return;
  }

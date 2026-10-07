@@ -20,10 +20,10 @@ Unsupported requests are blocked with `CAPABILITY_UNSUPPORTED`. The founder must
 1. **Contract accepted**: founder agrees to capabilities and exclusions.
 2. **IMPLEMENTED**: reviewed files are assembled; each packaged JS file is compiled; dependencies and PWA assets are checked. No LLM call is needed for assembly.
 3. **INTEGRATION_VERIFIED**: domain tests execute, a Chromium regression report matches the exact source hash, and receipt builds make a real OCR API call using a synthetic receipt with known line totals. A failed, missing, stale or incomplete check blocks the gate.
-4. **Deployment requested**: the server validates signed build/evidence tickets and reassembles the same reviewed code. Client-submitted HTML is ignored. Vercel state must actually become `READY` before the UI shows a launch link.
+4. **Deployment requested**: the server validates current-source build descriptors and reassembles the same reviewed code. Client-submitted HTML is ignored. Vercel state must actually become `READY` before the UI shows a launch link.
 5. **Physical-phone verification pending**: hardware capture, permission UX, standalone launch, and real-use behavior still require the founder's device. Manual notes are labeled `user_report`; they do not turn into automated test evidence.
 
-The build and evidence tickets bind the session ID, build ID, artifact descriptor hash, source hash, version, expiry and evidence purpose. Old or modified builds must be reverified. Publish requires a matching valid verification ticket and explicit approval. Legacy and unsigned publish requests return 422.
+Build descriptors bind the session ID, build ID, source hash and version. They are not secrets and are never trusted as proof. Old or modified builds are rejected by source-hash checks. Publish reruns current-source verification and requires explicit approval; legacy client HTML is ignored.
 
 ## Executable tests
 
@@ -34,7 +34,7 @@ npm test
 npm run test:browser
 ```
 
-`tests/backend.test.cjs` covers domain rules, source identity, signed-proof integrity, privacy consent, schema rejection, same-session authorization, provider failures, and blocked legacy publish calls.
+`tests/backend.test.cjs` covers domain rules, source identity, source-bound-proof integrity, privacy consent, schema rejection, same-session authorization, provider failures, and blocked legacy publish calls.
 
 `tests/browser.mjs` launches actual Chromium at a mobile viewport. Its browser workflow tests use an explicitly mocked OCR transport and Chromium synthetic media. The generated report states that limitation. It exercises camera controls, consent, image upload, editable OCR results, mismatch checks, persistence/reload, duplicate rejection, error feedback, session isolation, travel workflows, offline shell, and camera permission failure.
 
@@ -43,16 +43,16 @@ When all browser checks pass, the runner writes `lib/browser-evidence.json` tied
 ## Endpoints
 
 - `GET /api/build`: capability catalog and configuration presence; not an integration success claim.
-- `POST /api/build { action: 'assemble', project, kind, acceptedScope: true }`: deterministic signed build.
+- `POST /api/build { action: 'assemble', project, kind, acceptedScope: true }`: deterministic source-bound build.
 - `POST /api/build { action: 'verify', ticket, liveConsent: true }`: executable checks and one paid synthetic-image OCR check for receipt builds. No fake fallback.
 - `GET /api/build-preview?ticket=...`: same-origin preview assembled from trusted code. It does not accept arbitrary user HTML.
-- `POST /api/receipt-ocr`: signed per-session app ticket, explicit consent, image MIME/signature/size validation, actual provider request, strict result validation.
+- `POST /api/receipt-ocr`: source-bound per-session app ticket, explicit consent, image MIME/signature/size validation, actual provider request, strict result validation.
 - `POST /api/publish`: valid build and verification tickets, session match, explicit approval. Deploys the reviewed files plus the OCR backend, not a static shell.
-- `GET /api/publish?ticket=...`: fetches the actual Vercel state of the signed deployment ID.
+- `GET /api/publish?ticket=...`: fetches the actual Vercel state of the source-bound deployment ID.
 
 ## Why generated OCR apps now work
 
-The generated app contains `api/receipt-ocr.js`, `lib/receipt-service.js`, its signing dependency, and browser domain code. The camera app calls its own origin, avoiding a wildcard CORS proxy. API keys remain in Vercel runtime environment variables. The app contains only a limited signed application ticket.
+The generated app contains `api/receipt-ocr.js`, `lib/receipt-service.js`, its signing dependency, and browser domain code. The camera app calls its own origin, avoiding a wildcard CORS proxy. API keys remain in Vercel runtime environment variables. The app contains only a limited source-bound application ticket.
 
 The OCR model defaults to `gpt-4.1-mini`. `OPENAI_OCR_MODEL` can override it, but a different model is not treated as verified until the live test succeeds. Unknown model pricing is reported as `null`, not zero. Known-model token-derived costs are labeled estimates, not an invoice reconciliation.
 
@@ -61,8 +61,7 @@ The OCR model defaults to `gpt-4.1-mini`. `OPENAI_OCR_MODEL` can override it, bu
 ## Internal setup
 
 - Existing `OPENAI_API_KEY`: server-only, production + preview.
-- New `STARTUP_OS_BUILD_KEY`: independently generated secret for signed build/app/deployment evidence, production + preview.
-- Existing `VERCEL_PUBLISH_TOKEN` and `VERCEL_TEAM_ID`: operator-only deployment authorization.
+- - Existing `VERCEL_PUBLISH_TOKEN` and `VERCEL_TEAM_ID`: operator-only deployment authorization.
 - Optional `OPENAI_OCR_MODEL`.
 
 Preview deployments inherit the appropriate project environment. Do not put provider or publisher keys in app source, browser storage, or generated files. Do not disable deployment protection just to get a test to pass.
