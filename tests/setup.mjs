@@ -7,7 +7,7 @@ const seed={activeId:'vs_setup_test',sessions:[{_sessionId:'vs_setup_test',name:
 const server=http.createServer((req,res)=>{
   if(req.url==='/api/build'){
     res.setHeader('Content-Type','application/json');
-    res.end(JSON.stringify({ok:true,version:'functional-build-3.1.0',mode:'keyless-stateless-functional-build',configured:{ocr:true,publisher:true},contracts:{receipt:{acceptance:['사진 촬영'],exclusions:['금융 연결'],storage:'브라우저 저장'}}}));
+    res.end(JSON.stringify({ok:true,version:'functional-build-3.1.0',mode:'keyless-stateless-functional-build',configured:{ocr:true,publisher:true},contracts:{receipt:{title:'영수증 OCR 가계부',acceptance:['사진 촬영'],exclusions:['금융 연결'],storage:'브라우저 저장'}}}));
     return;
   }
   const name=req.url==='/'?'builder/index.html':req.url.slice(1);
@@ -29,7 +29,7 @@ try{
   });
   await check('build_is_enabled_after_auto_mapping_and_scope_approval',async()=>{
     assert.equal(await page.locator('#kind').count(),0);
-    await page.getByText('카메라 OCR 가계부',{exact:true}).waitFor();
+    await page.getByText('영수증 OCR 가계부',{exact:true}).waitFor();
     assert.equal(await page.locator('#assemble').isDisabled(),true);
     await page.locator('#scope').check();
     assert.equal(await page.locator('#assemble').isEnabled(),true);
