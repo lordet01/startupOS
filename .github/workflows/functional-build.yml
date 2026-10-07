@@ -1,7 +1,7 @@
 name: Functional Build regression
 on:
   push:
-    branches: [main, feat/functional-build-v3]
+    branches: [main, feat/functional-build-v3, feat/keyless-functional-build]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -21,15 +21,18 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --ignore-scripts
-      - name: Check committed browser evidence matches capability source
-        run: node -e "const assert=require('node:assert/strict');const B=require('./lib/build-contract');const r=require('./lib/browser-evidence.json');assert.equal(r.sourceHash,B.sourceHash());assert.ok(r.checks.length>=18 && r.checks.every(x=>x.status==='passed'));"
       - name: Domain, API and authorization tests
         run: npm test
       - run: npx playwright install --with-deps chromium
       - name: Mobile browser workflows (mocked OCR transport; not live provider)
         run: npm run test:browser
-      - name: Session continuity and operator setup
+      - name: Generated browser report matches current capability source
+        run: node -e "const assert=require('node:assert/strict');const B=require('./lib/build-contract');const r=require('./test-results/browser-report.json');assert.equal(r.sourceHash,B.sourceHash());assert.ok(r.checks.length>=18 && r.checks.every(x=>x.status==='passed'));"
+      - name: Session continuity and keyless operator setup
         run: node tests/studio.mjs && node tests/setup.mjs
+      - name: Committed evidence check on main
+        if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
+        run: node -e "const assert=require('node:assert/strict');const B=require('./lib/build-contract');const r=require('./lib/browser-evidence.json');assert.equal(r.sourceHash,B.sourceHash());assert.ok(r.checks.length>=18 && r.checks.every(x=>x.status==='passed'));"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
