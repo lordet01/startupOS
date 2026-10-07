@@ -41,6 +41,15 @@ input:focus,textarea:focus,select:focus{border-color:#6687ff;box-shadow:0 0 0 3p
 .busyline{background:#0a1728}.busyline:after{background:#6687ff}
 details{margin:8px 0}summary{cursor:pointer;font-size:12px;font-weight:750;color:#b9cae0}
 @media(max-width:760px){.studio{padding:16px 14px 70px}.studio-head,.pageTitle{align-items:flex-start;flex-direction:column}.studio-head select{max-width:none}.stages{grid-template-columns:1fr 1fr}.two,.compactGrid{grid-template-columns:1fr}.preview-frame{height:620px}}
+
+.workBtn{position:relative;overflow:hidden;min-width:132px}
+.workBtn .workLabel{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;gap:7px}
+.workBtn.running{background:#15284a;border-color:#567dff;color:#fff;cursor:progress}
+.workBtn.running:after{content:"";position:absolute;left:0;bottom:0;height:3px;width:36%;background:linear-gradient(90deg,#6f8dff,#9c75ff,#6f8dff);animation:btnrun 1.15s ease-in-out infinite}
+.workBtn.failed{background:#3a1821;border-color:#8a4558;color:#ffbcc8}
+.workBtn .tinySpinner{width:10px;height:10px;border-radius:50%;border:2px solid #7892bf;border-top-color:#fff;animation:spinBtn .8s linear infinite}
+@keyframes btnrun{0%{transform:translateX(-110%)}100%{transform:translateX(320%)}}
+@keyframes spinBtn{to{transform:rotate(360deg)}}
 </style>
 </head><body>
 <main id="studio" class="studio"><p class="muted">Loading…</p></main>
