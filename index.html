@@ -96,6 +96,46 @@
   .runPanel{padding:13px}.runSteps{display:flex;overflow-x:auto;gap:7px}.runStep{min-width:118px}
   .modal.wide{width:calc(100vw - 16px);max-height:92vh;padding:14px}.form{grid-template-columns:1fr!important}
 }
+
+.mobileOnly{display:none}
+.moreSheet{display:none}
+@media(max-width:760px){
+  .desktopOnly{display:none!important}.mobileOnly{display:block}
+  .projectHead{display:none!important}
+  .statusGrid{display:none!important}
+  .coreGrid{margin-top:0}
+  .mobileDashboard{display:block;background:#102039;border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+  .mobileDashboard .sessionEyebrow{font-size:9px;letter-spacing:.12em;color:#8297b5;font-weight:800}
+  .mobileDashboard h1{font-size:22px;line-height:1.2;margin:6px 0 6px;letter-spacing:-.04em}
+  .mobileDashboard .mobileDesc{font-size:12px;color:#95a8c2;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .mobileProgress{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:14px 0 12px}
+  .mobileStep{padding:9px 5px;border:1px solid #29405e;border-radius:11px;text-align:center;background:#0b1829}
+  .mobileStep .ico{font-size:15px;display:block;margin-bottom:3px}
+  .mobileStep b{display:block;font-size:9px;color:#9eb0c7}.mobileStep.done{border-color:#2e6b59;background:#0d2a23}.mobileStep.done b{color:#baf0df}
+  .mobileStep.current{border-color:#668dff;background:#142a51}.mobileStep.current b{color:#fff}
+  .mobilePrimary{width:100%;min-height:48px;font-size:14px;font-weight:800;border-radius:13px}
+  .mobileSecondary{margin-top:8px;width:100%;min-height:42px;font-size:12px}
+  .mobileSummary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 12px}
+  .mobileMini{background:#0f1d32;border:1px solid #29405e;border-radius:12px;padding:11px}.mobileMini span{display:block;font-size:9px;color:#8195b0;margin-bottom:4px}.mobileMini b{font-size:14px}
+  .compactCard{padding:13px}.sectionTitle{font-size:12px}.featureRow{font-size:11px;padding:8px 0}.nextAction{font-size:12px}
+  .side{padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
+  .nav{justify-content:space-around;overflow:visible}
+  .nav button{display:none!important}
+  .nav button[data-view="overview"],.nav button[data-view="venture"],.nav button[data-view="build"],.nav button[data-view="deploy"],.nav button[data-view="phone"]{display:flex!important;flex:1 1 20%;min-width:0;max-width:88px}
+  .nav button .navText{max-width:64px}
+  .top{position:sticky;top:0;z-index:40;background:#081422f2;backdrop-filter:blur(14px)}
+  .top #sessionSelect{font-weight:700}
+  .top>.row:last-child{gap:6px}
+  .top #newVenture{width:42px;min-width:42px}
+  .top .moreMobileBtn{display:inline-flex!important;width:42px;height:42px;padding:0;align-items:center;justify-content:center;font-size:20px}
+  .moreSheet{position:fixed;inset:0;z-index:80;background:#0008;display:none;align-items:flex-end}
+  .moreSheet.open{display:flex}
+  .morePanel{width:100%;background:#0d1b2d;border-radius:20px 20px 0 0;border:1px solid #29405e;padding:14px 14px calc(18px + env(safe-area-inset-bottom))}
+  .moreHandle{width:42px;height:4px;background:#41536c;border-radius:999px;margin:2px auto 14px}
+  .moreGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .moreGrid button{min-height:70px;border:1px solid #29405e;border-radius:13px;background:#102039;color:#dbe7f8;font-size:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px}
+  .moreGrid button .navIcon{font-size:20px}
+}
 </style>
 </head>
 <body>
@@ -345,12 +385,25 @@ function nav(){
     return '<button data-view="'+x[0]+'" class="'+(state.view===x[0]?"on ":"")+(tracked[x[0]]?"stageNav":"")+'">'+dot+'<span class="navIcon" aria-hidden="true">'+x[2]+'</span><span class="navText">'+x[1]+'</span></button>';
   }).join("")+'</div><div class="small">StartupOS<br>Functional Build</div></aside>'
 }
-function shell(body){var live=state.runtimeStatus==="live";var badge=state.running?"GPT running…":(live?"Live GPT Runtime":(runtimeUrl()?"Runtime ready":"Runtime not linked"));var opts=sessionPack.sessions.map(function(s){return '<option value="'+esc(s._sessionId)+'" '+(s._sessionId===state.p._sessionId?"selected":"")+'>'+esc(s.name||"Untitled")+' · '+shortSessionId(s)+'</option>'}).join("");return '<div class="shell">'+nav()+'<main class="main"><header class="top"><div class="row"><select id="sessionSelect" class="btn" style="max-width:280px">'+opts+'</select><span class="small">Session '+shortSessionId(state.p)+' · '+esc(state.p._phase||state.p.stage||"brief")+'</span></div><div class="row"><span class="tag '+(live?"ok":"")+'">'+badge+'</span><button class="btn" id="newVenture">+ New venture</button></div></header><div class="content">'+body+'</div></main></div>'}
+function shell(body){var live=state.runtimeStatus==="live";var badge=state.running?"GPT running…":(live?"Live GPT Runtime":(runtimeUrl()?"Runtime ready":"Runtime not linked"));var opts=sessionPack.sessions.map(function(s){return '<option value="'+esc(s._sessionId)+'" '+(s._sessionId===state.p._sessionId?"selected":"")+'>'+esc(s.name||"Untitled")+' · '+shortSessionId(s)+'</option>'}).join("");var more='<div class="moreSheet" id="moreSheet"><div class="morePanel"><div class="moreHandle"></div><div class="moreGrid">'+[["sessions","▦","Sessions"],["agents","◎","Agents"],["cost","$","Cost"],["growth","↗","Growth"],["settings","⚙","Settings"]].map(function(x){return '<button data-more-view="'+x[0]+'"><span class="navIcon">'+x[1]+'</span><span>'+x[2]+'</span></button>'}).join("")+'</div></div></div>';return '<div class="shell">'+nav()+'<main class="main"><header class="top"><div class="row"><select id="sessionSelect" class="btn" style="max-width:280px">'+opts+'</select><span class="small">Session '+shortSessionId(state.p)+' · '+esc(state.p._phase||state.p.stage||"brief")+'</span></div><div class="row"><span class="tag '+(live?"ok":"")+'">'+badge+'</span><button class="btn moreMobileBtn mobileOnly" id="moreMobile">⋯</button><button class="btn" id="newVenture">+ New venture</button></div></header><div class="content">'+body+'</div></main>'+more+'</div>'}
 function metric(t,v,n,c){return '<div class="card metric"><span>'+t+'</span><b class="'+(c||"")+'">'+v+'</b><span>'+n+'</span></div>'}
 function agents(){var notes=state.p.agentNotes||{};var a=[["CEO","ceo","Goal / priority / gate"],["Market","market","Customer / competition"],["Product","product","MVP / UX / conversion"],["Finance","finance","Cost / pricing / margin"],["Tech","tech","Architecture / APIs"],["Builder","tech","Implementation / deploy"],["Legal","legal","Privacy / IP / policy"],["Growth","growth","Acquisition / experiments"]];return '<div class="agents">'+a.map(function(x,i){var note=notes[x[1]]||x[2];return '<div class="agent"><div class="head"><b>'+x[0]+' Agent</b><span class="tag '+(state.runtimeStatus==="live"?"ok":"")+'">'+(state.running&&i<4?"Running":state.runtimeStatus==="live"?"Synced":"Ready")+'</span></div><p>'+esc(note)+'</p></div>'}).join("")+'</div>'}
 
 function gates(){return '<div class="gate"><div class="pass">✓<br><b>Problem</b></div><div class="pass">✓<br><b>Customer</b></div><div class="pass">✓<br><b>MVP</b></div><div>!<br><b>Payment</b></div><div>!<br><b>Legal</b></div></div>'}
 function sessionsView(){var rows=sessionPack.sessions;return shell('<div class="head"><div><h2 style="font-size:27px">Venture Sessions</h2><div class="small">New Venture마다 독립 세션이 생성되고 Brief → Blueprint → Build → Deploy → Phone Test → Iterate 전체 이력이 이 세션에 묶입니다.</div></div><button class="btn primary" id="newVenture">+ New venture</button></div><div class="grid g2">'+rows.map(function(s){var phase=s._phase||"brief";return '<div class="card"><div class="head"><div><h2>'+esc(s.name||"Untitled venture")+'</h2><div class="small">Session '+shortSessionId(s)+' · '+esc(phase)+' · '+new Date(s._updatedAt||s._createdAt).toLocaleString()+'</div></div><span class="tag '+(s.runtimeLast?"ok":"")+'">'+(s.runtimeLast?"AI synced":"Local")+'</span></div><p class="small" style="line-height:1.6">'+esc(s.idea||"")+'</p><div class="row"><button class="btn primary openSession" data-session="'+esc(s._sessionId)+'">Open session</button></div></div>'}).join("")+'</div>')}
+function mobileNextAction(p){
+  var s=sessionStageStatus(p);
+  if(!s.venture)return {view:"venture",label:"Blueprint 만들기",icon:"🧩",step:0};
+  if(!s.build)return {view:"build",label:"Build 시작",icon:"🛠",step:1};
+  if(!s.deploy)return {view:"deploy",label:"Deploy 하기",icon:"🚀",step:2};
+  if(!s.phone)return {view:"phone",label:"Phone Test 하기",icon:"📱",step:3};
+  return {view:"growth",label:"다음 개선 사이클",icon:"↻",step:4};
+}
+function mobileOverviewCard(p,spendValue){
+  var s=sessionStageStatus(p),next=mobileNextAction(p);
+  var steps=[["🧩","Blueprint",s.venture],["🛠","Build",s.build],["🚀","Deploy",s.deploy],["📱","Test",s.phone]];
+  return '<section class="mobileDashboard mobileOnly"><div class="sessionEyebrow">SESSION '+shortSessionId(p)+'</div><h1>'+esc(p.name||"Untitled venture")+'</h1><div class="mobileDesc">'+esc(p.desiredOutcome||p.idea||"")+'</div><div class="mobileProgress">'+steps.map(function(x,i){return '<div class="mobileStep '+(x[2]?"done":i===next.step?"current":"")+'"><span class="ico">'+x[0]+'</span><b>'+x[1]+'</b></div>'}).join("")+'</div><button class="btn primary mobilePrimary" data-view="'+next.view+'">'+next.icon+' '+next.label+'</button><button class="btn mobileSecondary" id="runCycle">↻ Run cycle</button><div class="mobileSummary"><div class="mobileMini"><span>Blueprint</span><b>'+(s.venture?"Ready":"Pending")+'</b></div><div class="mobileMini"><span>API Cost</span><b>'+money(spendValue)+'</b></div></div></section>'
+}
 function runtimeButton(id,label,mode,primary){
   var running=state.running&&state.runMode===mode;
   return '<button class="btn '+(primary?'primary ':'')+'inlineWork '+(running?'running':'')+'" id="'+id+'" '+(state.running?'disabled':'')+'><span class="workInner">'+(running?'<span class="workSpin"></span><span>Working · <span class="mainRunElapsed">'+elapsedSeconds().toFixed(1)+'s</span></span>':label)+'</span></button>'
@@ -365,7 +418,8 @@ var features=(p.mvpFeatures||[]).slice(0,6);
 var desc=p.desiredOutcome||p.idea||"";
 var next=p.nextExperiment||"다음 단계가 아직 정해지지 않았습니다.";
 return shell(
-'<section class="projectHead"><div><div class="eyebrow">SESSION '+shortSessionId(p)+'</div><h1>'+esc(p.name||"Untitled venture")+'</h1><div class="desc">'+esc(desc)+'</div><div class="quickActions"><button class="btn" data-view="venture">Blueprint</button><button class="btn primary" data-view="build">Build</button><button class="btn" data-view="deploy">Deploy</button><button class="btn" data-view="phone">Phone Test</button>'+runtimeButton("runCycle","Run cycle","cycle",false)+'</div></div><div class="miniMeta"><span class="miniTag">'+esc(p._phase||"brief")+'</span><span class="miniTag">'+(state.runtimeStatus==="live"?"AI connected":"Runtime ready")+'</span></div></section>'+
+mobileOverviewCard(p,s)+
+'<section class="projectHead desktopOnly"><div><div class="eyebrow">SESSION '+shortSessionId(p)+'</div><h1>'+esc(p.name||"Untitled venture")+'</h1><div class="desc">'+esc(desc)+'</div><div class="quickActions"><button class="btn" data-view="venture">Blueprint</button><button class="btn primary" data-view="build">Build</button><button class="btn" data-view="deploy">Deploy</button><button class="btn" data-view="phone">Phone Test</button>'+runtimeButton("runCycle","Run cycle","cycle",false)+'</div></div><div class="miniMeta"><span class="miniTag">'+esc(p._phase||"brief")+'</span><span class="miniTag">'+(state.runtimeStatus==="live"?"AI connected":"Runtime ready")+'</span></div></section>'+
 '<section class="statusGrid">'+
 '<div class="statusCard"><span>Blueprint</span><b>'+bp+'</b><small>'+(p.serviceFlow&&p.serviceFlow.length?(p.serviceFlow.length+" steps"):"Analyze first")+'</small></div>'+
 '<div class="statusCard"><span>Build</span><b>'+buildState+'</b><small>'+(fb?esc(fb.kind||"functional app"):"No artifact")+'</small></div>'+
@@ -482,7 +536,7 @@ function loadTravelTemplate(){createSession(TRAVEL_TEMPLATE,"example-travel");st
 function loadOcrTemplate(){createSession(OCR_LEDGER_TEMPLATE,"example-ocr");state.modal=false;state.view="venture";render();toast("New OCR Ledger session created")}
 
 function bind(){
-document.querySelectorAll("[data-view]").forEach(function(b){b.onclick=function(){state.view=b.dataset.view;render()}});var ss=document.getElementById("sessionSelect");if(ss)ss.onchange=function(){switchSession(ss.value)};document.querySelectorAll(".openSession").forEach(function(b){b.onclick=function(){switchSession(b.dataset.session)}});
+document.querySelectorAll("[data-view]").forEach(function(b){b.onclick=function(){state.view=b.dataset.view;render()}});var mm=document.getElementById("moreMobile"),ms=document.getElementById("moreSheet");if(mm&&ms)mm.onclick=function(){ms.classList.add("open")};if(ms){ms.onclick=function(e){if(e.target===ms)ms.classList.remove("open")};ms.querySelectorAll("[data-more-view]").forEach(function(b){b.onclick=function(){state.view=b.dataset.moreView;render()}})};var ss=document.getElementById("sessionSelect");if(ss)ss.onchange=function(){switchSession(ss.value)};document.querySelectorAll(".openSession").forEach(function(b){b.onclick=function(){switchSession(b.dataset.session)}});
 var n=document.getElementById("newVenture");if(n)n.onclick=function(){state.modalMode="new";state.modal=true;render()};var eb=document.getElementById("editBrief");if(eb)eb.onclick=function(){state.modalMode="edit";state.modal=true;render()};
 var cbtn=document.getElementById("closeModal");if(cbtn)cbtn.onclick=function(){state.modal=false;render()};var gm=document.getElementById("generateMvp");if(gm)gm.onclick=generateMvp;var op=document.getElementById("openPrototype");if(op)op.onclick=openPrototype;var pm=document.getElementById("publishMvp");if(pm)pm.onclick=publishMvp;var tpa=document.getElementById("testPublishAuth");if(tpa)tpa.onclick=testPublishAuth;var cu=document.getElementById("copyDeployUrl");if(cu)cu.onclick=function(){if(state.p.deployment&&navigator.clipboard){navigator.clipboard.writeText(state.p.deployment.url);toast("URL copied")}};var mo=document.getElementById("markOpened");if(mo)mo.onclick=function(){updatePhoneTest({opened:true})};var mi=document.getElementById("markInstalled");if(mi)mi.onclick=function(){updatePhoneTest({installed:true})};var sn=document.getElementById("savePhoneNotes");if(sn)sn.onclick=function(){updatePhoneTest({notes:document.getElementById("phoneNotes").value});toast("Phone feedback saved")};var si=document.getElementById("startIteration");if(si)si.onclick=function(){var notes=document.getElementById("phoneNotes")?document.getElementById("phoneNotes").value:"";state.p.phoneTest=Object.assign({},state.p.phoneTest||{},{notes:notes,updatedAt:new Date().toISOString()});state.p._phase="iterate";addSessionEvent("iteration_started","Founder started next iteration",{notes:notes});save();state.view="growth";render()};
 document.querySelectorAll("#runCycle").forEach(function(r){r.onclick=function(){run("cycle")}});
