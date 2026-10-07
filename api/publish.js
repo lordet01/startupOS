@@ -24,7 +24,7 @@ module.exports=async function handler(req,res){
       return res.status(200).json({ok:true,deployment:{id,readyState:data.readyState||data.state||'UNKNOWN',url:data.url?'https://'+data.url:null,mode:'preview',deviceStatus:'PENDING_PHYSICAL_PHONE',error:data.errorMessage||null}});
     }
     if(req.method!=='POST')return res.status(405).json({ok:false,error:'POST only'});
-    const body=B.body(req),desc=B.assertCurrent({...body.descriptor});
+    const body=B.body(req);if(!body.descriptor)throw B.failure('INVALID_BUILD','Build descriptor가 필요합니다.',400);const desc=B.assertCurrent({...body.descriptor});
     if(body.sessionId!==desc.sid)throw B.failure('SESSION_MISMATCH','다른 세션의 Build를 배포할 수 없습니다.',409);
     if(body.approved!==true)throw B.failure('APPROVAL_REQUIRED','테스트 배포를 승인하세요.',422);
     const verification=await V.verify(desc,{liveConsent:body.liveConsent===true});
