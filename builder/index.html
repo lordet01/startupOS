@@ -1,3 +1,48 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>StartupOS · Functional Build</title><link rel="stylesheet" href="/capabilities/app.css"><style>.studio{max-width:1120px;margin:auto;padding:24px 18px 80px}.studio-head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:12px 0 26px}.studio-head select{max-width:400px}.stages{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.stagebox{padding:13px;border:1px solid var(--line);border-radius:14px;font-size:12px;background:white}.stagebox strong{display:block;margin-bottom:6px}.stagebox.pass{background:var(--accent2);border-color:#9ec8bc}.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}.checkrow{display:grid;grid-template-columns:24px 1fr;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}.checkrow .tiny{word-break:break-word}.preview-frame{width:100%;height:720px;border:1px solid var(--line);border-radius:18px;background:#fff}.trace{font-family:ui-monospace,monospace;font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere;background:#102137;color:#e6edf5;padding:16px;border-radius:14px;max-height:350px;overflow:auto}.scope{background:#fff8e8;border:1px solid #ebd9b1}.toplink{text-decoration:none;font-weight:850}.state-label{font-size:12px;font-weight:800;color:var(--accent);overflow-wrap:anywhere}details{margin:10px 0}summary{cursor:pointer;font-weight:700}.toolbar{display:flex;gap:10px;flex-wrap:wrap}.studio .card{margin:16px 0}.stagebox.pending{color:var(--muted)}.button-note{max-width:480px}@media(max-width:760px){.two{grid-template-columns:1fr}.stages{grid-template-columns:1fr 1fr}.studio-head{align-items:flex-start;flex-direction:column}.preview-frame{height:650px}}
-</style></head><body><main id="studio" class="studio"><p>세션을 불러오고 있습니다.</p></main><script src="/builder/studio.js"></script></body></html>
+<html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>StartupOS · Build</title>
+<link rel="stylesheet" href="/capabilities/app.css">
+<style>
+:root{--bg:#081422;--ink:#f4f7fb;--muted:#91a4bf;--line:#29405e;--card:#102039;--accent:#6687ff;--accent2:#162d52;--danger:#ff7f96;background:var(--bg);color:var(--ink)}
+body{background:#081422;color:var(--ink)}
+.studio{max-width:1180px;margin:auto;padding:22px 24px 80px}
+.studio-head{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:18px}
+.studio-head select{max-width:420px;background:#102039;color:#fff;border:1px solid #29405e}
+.toplink{color:#dbe7f8;text-decoration:none;font-weight:850}
+.pageTitle{display:flex;justify-content:space-between;align-items:end;gap:14px;margin:12px 0 18px}
+.pageTitle h1{font-size:28px;margin:0;letter-spacing:-.04em}.pageTitle .muted{margin-top:5px}
+.stages{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:0 0 16px}
+.stagebox{padding:12px 13px;border:1px solid #29405e;border-radius:13px;font-size:11px;background:#0d1b30;color:#7187a6}
+.stagebox strong{display:block;margin-bottom:4px;color:#b8c7db;font-size:12px}
+.stagebox.pass{background:#142b52;border-color:#5578d6;color:#a9bce0}.stagebox.pass strong{color:#fff}
+.card{background:#102039!important;border:1px solid #29405e!important;color:#f4f7fb;box-shadow:none!important}
+.scope{background:#102039!important;border:1px solid #29405e!important}
+h2{font-size:17px;margin-bottom:10px}h3{font-size:13px;color:#cbd8e9}
+.muted,.hint,.tiny{color:#8da1bd!important}
+.field span,.field>label{color:#9db0c9}
+input:not([type=checkbox]),textarea,select{background:#081522;color:#fff;border:1px solid #345070}
+input:focus,textarea:focus,select:focus{border-color:#6687ff;box-shadow:0 0 0 3px #6687ff20}
+.btn{background:#162842;color:#fff;border:1px solid #345070}.btn:hover{border-color:#6687ff}
+.btn.primary{background:linear-gradient(135deg,#6288ff,#765fff);border-color:transparent;color:white}
+.btn.danger{color:#ff9caf;border-color:#70404e;background:#2b1720}
+.badge{background:#0b1a2d;color:#bcd0e8;border:1px solid #345070}
+.notice{background:#122c48;color:#c5d7ef;border:1px solid #31577c}
+.notice.warn{background:#2b2417;color:#e7c880;border-color:#6b5932}.notice.error,.errorbox{background:#351822;color:#ffb7c2;border:1px solid #7b3e4d}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.scopeList{display:grid;gap:6px}.scopeItem{font-size:12px;color:#aabbd1;padding:7px 0;border-bottom:1px solid #223551}.scopeItem:last-child{border-bottom:0}
+.checkrow{display:grid;grid-template-columns:24px 1fr;gap:8px;padding:8px 0;border-bottom:1px solid #223551;font-size:12px}.checkrow .tiny{word-break:break-word}
+.preview-frame{width:100%;height:700px;border:1px solid #29405e;border-radius:16px;background:#fff}
+.trace{font-family:ui-monospace,monospace;font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere;background:#07111e;color:#c9d7e8;padding:14px;border-radius:12px;max-height:300px;overflow:auto}
+.state-label{font-size:12px;font-weight:800;color:#8db1ff}.toolbar{display:flex;gap:8px;flex-wrap:wrap}.studio .card{margin:12px 0}
+.sectionHead{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}.sectionHead h2{margin:0}
+.metaRow{display:flex;gap:7px;flex-wrap:wrap}.metaChip{font-size:10px;padding:4px 7px;border-radius:999px;border:1px solid #345070;color:#a9bdd6}
+.compactGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.busyline{background:#0a1728}.busyline:after{background:#6687ff}
+details{margin:8px 0}summary{cursor:pointer;font-size:12px;font-weight:750;color:#b9cae0}
+@media(max-width:760px){.studio{padding:16px 14px 70px}.studio-head,.pageTitle{align-items:flex-start;flex-direction:column}.studio-head select{max-width:none}.stages{grid-template-columns:1fr 1fr}.two,.compactGrid{grid-template-columns:1fr}.preview-frame{height:620px}}
+</style>
+</head><body>
+<main id="studio" class="studio"><p class="muted">Loading…</p></main>
+<script src="/builder/studio.js"></script>
+</body></html>
