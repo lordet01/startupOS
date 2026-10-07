@@ -60,6 +60,11 @@
 .sectionTitle{font-size:13px;font-weight:850;margin-bottom:10px}.mutedLine{font-size:11px;color:#7f94b1}
 @media(max-width:900px){.statusGrid{grid-template-columns:1fr 1fr}.coreGrid{grid-template-columns:1fr}}
 @media(max-width:650px){.projectHead{flex-direction:column}.statusGrid{grid-template-columns:1fr 1fr}.projectHead h1{font-size:23px}.quickActions .btn{flex:1}.coreGrid{grid-template-columns:1fr}}
+
+.nav button.stageNav{display:flex;align-items:center;gap:11px}
+.navState{width:10px;height:10px;border-radius:50%;flex:0 0 10px;border:1.6px solid #617591;background:transparent}
+.navState.done{background:#45d7aa;border-color:#45d7aa;box-shadow:0 0 0 3px rgba(69,215,170,.08)}
+.navText{min-width:0}
 </style>
 </head>
 <body>
@@ -293,7 +298,22 @@ function fee(){return spend()*.05}
 function runtimeUrl(){var saved=localStorage.getItem("startupOS.runtimeUrl");if(saved)return saved;if(window.STARTUP_OS_CONFIG&&window.STARTUP_OS_CONFIG.runtimeUrl)return window.STARTUP_OS_CONFIG.runtimeUrl;if(location.hostname.endsWith(".vercel.app")||location.hostname==="localhost")return "/api/runtime";return ""}
 function stackServices(){var t=state.p.techStack;if(t&&t.length)return t.map(function(x){return typeof x==="string"?x:(x.service||x.area)});return ["OpenAI GPT","Firebase","Vercel","GitHub","Stripe","PostHog","Resend"]}
 function esc(s){return String(s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
-function nav(){var a=[["sessions","Sessions"],["overview","Overview"],["venture","Venture Lab"],["build","Build"],["deploy","Deploy"],["phone","Phone Test"],["agents","Agents"],["cost","Cost Ledger"],["growth","Growth"],["settings","Settings"]];return '<aside class="side"><div class="brand"><i>S</i>Startup OS</div><div class="nav">'+a.map(function(x){return '<button data-view="'+x[0]+'" class="'+(state.view===x[0]?"on":"")+'">'+x[1]+'</button>'}).join("")+'</div><div class="small">StartupOS<br>Functional Build</div></aside>'}
+function sessionStageStatus(p){
+  var blueprint=!!(p&&Array.isArray(p.serviceFlow)&&p.serviceFlow.length&&Array.isArray(p.mvpFeatures)&&p.mvpFeatures.length);
+  var build=!!(p&&p.functionalBuild&&p.functionalBuild.verification&&p.functionalBuild.verification.status==="INTEGRATION_VERIFIED");
+  var deploy=!!(p&&p.functionalBuild&&p.functionalBuild.deployment&&p.functionalBuild.deployment.readyState==="READY");
+  var phone=!!(p&&(p.functionalDeviceEvidence&&p.functionalDeviceEvidence.note||p.functionalDeviceNote));
+  return {venture:blueprint,build:build,deploy:deploy,phone:phone};
+}
+function nav(){
+  var a=[["sessions","Sessions"],["overview","Overview"],["venture","Venture Lab"],["build","Build · 기능 검증"],["deploy","Deploy"],["phone","Phone Test"],["agents","Agents"],["cost","Cost Ledger"],["growth","Growth"],["settings","Settings"]];
+  var stages=sessionStageStatus(state.p);
+  var tracked={venture:true,build:true,deploy:true,phone:true};
+  return '<aside class="side"><div class="brand"><i>S</i>Startup OS</div><div class="nav">'+a.map(function(x){
+    var dot=tracked[x[0]]?'<span class="navState '+(stages[x[0]]?"done":"")+'" aria-hidden="true"></span>':'';
+    return '<button data-view="'+x[0]+'" class="'+(state.view===x[0]?"on ":"")+(tracked[x[0]]?"stageNav":"")+'">'+dot+'<span class="navText">'+x[1]+'</span></button>';
+  }).join("")+'</div><div class="small">StartupOS<br>Functional Build</div></aside>'
+}
 function shell(body){var live=state.runtimeStatus==="live";var badge=state.running?"GPT running…":(live?"Live GPT Runtime":(runtimeUrl()?"Runtime ready":"Runtime not linked"));var opts=sessionPack.sessions.map(function(s){return '<option value="'+esc(s._sessionId)+'" '+(s._sessionId===state.p._sessionId?"selected":"")+'>'+esc(s.name||"Untitled")+' · '+shortSessionId(s)+'</option>'}).join("");return '<div class="shell">'+nav()+'<main class="main"><header class="top"><div class="row"><select id="sessionSelect" class="btn" style="max-width:280px">'+opts+'</select><span class="small">Session '+shortSessionId(state.p)+' · '+esc(state.p._phase||state.p.stage||"brief")+'</span></div><div class="row"><span class="tag '+(live?"ok":"")+'">'+badge+'</span><button class="btn" id="newVenture">+ New venture</button></div></header><div class="content">'+body+'</div></main></div>'}
 function metric(t,v,n,c){return '<div class="card metric"><span>'+t+'</span><b class="'+(c||"")+'">'+v+'</b><span>'+n+'</span></div>'}
 function agents(){var notes=state.p.agentNotes||{};var a=[["CEO","ceo","Goal / priority / gate"],["Market","market","Customer / competition"],["Product","product","MVP / UX / conversion"],["Finance","finance","Cost / pricing / margin"],["Tech","tech","Architecture / APIs"],["Builder","tech","Implementation / deploy"],["Legal","legal","Privacy / IP / policy"],["Growth","growth","Acquisition / experiments"]];return '<div class="agents">'+a.map(function(x,i){var note=notes[x[1]]||x[2];return '<div class="agent"><div class="head"><b>'+x[0]+' Agent</b><span class="tag '+(state.runtimeStatus==="live"?"ok":"")+'">'+(state.running&&i<4?"Running":state.runtimeStatus==="live"?"Synced":"Ready")+'</span></div><p>'+esc(note)+'</p></div>'}).join("")+'</div>'}
