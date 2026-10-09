@@ -55,6 +55,7 @@ try{
  });
  await test('Verify requires automated full-workflow smoke evidence',async()=>{
   const sid='vs_studio_skin';
+  await page.goto(base+'/builder/?sessionId='+sid);
   await page.evaluate(({key,sid})=>{
    const pack=JSON.parse(localStorage.getItem(key)),p=pack.sessions.find(x=>x._sessionId===sid);
    p.functionalBuild.verification={status:'INTEGRATION_VERIFIED',artifactHash:p.functionalBuild.artifactHash,checks:[]};
@@ -92,7 +93,13 @@ try{
   assert.ok(!new URL(page.url()).searchParams.has('verifyIssue')); // avoid repeating report on refresh
  });
  await test('fix_plan_explains_and_applies_real_photo_repair_before_rebuild',async()=>{
-  await page.locator('#fixBuild').waitFor({state:'visible',timeout:15000});
+  await page.locator('#fixBuild').waitFor({state:'visible',timeout:9000}).catch(async e=>{
+   const debug=await page.evaluate(key=>{
+     const pack=JSON.parse(localStorage.getItem(key)),p=pack.sessions.find(x=>x._sessionId==='vs_studio_skin');
+     return {repair:p.functionalRepair,plan:p.functionalRepairPlan,diagnostics:p.functionalDiagnostics,repairUI:document.getElementById('repair-stage')?.innerText};
+   },key);
+   throw Error('Fix plan UI not ready: '+JSON.stringify(debug));
+  });
   assert.equal(await page.locator('#assemble').count(),0);
   assert.match(await page.locator('#repair-stage').innerText(),/수정 내용/);
   assert.match(await page.locator('#repair-stage').innerText(),/skin-photo-repair.js/);
