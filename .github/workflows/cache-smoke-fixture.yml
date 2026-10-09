@@ -1,0 +1,42 @@
+name: Cache public CC0 face smoke fixture
+on:
+  push:
+    branches: [feat/repair-smoke-pipeline]
+    paths: ['.github/workflows/cache-smoke-fixture.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fetch-fixture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Fetch openly licensed web test image (once, then cache in repo)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p fixtures
+          SOURCE="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Close-up_portrait_of_an_old_woman.jpg/640px-Close-up_portrait_of_an_old_woman.jpg"
+          FALLBACK="https://upload.wikimedia.org/wikipedia/commons/8/80/Close-up_portrait_of_an_old_woman.jpg"
+          curl --fail --location --retry 3 --connect-timeout 10 --max-time 60 --user-agent "StartupOS test fixture caching (github.com/lordet01/startupOS)" "$SOURCE" -o fixtures/skin-face.jpg || curl --fail --location --retry 3 --max-time 60 "$FALLBACK" -o fixtures/skin-face.jpg
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("fixtures/skin-face.jpg")
+          b=p.read_bytes()
+          assert b[:2]==b'\xff\xd8', "not a JPEG"
+          assert 5000 < len(b) < 2500000, "unexpected JPEG size"
+          print("CC0 smoke face cached:",len(b),"bytes")
+          PY
+      - name: Commit pinned fixture once
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add fixtures/skin-face.jpg
+          if ! git diff --cached --quiet; then
+            git commit -m "test: cache Wikimedia CC0 skin face smoke fixture"
+            git push origin HEAD:feat/repair-smoke-pipeline
+          fi
