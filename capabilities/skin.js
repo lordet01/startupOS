@@ -18,12 +18,13 @@ function form(){
  (preview?'<div id="previewPhase" class="card" style="margin-top:14px;border-color:#347ca0"><div class="step">02 / 사진 확인 · 분석 실행</div><img class="photo" alt="선택한 피부 사진 미리보기" src="'+preview+'"><label class="check"><input type="checkbox" id="consent" '+(consent?'checked':'')+'>사진을 OpenAI API로 전송하는 데 동의합니다. 원본 이미지는 앱에 저장하지 않습니다.</label><button class="btn primary full" id="analyze" '+(busy||!consent?'disabled':'')+'>'+(busy?'분석 중…':'✨ 이 사진 분석하기')+'</button><p class="hint">'+(consent?'분석 버튼을 눌러주세요.':'사진 전송에 동의하면 분석 버튼이 활성화됩니다.')+'</p></div>':'')+
  (busy?'<div class="busyline"></div><div class="muted" role="status">실제 AI 이미지 요청 중… <button class="btn" id="cancel">중지</button></div>':'')+
  (error?'<div role="alert" class="errorbox"><strong>분석 단계 오류</strong><p>'+esc(error)+'</p><button class="btn danger" id="reportIssue">⚠ Verify에 오류 보내기</button></div>':'')+
- (status?'<div class="notice">'+esc(status)+'</div>':'')+'</section>';
+ (status?'<div class="notice">'+esc(status)+'</div>':'')+
+ (preview&&!busy&&!error&&!result?'<button class="btn" id="stuckReport" style="margin-top:10px">촬영 후 진행되지 않나요? Verify에 보고</button>':'')+'</section>';
 }
 function findings(r){
  if(!r)return '';
- if(r.image_status!=='face_visible')return '<section class="card"><h2>분석 불가</h2><p>'+esc(r.summary)+'</p></section>';
- return '<section class="card"><div class="step">02 / 관찰 결과</div><h2>'+esc(r.summary)+'</h2>'+
+ if(r.image_status!=='face_visible')return '<section class="card" id="analysisResult"><h2>분석 불가</h2><p>'+esc(r.summary)+'</p></section>';
+ return '<section class="card" id="analysisResult"><div class="step">03 / 관찰 결과</div><h2>'+esc(r.summary)+'</h2>'+
  '<div class="featureList">'+r.observations.map(x=>'<div class="item"><b>'+esc(x.property.replaceAll('_',' '))+' · '+(x.certainty==='low'?'낮은 확신':'제한적 관찰')+'</b><p class="muted">'+esc(x.description)+'</p></div>').join('')+'</div>'+
  '<h2 style="margin-top:15px">추천 성분군</h2>'+
  r.ingredient_groups.map(x=>'<div class="item"><b>'+esc(ingredientNames[x.ingredient]||x.ingredient)+'</b><p class="muted">'+esc(x.reason)+'</p><p class="hint">'+esc(x.caution)+'</p></div>').join('')+
@@ -45,6 +46,7 @@ function render(){
  const snap=document.getElementById('snap');if(snap)snap.onclick=takePhoto;
  const cancel=document.getElementById('cancel');if(cancel)cancel.onclick=()=>aborter?.abort();
  const report=document.getElementById('reportIssue');if(report)report.onclick=reportFailure;
+ const stuck=document.getElementById('stuckReport');if(stuck)stuck.onclick=()=>{lastFailure={stage:photoStage,code:'PHOTO_FLOW_STUCK',message:'촬영 후 분석 단계로 진행하지 못함',at:new Date().toISOString()};reportFailure()};
  if(cameraStream){const video=document.getElementById('video');if(video){video.srcObject=cameraStream;video.play().catch(()=>{})}}
 }
 async function openCamera(){
@@ -86,7 +88,7 @@ async function analyzePhoto(){
   if(!resp.ok||!data.ok)throw Error(data.error||'분석 실패 · HTTP '+resp.status);
   result=data.result;photoStage='done';status='AI 분석 완료 · '+Number(data.latency_ms/1000).toFixed(1)+'초';
  }catch(e){photoStage='error';error=e.name==='AbortError'?'분석이 중단되거나 시간 초과됐습니다.':e.message;lastFailure={stage:'image_analysis',code:e.code||'RUNTIME_OR_UX_FAILURE',message:error,at:new Date().toISOString()}}
- finally{clearTimeout(timeout);busy=false;aborter=null;render()}
+ finally{clearTimeout(timeout);busy=false;aborter=null;render();if(result)requestAnimationFrame(()=>document.getElementById('analysisResult')?.scrollIntoView({behavior:'smooth',block:'start'}));}
 }
 function reportFailure(){
  const issue=lastFailure||{stage:photoStage,message:error||'사진 촬영→분석이 진행되지 않음',code:'PHOTO_FLOW_FAILED',at:new Date().toISOString()};
