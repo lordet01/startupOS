@@ -2,6 +2,7 @@
   "fluid": true,
   "functions": {
     "api/runtime.js": { "maxDuration": 60 },
+    "api/idea-note.js": { "maxDuration": 60 },
     "api/build.js": { "maxDuration": 60, "includeFiles": "{capabilities/**,lib/**}" },
     "api/build-preview.js": { "maxDuration": 30, "includeFiles": "{capabilities/**,lib/**}" },
     "api/publish.js": { "maxDuration": 30, "includeFiles": "{capabilities/**,lib/**}" },
