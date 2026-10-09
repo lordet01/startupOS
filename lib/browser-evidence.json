@@ -1,1 +1,103 @@
-{"suite":"functional-build-browser-v3","sourceHash":"6384d686606dd19eda9daa6f48cf8d3eeb295ad674d50a696cb5d11bc58bf194","checkedAt":"2026-10-07T00:50:47.420Z","browser":"153.0.8010.12","viewport":{"width":390,"height":844},"ocrTransport":"mocked for browser workflow tests; real provider checked separately at build verification","camera":"Chromium synthetic media device and simulated permission denial; not a physical phone","physicalPhone":false,"checks":[{"id":"mobile_receipt_app_renders_without_script_errors","status":"passed"},{"id":"camera_permission_and_capture_ui","status":"passed"},{"id":"album_image_preview_and_explicit_consent_gate","status":"passed"},{"id":"ocr_transport_to_editable_line_items","status":"passed"},{"id":"mismatch_blocks_save_and_preserves_draft","status":"passed"},{"id":"corrected_receipt_save_and_reload","status":"passed"},{"id":"receipt_monthly_and_category_summary","status":"passed"},{"id":"same_receipt_duplicate_prevention","status":"passed"},{"id":"external_api_error_is_not_a_success","status":"passed"},{"id":"session_isolation_same_origin","status":"passed"},{"id":"receipt_edit_and_delete_are_persistent","status":"passed"},{"id":"travel_trip_dates_and_creation","status":"passed"},{"id":"travel_task_completion_and_reload","status":"passed"},{"id":"packing_template_is_idempotent","status":"passed"},{"id":"reservation_link_notes_and_edit","status":"passed"},{"id":"mobile_layout_and_no_uncaught_errors","status":"passed"},{"id":"packaged_pwa_offline_reload","status":"passed"},{"id":"camera_permission_failure_has_file_fallback","status":"passed"}]}
+{
+  "suite": "functional-build-browser-v3",
+  "sourceHash": "4d8915172cec8904c1858041229f2429a33c92b3e32ea2c44c5778114f4c9328",
+  "checkedAt": "2026-10-09T11:58:19Z",
+  "browser": "153.0.8010.12",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "ocrTransport": "Browser workflows use mocked OCR and skin Vision transport. Separate live provider gate is mandatory before verified Build.",
+  "camera": "Chromium synthetic camera and mocked Vision transport. Physical Android/iOS camera, UVC and skin observation accuracy were not verified.",
+  "physicalPhone": false,
+  "checks": [
+    {
+      "id": "mobile_receipt_app_renders_without_script_errors",
+      "status": "passed"
+    },
+    {
+      "id": "camera_permission_and_capture_ui",
+      "status": "passed"
+    },
+    {
+      "id": "album_image_preview_and_explicit_consent_gate",
+      "status": "passed"
+    },
+    {
+      "id": "ocr_transport_to_editable_line_items",
+      "status": "passed"
+    },
+    {
+      "id": "mismatch_blocks_save_and_preserves_draft",
+      "status": "passed"
+    },
+    {
+      "id": "corrected_receipt_save_and_reload",
+      "status": "passed"
+    },
+    {
+      "id": "receipt_monthly_and_category_summary",
+      "status": "passed"
+    },
+    {
+      "id": "same_receipt_duplicate_prevention",
+      "status": "passed"
+    },
+    {
+      "id": "external_api_error_is_not_a_success",
+      "status": "passed"
+    },
+    {
+      "id": "session_isolation_same_origin",
+      "status": "passed"
+    },
+    {
+      "id": "receipt_edit_and_delete_are_persistent",
+      "status": "passed"
+    },
+    {
+      "id": "travel_trip_dates_and_creation",
+      "status": "passed"
+    },
+    {
+      "id": "travel_task_completion_and_reload",
+      "status": "passed"
+    },
+    {
+      "id": "packing_template_is_idempotent",
+      "status": "passed"
+    },
+    {
+      "id": "reservation_link_notes_and_edit",
+      "status": "passed"
+    },
+    {
+      "id": "mobile_layout_and_no_uncaught_errors",
+      "status": "passed"
+    },
+    {
+      "id": "packaged_pwa_offline_reload",
+      "status": "passed"
+    },
+    {
+      "id": "camera_permission_failure_has_file_fallback",
+      "status": "passed"
+    },
+    {
+      "id": "skin_module_mobile_camera_and_consent",
+      "status": "passed"
+    },
+    {
+      "id": "skin_real_api_boundary_and_ingredient_result",
+      "status": "passed"
+    },
+    {
+      "id": "skin_save_reload_and_delete",
+      "status": "passed"
+    },
+    {
+      "id": "skin_api_failure_never_masquerades_as_success",
+      "status": "passed"
+    }
+  ]
+}
