@@ -807,10 +807,93 @@ async function testRuntime(){var url=runtimeUrl();if(!url){toast("Runtime endpoi
 function loadTravelTemplate(){createSession(TRAVEL_TEMPLATE,"example-travel");state.modal=false;state.view="venture";render();toast("New Travel ToDo session created")}
 function loadOcrTemplate(){createSession(OCR_LEDGER_TEMPLATE,"example-ocr");state.modal=false;state.view="venture";render();toast("New OCR Ledger session created")}
 
+var ideaRecorder=null,ideaStream=null,ideaChunks=[],ideaRecordClock=null,ideaStopTimer=null,ideaStartedAt=0;
+function ideaNoteStatus(message,type){
+ var el=document.getElementById("ideaNoteStatus");if(!el)return;
+ el.textContent=message;el.className="noteStatus "+(type||"");
+}
+function ideaStopMedia(){
+ if(ideaStopTimer){clearTimeout(ideaStopTimer);ideaStopTimer=null}
+ if(ideaRecordClock){clearInterval(ideaRecordClock);ideaRecordClock=null}
+ if(ideaStream){ideaStream.getTracks().forEach(function(t){t.stop()});ideaStream=null}
+ ideaRecorder=null;
+}
+function ideaRecorderStop(){if(ideaRecorder&&ideaRecorder.state==="recording")ideaRecorder.stop()}
+async function ideaNoteRequest(payload,seconds){
+ var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},seconds*1000);
+ try{
+  var res=await fetch("/api/idea-note",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:controller.signal});
+  var data=await res.json().catch(function(){return {error:"서버 응답을 읽을 수 없습니다."}});
+  if(!res.ok||!data.ok)throw new Error(data.error||"Idea Note 실패 · HTTP "+res.status);
+  return data
+ }finally{clearTimeout(timer)}
+}
+async function ideaNoteStructure(){
+ var el=document.getElementById("ideaNoteText"),button=document.getElementById("ideaNoteStructure");
+ if(!el||!button)return;
+ var note=el.value.trim();
+ if(note.length<20){ideaNoteStatus("아이디어를 최소 20자 이상 입력하거나 마이크로 말해주세요.","error");return}
+ if(note.length>15000){ideaNoteStatus("아이디어 노트는 15,000자 이내로 입력해주세요.","error");return}
+ button.disabled=true;button.textContent="⏳ GPT 분석 중…";ideaNoteStatus("서술형 내용을 세션 입력항목으로 분류 중입니다.");
+ try{
+  var data=await ideaNoteRequest({action:"structure",note:note},48),draft=data.draft||{};
+  if(!document.getElementById("newIdea"))return;
+  var mapping={newName:draft.name,newIdea:draft.idea,newCustomer:draft.customer,newProblem:draft.problem,newOutcome:draft.desiredOutcome,newModel:draft.model,newConstraints:draft.constraints};
+  Object.keys(mapping).forEach(function(id){var control=document.getElementById(id);if(control&&mapping[id]!=null)control.value=String(mapping[id])});
+  if(draft.priceUsd!=null)document.getElementById("newPrice").value=draft.priceUsd;
+  if(draft.budgetUsd!=null)document.getElementById("newBudget").value=draft.budgetUsd;
+  ideaNoteStatus("✓ 항목을 채웠습니다. 내용을 수정·확인한 후 Create & analyze를 누르세요.","success");
+  document.getElementById("newIdea").focus({preventScroll:true});
+ }catch(e){ideaNoteStatus("분류 실패: "+e.message,"error")}
+ finally{button.disabled=false;button.textContent="AI로 항목 채우기"}
+}
+async function ideaNoteMic(){
+ var button=document.getElementById("ideaNoteMic");
+ if(!button)return;
+ if(ideaRecorder&&ideaRecorder.state==="recording"){ideaRecorderStop();return}
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||typeof MediaRecorder==="undefined"){
+  ideaNoteStatus("이 브라우저는 녹음을 지원하지 않습니다. 노트에 직접 입력해 주세요.","error");return
+ }
+ try{
+  ideaStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
+  if(!document.getElementById("ideaNoteText")){ideaStopMedia();return}
+  var types=["audio/mp4","audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus"];
+  var chosen=types.find(function(x){return MediaRecorder.isTypeSupported(x)});
+  if(!chosen){ideaStopMedia();ideaNoteStatus("지원 가능한 음성 녹음 형식이 없습니다.","error");return}
+  ideaChunks=[];ideaRecorder=new MediaRecorder(ideaStream,{mimeType:chosen,audioBitsPerSecond:48000});
+  ideaRecorder.ondataavailable=function(event){if(event.data&&event.data.size)ideaChunks.push(event.data)};
+  ideaRecorder.onstop=async function(){
+   var blob=new Blob(ideaChunks,{type:chosen});ideaChunks=[];ideaStopMedia();
+   var currentButton=document.getElementById("ideaNoteMic");
+   if(!currentButton)return;
+   currentButton.classList.remove("recording");currentButton.textContent="🎙 녹음 시작";
+   if(blob.size<100){ideaNoteStatus("녹음이 너무 짧습니다. 다시 시도하세요.","error");return}
+   if(blob.size>1800000){ideaNoteStatus("녹음이 너무 큽니다. 더 짧게 나눠 말해주세요.","error");return}
+   currentButton.disabled=true;ideaNoteStatus("녹음한 음성을 텍스트로 변환 중입니다.");
+   try{
+    var encoded=await new Promise(function(resolve,reject){var reader=new FileReader();reader.onload=function(){resolve(reader.result)};reader.onerror=reject;reader.readAsDataURL(blob)});
+    var data=await ideaNoteRequest({action:"transcribe",audio:encoded},50);
+    var note=document.getElementById("ideaNoteText");
+    if(note){note.value+=(note.value.trim()?"\n\n":"")+data.text;note.scrollTop=note.scrollHeight}
+    ideaNoteStatus("✓ 음성 인식 완료. 이어서 말하거나 AI로 항목을 채우세요.","success")
+   }catch(e){ideaNoteStatus("음성 인식 실패: "+e.message,"error")}
+   finally{currentButton.disabled=false}
+  };
+  ideaRecorder.onerror=function(){ideaStopMedia();ideaNoteStatus("녹음에 실패했습니다. 다시 시도하세요.","error")};
+  ideaRecorder.start(500);ideaStartedAt=Date.now();
+  button.classList.add("recording");button.textContent="■ 녹음 종료";ideaNoteStatus("녹음 중 · 0초 (최대 60초)");
+  ideaRecordClock=setInterval(function(){ideaNoteStatus("녹음 중 · "+Math.floor((Date.now()-ideaStartedAt)/1000)+"초 (최대 60초)")},1000);
+  ideaStopTimer=setTimeout(ideaRecorderStop,60000);
+ }catch(e){ideaStopMedia();ideaNoteStatus(e.name==="NotAllowedError"?"마이크 권한이 거부되었습니다. 브라우저 설정에서 허용하거나 글로 입력하세요.":e.message,"error")}
+}
 function bind(){
+var noteToggle=document.getElementById("ideaNoteToggle");
+if(noteToggle)noteToggle.onclick=function(){var panel=document.getElementById("ideaNotePanel");panel.hidden=!panel.hidden;noteToggle.textContent=panel.hidden?"✍ Idea Note · 말하거나 자유롭게 입력":"✍ Idea Note 접기"};
+var noteAi=document.getElementById("ideaNoteStructure");if(noteAi)noteAi.onclick=ideaNoteStructure;
+var noteMic=document.getElementById("ideaNoteMic");if(noteMic)noteMic.onclick=ideaNoteMic;
 document.querySelectorAll("[data-view]").forEach(function(b){b.onclick=function(){state.view=b.dataset.view;render()}});var mm=document.getElementById("moreMobile"),ms=document.getElementById("moreSheet");if(mm&&ms)mm.onclick=function(){ms.classList.add("open")};if(ms){ms.onclick=function(e){if(e.target===ms)ms.classList.remove("open")};ms.querySelectorAll("[data-more-view]").forEach(function(b){b.onclick=function(){state.view=b.dataset.moreView;render()}})};var ss=document.getElementById("sessionSelect");if(ss)ss.onchange=function(){switchSession(ss.value)};document.querySelectorAll(".openSession").forEach(function(b){b.onclick=function(){switchSession(b.dataset.session)}});
 var n=document.getElementById("newVenture");if(n)n.onclick=function(){state.modalMode="new";state.modal=true;render()};var eb=document.getElementById("editBrief");if(eb)eb.onclick=function(){state.modalMode="edit";state.modal=true;render()};
-var cbtn=document.getElementById("closeModal");if(cbtn)cbtn.onclick=function(){state.modal=false;render()};var gm=document.getElementById("generateMvp");if(gm)gm.onclick=generateMvp;var op=document.getElementById("openPrototype");if(op)op.onclick=openPrototype;var pm=document.getElementById("publishMvp");if(pm)pm.onclick=publishMvp;var tpa=document.getElementById("testPublishAuth");if(tpa)tpa.onclick=testPublishAuth;var cu=document.getElementById("copyDeployUrl");if(cu)cu.onclick=function(){if(state.p.deployment&&navigator.clipboard){navigator.clipboard.writeText(state.p.deployment.url);toast("URL copied")}};var mo=document.getElementById("markOpened");if(mo)mo.onclick=function(){updatePhoneTest({opened:true})};var mi=document.getElementById("markInstalled");if(mi)mi.onclick=function(){updatePhoneTest({installed:true})};var sn=document.getElementById("savePhoneNotes");if(sn)sn.onclick=function(){updatePhoneTest({notes:document.getElementById("phoneNotes").value});toast("Phone feedback saved")};var si=document.getElementById("startIteration");if(si)si.onclick=function(){var notes=document.getElementById("phoneNotes")?document.getElementById("phoneNotes").value:"";state.p.phoneTest=Object.assign({},state.p.phoneTest||{},{notes:notes,updatedAt:new Date().toISOString()});state.p._phase="iterate";addSessionEvent("iteration_started","Founder started next iteration",{notes:notes});save();state.view="growth";render()};
+var cbtn=document.getElementById("closeModal");if(cbtn)cbtn.onclick=function(){ideaRecorderStop();ideaStopMedia();state.modal=false;render()};var gm=document.getElementById("generateMvp");if(gm)gm.onclick=generateMvp;var op=document.getElementById("openPrototype");if(op)op.onclick=openPrototype;var pm=document.getElementById("publishMvp");if(pm)pm.onclick=publishMvp;var tpa=document.getElementById("testPublishAuth");if(tpa)tpa.onclick=testPublishAuth;var cu=document.getElementById("copyDeployUrl");if(cu)cu.onclick=function(){if(state.p.deployment&&navigator.clipboard){navigator.clipboard.writeText(state.p.deployment.url);toast("URL copied")}};var mo=document.getElementById("markOpened");if(mo)mo.onclick=function(){updatePhoneTest({opened:true})};var mi=document.getElementById("markInstalled");if(mi)mi.onclick=function(){updatePhoneTest({installed:true})};var sn=document.getElementById("savePhoneNotes");if(sn)sn.onclick=function(){updatePhoneTest({notes:document.getElementById("phoneNotes").value});toast("Phone feedback saved")};var si=document.getElementById("startIteration");if(si)si.onclick=function(){var notes=document.getElementById("phoneNotes")?document.getElementById("phoneNotes").value:"";state.p.phoneTest=Object.assign({},state.p.phoneTest||{},{notes:notes,updatedAt:new Date().toISOString()});state.p._phase="iterate";addSessionEvent("iteration_started","Founder started next iteration",{notes:notes});save();state.view="growth";render()};
 document.querySelectorAll("#runCycle").forEach(function(r){r.onclick=function(){run("cycle")}});var doneAgent=document.getElementById("completeAgentAction");if(doneAgent)doneAgent.onclick=function(){
  var note=document.getElementById("agentActionEvidence").value.trim();
  if(note.length<8){toast("실제 수행 내용과 결과를 8자 이상 기록하세요");return}
@@ -840,6 +923,7 @@ var create=document.getElementById("createVenture");if(create)create.onclick=fun
     price:Number(document.getElementById("newPrice").value||0),
     budget:Number(document.getElementById("newBudget").value||100),
     constraints:document.getElementById("newConstraints").value.trim(),
+    _ideaNote:(document.getElementById("ideaNoteText")?document.getElementById("ideaNoteText").value.trim():""),
     stage:"Discovery",score:50,metrics:{visitors:0,activation:0,trial:0,paid:0,mrr:0},
     costs:[],decisions:["새 Venture 생성: founder brief 입력 완료"],
     mvpFeatures:[],techStack:[],serviceFlow:[],buildPlan:[],costBreakdown:[],risks:[],launchGates:[],
