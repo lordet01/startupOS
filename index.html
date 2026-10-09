@@ -390,7 +390,15 @@ function metric(t,v,n,c){return '<div class="card metric"><span>'+t+'</span><b c
 function agents(){var notes=state.p.agentNotes||{};var a=[["CEO","ceo","Goal / priority / gate"],["Market","market","Customer / competition"],["Product","product","MVP / UX / conversion"],["Finance","finance","Cost / pricing / margin"],["Tech","tech","Architecture / APIs"],["Builder","tech","Implementation / deploy"],["Legal","legal","Privacy / IP / policy"],["Growth","growth","Acquisition / experiments"]];return '<div class="agents">'+a.map(function(x,i){var note=notes[x[1]]||x[2];return '<div class="agent"><div class="head"><b>'+x[0]+' Agent</b><span class="tag '+(state.runtimeStatus==="live"?"ok":"")+'">'+(state.running&&i<4?"Running":state.runtimeStatus==="live"?"Synced":"Ready")+'</span></div><p>'+esc(note)+'</p></div>'}).join("")+'</div>'}
 
 function gates(){return '<div class="gate"><div class="pass">✓<br><b>Problem</b></div><div class="pass">✓<br><b>Customer</b></div><div class="pass">✓<br><b>MVP</b></div><div>!<br><b>Payment</b></div><div>!<br><b>Legal</b></div></div>'}
-function sessionsView(){var rows=sessionPack.sessions;return shell('<div class="head"><div><h2 style="font-size:27px">Venture Sessions</h2><div class="small">New Venture마다 독립 세션이 생성되고 Brief → Blueprint → Build → Deploy → Phone Test → Iterate 전체 이력이 이 세션에 묶입니다.</div></div><button class="btn primary" id="newVenture">+ New venture</button></div><div class="grid g2">'+rows.map(function(s){var phase=s._phase||"brief";return '<div class="card"><div class="head"><div><h2>'+esc(s.name||"Untitled venture")+'</h2><div class="small">Session '+shortSessionId(s)+' · '+esc(phase)+' · '+new Date(s._updatedAt||s._createdAt).toLocaleString()+'</div></div><span class="tag '+(s.runtimeLast?"ok":"")+'">'+(s.runtimeLast?"AI synced":"Local")+'</span></div><p class="small" style="line-height:1.6">'+esc(s.idea||"")+'</p><div class="row"><button class="btn primary openSession" data-session="'+esc(s._sessionId)+'">Open session</button></div></div>'}).join("")+'</div>')}
+function sessionsView(){
+ var rows=sessionPack.sessions;
+ return shell('<div class="pageHead"><div><h2>Sessions</h2><span class="pageCount">'+rows.length+' projects</span></div></div>'+
+ '<div class="sessionGrid">'+rows.map(function(s){
+ var d=s.functionalBuild&&s.functionalBuild.deployment;
+ var status=d&&d.readyState==="READY"?"Deployed":s.functionalBuild?"Built":(s.serviceFlow&&s.serviceFlow.length?"Blueprint":"Draft");
+ return '<article class="card sessionCard"><div class="sessionCardTop"><h3>'+esc(s.name||"Untitled venture")+'</h3><span class="tag">'+status+'</span></div><p>'+esc(s.desiredOutcome||s.idea||"")+'</p><div class="sessionCardFooter"><span>'+shortSessionId(s)+' · '+new Date(s._updatedAt||s._createdAt).toLocaleDateString()+'</span><button class="btn openSession" data-session="'+esc(s._sessionId)+'">Open →</button></div></article>'
+ }).join("")+'</div>');
+}
 function mobileNextAction(p){
   var s=sessionStageStatus(p);
   if(!s.venture)return {view:"venture",label:"Blueprint 만들기",icon:"🧩",step:0};
@@ -399,38 +407,23 @@ function mobileNextAction(p){
   if(!s.phone)return {view:"phone",label:"Phone Test 하기",icon:"📱",step:3};
   return {view:"growth",label:"다음 개선 사이클",icon:"↻",step:4};
 }
-function mobileOverviewCard(p,spendValue){
-  var s=sessionStageStatus(p),next=mobileNextAction(p);
-  var steps=[["🧩","Blueprint",s.venture],["🛠","Build",s.build],["🚀","Deploy",s.deploy],["📱","Test",s.phone]];
-  return '<section class="mobileDashboard mobileOnly"><div class="sessionEyebrow">SESSION '+shortSessionId(p)+'</div><h1>'+esc(p.name||"Untitled venture")+'</h1><div class="mobileDesc">'+esc(p.desiredOutcome||p.idea||"")+'</div><div class="mobileProgress">'+steps.map(function(x,i){return '<div class="mobileStep '+(x[2]?"done":i===next.step?"current":"")+'"><span class="ico">'+x[0]+'</span><b>'+x[1]+'</b></div>'}).join("")+'</div><button class="btn primary mobilePrimary" data-view="'+next.view+'">'+next.icon+' '+next.label+'</button><button class="btn mobileSecondary" id="runCycle">↻ Run cycle</button><div class="mobileSummary"><div class="mobileMini"><span>Blueprint</span><b>'+(s.venture?"Ready":"Pending")+'</b></div><div class="mobileMini"><span>API Cost</span><b>'+money(spendValue)+'</b></div></div></section>'
-}
 function runtimeButton(id,label,mode,primary){
   var running=state.running&&state.runMode===mode;
   return '<button class="btn '+(primary?'primary ':'')+'inlineWork '+(running?'running':'')+'" id="'+id+'" '+(state.running?'disabled':'')+'><span class="workInner">'+(running?'<span class="workSpin"></span><span>Working · <span class="mainRunElapsed">'+elapsedSeconds().toFixed(1)+'s</span></span>':label)+'</span></button>'
 }
 function lifecycleStepper(p){var phases=[["brief","📝","1 · Brief","문제·고객"],["blueprint","🧩","2 · Blueprint","흐름·기술·비용"],["build","🛠","3 · Build","실제 구현"],["deploy","🚀","4 · Deploy","웹 배포"],["test","📱","5 · Phone","PWA 설치·사용"],["iterate","↻","6 · Iterate","피드백·개선"]];var rank={brief:0,blueprint:1,build:2,deploy:3,test:4,iterate:5};var cur=rank[p._phase||"brief"]||0;return '<div class="wizardSteps" style="grid-template-columns:repeat(6,1fr)">'+phases.map(function(x,i){return '<div class="wizardStep '+(i<=cur?"active":"")+'"><div class="stepIcon">'+x[1]+'</div><b>'+x[2]+'</b>'+x[3]+'</div>'}).join("")+'</div>'}
 function overview(){
-var p=state.p,s=spend(),fb=p.functionalBuild||null,ver=fb&&fb.verification,dep=fb&&fb.deployment;
-var buildState=ver&&ver.status==="INTEGRATION_VERIFIED"?"Verified":fb?"Built":"Not built";
-var deployState=dep&&dep.readyState==="READY"?"Live":dep?dep.readyState||"Deploying":"Not deployed";
-var bp=(p.serviceFlow&&p.serviceFlow.length)?"Ready":"Needs analysis";
-var features=(p.mvpFeatures||[]).slice(0,6);
-var desc=p.desiredOutcome||p.idea||"";
-var next=p.nextExperiment||"다음 단계가 아직 정해지지 않았습니다.";
-return shell(
-mobileOverviewCard(p,s)+
-'<section class="projectHead desktopOnly"><div><div class="eyebrow">SESSION '+shortSessionId(p)+'</div><h1>'+esc(p.name||"Untitled venture")+'</h1><div class="desc">'+esc(desc)+'</div><div class="quickActions"><button class="btn" data-view="venture">Blueprint</button><button class="btn primary" data-view="build">Build</button><button class="btn" data-view="deploy">Deploy</button><button class="btn" data-view="phone">Phone Test</button>'+runtimeButton("runCycle","Run cycle","cycle",false)+'</div></div><div class="miniMeta"><span class="miniTag">'+esc(p._phase||"brief")+'</span><span class="miniTag">'+(state.runtimeStatus==="live"?"AI connected":"Runtime ready")+'</span></div></section>'+
-'<section class="statusGrid">'+
-'<div class="statusCard"><span>Blueprint</span><b>'+bp+'</b><small>'+(p.serviceFlow&&p.serviceFlow.length?(p.serviceFlow.length+" steps"):"Analyze first")+'</small></div>'+
-'<div class="statusCard"><span>Build</span><b>'+buildState+'</b><small>'+(fb?esc(fb.kind||"functional app"):"No artifact")+'</small></div>'+
-'<div class="statusCard"><span>Deploy</span><b>'+deployState+'</b><small>'+(dep&&dep.url?"URL issued":"No URL")+'</small></div>'+
-'<div class="statusCard"><span>Cost</span><b>'+money(s)+'</b><small>External API spend</small></div>'+
-'</section>'+
-'<section class="coreGrid"><div class="compactCard"><div class="sectionTitle">Core functions</div><div class="featureList">'+(features.length?features.map(function(x){return '<div class="featureRow"><span class="featureDot"></span><span>'+esc(x)+'</span></div>'}).join(""):'<div class="mutedLine">Blueprint에서 핵심 기능을 정의하세요.</div>')+'</div></div>'+
-'<div class="compactCard"><div class="sectionTitle">Next action</div><div class="nextAction">'+esc(next)+'</div><div class="quickActions" style="margin-top:14px">'+runtimeButton("analyzeNow","Analyze","analyze",false)+'<button class="btn" data-view="venture">Edit blueprint</button></div></div></section>'+
-runPanel()
-)}
-
+ var p=state.p,s=spend(),steps=sessionStageStatus(p),next=mobileNextAction(p);
+ var feats=(p.mvpFeatures||[]).slice(0,4), fb=p.functionalBuild,dep=fb&&fb.deployment;
+ var phases=[["Blueprint",steps.venture],["Build",steps.build],["Deploy",steps.deploy],["Test",steps.phone]];
+ return shell('<section class="overviewCard"><div class="overviewEyebrow">SESSION '+shortSessionId(p)+'</div><div class="overviewTitle">'+esc(p.name||"Untitled venture")+'</div>'+
+ '<p class="overviewGoal">'+esc(p.desiredOutcome||p.idea||"사업 목표를 입력하세요.")+'</p>'+
+ '<div class="overviewProgress">'+phases.map(function(x,i){return '<div class="overviewStep '+(x[1]?"done":next.step===i?"current":"")+'"><span class="stepDot"></span>'+x[0]+'</div>'}).join("")+'</div>'+
+ '<div class="overviewActions"><button class="btn primary" data-view="'+next.view+'">'+next.icon+' '+next.label+'</button></div></section>'+
+ '<div class="overviewNumbers"><div><span>External cost</span><strong>'+money(s)+'</strong></div><div><span>Latest build</span><strong>'+(steps.build?"Verified":fb?"Pending verification":"Not built")+'</strong></div></div>'+
+ (feats.length?'<section class="card overviewFeatures"><div class="sectionTitle">Core features</div>'+feats.map(function(x){return '<div class="simpleFeature"><span class="featureDot"></span><span>'+esc(x)+'</span></div>'}).join("")+'</section>':'')+
+ (state.runStage==="error"?runPanel():""));
+}
 function item(a,b){return '<div class="item"><div><b>'+esc(a)+'</b><div>'+esc(b)+'</div></div></div>'}
 function runStageIndex(){return {prepare:0,request:1,waiting:2,apply:3,done:4,error:4}[state.runStage]||0}
 function elapsedSeconds(){return state.runStartedAt?Math.max(0,(Date.now()-state.runStartedAt)/1000):0}
