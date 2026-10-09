@@ -62,7 +62,7 @@ try{
   const p=await page.evaluate(({sid,key})=>JSON.parse(localStorage.getItem(key)).sessions.find(x=>x._sessionId===sid),{sid,key});
   assert.equal(p.functionalRepair.status,'REPAIR_REQUIRED');
   assert.equal(p.functionalRepair.buildId,desc.bid);
-  assert.equal(await page.locator('.stages .stagebox.pass').count(),1); // contract only; reported failure overrides client 'verified'
+  assert.equal(await page.locator('.stages .stagebox.pass').count(),2); // contract + built, but reported failure overrides any client 'verified' claim
   assert.ok(!new URL(page.url()).searchParams.has('verifyIssue')); // avoid repeating report on refresh
  });
  await test('same_source_rebuild_is_rejected_until_code_is_repaired',async()=>{
