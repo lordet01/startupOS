@@ -66,6 +66,25 @@ details{margin:8px 0}summary{cursor:pointer;font-size:12px;font-weight:750;color
 .workBtn .tinySpinner{width:10px;height:10px;border-radius:50%;border:2px solid #7892bf;border-top-color:#fff;animation:spinBtn .8s linear infinite}
 @keyframes btnrun{0%{transform:translateX(-110%)}100%{transform:translateX(320%)}}
 @keyframes spinBtn{to{transform:rotate(360deg)}}
+
+.repairCard{border-color:#8d455a!important;background:#132238!important}
+.repairCard .notice.error{padding:12px}
+.repairCard .repairCompare{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.repairCompare>div{background:#0d1b30;border:1px solid #355376;border-radius:12px;padding:12px;min-width:0}
+.repairCompare>div:last-child{border-color:#3d8b79;background:#102d31}
+.repairCompare h3{font-size:12px;color:#b9cdef;margin:0 0 7px}
+.repairCompare p{font-size:12px;line-height:1.55;color:#d4dfed;margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.repairTimeline{display:grid;gap:2px;margin:10px 0}
+.repairTimeline .checkrow{margin:0;grid-template-columns:20px 1fr}
+.repairTimeline .checkrow strong{font-size:12px;color:#d4e6fc}
+.repairTimeline .checkrow .tiny{font-size:11px;line-height:1.5}
+#fixBuild{min-width:210px}
+@media(max-width:760px){
+ .repairCard .repairCompare{grid-template-columns:1fr}
+ #fixBuild{width:100%}
+ .repairCompare>div{padding:11px}
+ .repairTimeline .checkrow .tiny{font-size:10px}
+}
 </style>
 </head><body>
 <main id="studio" class="studio"><p class="muted">Loading…</p></main>
