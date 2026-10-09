@@ -70,7 +70,7 @@ function checks(rows){return (rows||[]).map(x=>'<div class="checkrow"><span>'+(x
 function trace(p){const d=p.functionalDiagnostics;if(!d)return '<div class="hint">실행 이력이 없습니다.</div>';return '<pre class="trace">'+esc(JSON.stringify(d,null,2))+'</pre>';}
 function render(){
  const p=session();
- if(info&&repairFor(p)&&!planFor(p)&&!repairLoading.has(active)&&!(p.functionalRepairPlan?.status==='PLAN_FAILED'&&p.functionalRepairPlan.currentSourceHash===info.sourceHash))setTimeout(()=>refreshRepairPlan(active),0);
+ if(info&&repairFor(p)&&!planFor(p)&&!repairLoading.has(active)&&planFor(p)?.status!=='PLAN_FAILED')setTimeout(()=>refreshRepairPlan(active),0);
  if(!p){root.innerHTML='<div class="pageTitle"><div><h1>Build</h1><div class="muted">Session not found</div></div></div><div class="errorbox">'+esc(globalError||'세션이 없습니다.')+'</div><a class="btn" href="/">← StartupOS</a>';return;}
  const f=p.functionalBuild,kind=selectKind(p),contract=info&&info.contracts[kind],busy=!!job(active),repair=repairFor(p),plan=planFor(p),autoVerified=!!(f&&f.verification&&f.verification.status==='INTEGRATION_VERIFIED'),smokeVerified=!!(autoVerified&&f.verification.smoke?.status==='PASSED'&&f.verification.artifactHash===f.artifactHash),verified=!!(smokeVerified&&!repair),deployment=f&&f.deployment,ready=!!(verified&&deployment&&deployment.readyState==='READY');
  const stageData=[['🧩','Contract',!!contract&&p.functionalScopeApproved===kind],['🛠','Build',!!f],['✓','Verify',verified],['🚀','Deploy',ready],['📱','Phone',!!(ready&&p.functionalDeviceEvidence&&p.functionalDeviceEvidence.buildId===f.bid&&p.functionalDeviceEvidence.note)]];
