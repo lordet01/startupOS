@@ -4,7 +4,7 @@ module.exports=async function handler(req,res){
   res.setHeader('Cache-Control','no-store');
   try{
     if(req.method==='GET')return res.status(200).json({
-      ok:true,version:B.VERSION,mode:'keyless-stateless-functional-build',contracts:B.contracts,
+      ok:true,version:B.VERSION,mode:'keyless-stateless-functional-build',contracts:B.contracts,sourceHash:B.sourceHash(),
       configured:{ocr:!!process.env.OPENAI_API_KEY,publisher:!!process.env.VERCEL_PUBLISH_TOKEN},
       trustModel:'server reassembles and re-verifies current source on every privileged action'
     });
