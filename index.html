@@ -426,6 +426,18 @@ function save(){
   sessionPack.activeId=state.p._sessionId;
   persistSessions();
 }
+function saveSessionWithoutSwitch(p){
+  p._updatedAt=new Date().toISOString();
+  var index=sessionPack.sessions.findIndex(function(x){return x._sessionId===p._sessionId});
+  if(index<0)throw new Error("Venture session no longer exists");
+  sessionPack.sessions[index]=p;
+  persistSessions();
+}
+function addEventToSession(p,type,message,meta){
+  p._events=p._events||[];
+  p._events.unshift({at:new Date().toISOString(),type:type,message:message,meta:meta||{}});
+  if(p._events.length>100)p._events=p._events.slice(0,100);
+}
 function addSessionEvent(type,message,meta){
   state.p._events=state.p._events||[];
   state.p._events.unshift({at:new Date().toISOString(),type:type,message:message,meta:meta||{}});
@@ -508,7 +520,7 @@ function overview(){
 function item(a,b){return '<div class="item"><div><b>'+esc(a)+'</b><div>'+esc(b)+'</div></div></div>'}
 function runStageIndex(){return {prepare:0,request:1,waiting:2,apply:3,done:4,error:4}[state.runStage]||0}
 function elapsedSeconds(){return state.runStartedAt?Math.max(0,(Date.now()-state.runStartedAt)/1000):0}
-function runPanel(){if(!state.running&&state.runStage!=="done"&&state.runStage!=="error")return "";var idx=runStageIndex(),done=state.runStage==="done",err=state.runStage==="error";var steps=[["Founder brief","입력값 준비"],["Runtime","Vercel 요청"],["OpenAI","응답 대기"],["Blueprint","검증·반영"]];var html=steps.map(function(x,i){var cls=(done||i<idx)?"done":(i===idx?"active":"");return '<div class="runStep '+cls+'"><b>'+(done||i<idx?"✓ ":"")+x[0]+'</b>'+x[1]+'</div>'}).join("");var title=err?"분석 중 오류가 발생했습니다":done?"AI Venture Blueprint 생성 완료":"AI Venture Blueprint를 실제로 생성 중입니다";var detail=err?state.runError:(state.runMessage||"StartupOS Runtime과 연결 중");var cls=err?"runError":done?"runDone":"";var tail=done&&state.p.runtimeLast?'<strong>'+esc(state.p.runtimeLast.model)+' · '+esc(state.p.runtimeLast.tokens)+' tokens · '+esc(state.p.runtimeLast.latency)+'</strong>':'<strong id="runElapsed">'+elapsedSeconds().toFixed(1)+'s</strong>';return '<section class="runPanel '+cls+'"><div class="runTop"><h3>'+title+'</h3><span class="tag '+(done?"ok":"")+'">'+(err?"ERROR":done?"COMPLETED":"LIVE REQUEST")+'</span></div>'+(!done&&!err?'<div class="runBar"><i></i></div>':'')+'<div class="runSteps">'+html+'</div><div class="runDetail"><span id="runMessage">'+esc(detail)+'</span>'+tail+'</div></section>'}
+function runPanel(){if(!state.running&&state.runStage!=="done"&&state.runStage!=="error")return "";var idx=runStageIndex(),done=state.runStage==="done",err=state.runStage==="error";var cycle=state.runMode==="cycle"||state.view==="agents";var steps=cycle?[["Session","컨텍스트"],["Runtime","API 요청"],["Committee","역할별 검토"],["Decision","세션 저장"]]:[["Founder brief","입력값 준비"],["Runtime","Vercel 요청"],["OpenAI","응답 대기"],["Blueprint","검증·반영"]];var html=steps.map(function(x,i){var cls=(done||(!err&&i<idx))?"done":(!err&&i===idx?"active":"");return '<div class="runStep '+cls+'"><b>'+(done||i<idx?"✓ ":"")+x[0]+'</b>'+x[1]+'</div>'}).join("");var title=err?"GPT 요청 실패":done?(cycle?"의사결정 완료":"Blueprint 완료"):(cycle?"GPT 역할별 검토 진행 중":"Blueprint 분석 중");var detail=err?state.runError:(state.runMessage||"StartupOS Runtime과 연결 중");var cls=err?"runError":done?"runDone":"";var tail=done&&state.p.runtimeLast?'<strong>'+esc(state.p.runtimeLast.model)+' · '+esc(state.p.runtimeLast.tokens)+' tokens · '+esc(state.p.runtimeLast.latency)+'</strong>':'<strong id="runElapsed">'+elapsedSeconds().toFixed(1)+'s</strong>';return '<section class="runPanel '+cls+'"><div class="runTop"><h3>'+title+'</h3><span class="tag '+(done?"ok":"")+'">'+(err?"ERROR":done?"COMPLETED":"LIVE REQUEST")+'</span></div>'+(!done&&!err?'<div class="runBar"><i></i></div>':'')+'<div class="runSteps">'+html+'</div><div class="runDetail"><span id="runMessage">'+esc(detail)+'</span>'+tail+'</div></section>'}
 function setRunStage(stage,message){state.runStage=stage;state.runMessage=message||"";var msg=document.getElementById("runMessage");if(msg)msg.textContent=state.runMessage;var el=document.getElementById("runElapsed");if(el)el.textContent=elapsedSeconds().toFixed(1)+"s"}
 function startRunClock(){stopRunClock();state.runTimer=setInterval(function(){var t=elapsedSeconds().toFixed(1)+"s";var el=document.getElementById("runElapsed");if(el)el.textContent=t;document.querySelectorAll(".mainRunElapsed").forEach(function(x){x.textContent=t})},100)}
 function stopRunClock(){if(state.runTimer){clearInterval(state.runTimer);state.runTimer=null}}
@@ -590,9 +602,109 @@ function modal(){
 }
 function render(){var map={sessions:sessionsView,overview:overview,venture:venture,build:buildView,deploy:deployView,phone:phoneView,agents:agentView,cost:costView,growth:growth,settings:settings};document.getElementById("app").innerHTML=(map[state.view]||overview)()+(state.modal?modal():"");bind()}
 function toast(msg){var d=document.createElement("div");d.className="toast";d.textContent=msg;document.body.appendChild(d);setTimeout(function(){d.remove()},1600)}
-async function callRuntime(mode){var url=runtimeUrl();if(!url)throw new Error("Runtime endpoint가 없습니다. Settings에서 Vercel runtime URL을 연결하세요.");setRunStage("request","Vercel /api/runtime으로 Venture State를 전송했습니다.");var respPromise=fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:mode,project:state.p})});setRunStage("waiting","OpenAI가 서비스 흐름·기술·비용·구현 계획을 구조화된 JSON으로 생성 중입니다.");var resp=await respPromise;setRunStage("apply","응답을 수신했습니다. JSON Schema와 비용 정보를 검증하고 화면에 반영합니다.");var data=await resp.json().catch(function(){return {error:"Invalid runtime response"}});if(!resp.ok||!data.ok)throw new Error(data.error||("Runtime HTTP "+resp.status));return data}
-function applyAnalysis(data){var a=data.analysis||{};if(a.venture_name)state.p.name=a.venture_name;if(a.target_customer)state.p.customer=a.target_customer;if(a.problem)state.p.problem=a.problem;if(a.monetization)state.p.model=a.monetization;if(Number.isFinite(a.recommended_price_usd))state.p.price=a.recommended_price_usd;if(Number.isFinite(a.venture_score))state.p.score=a.venture_score;state.p.summary=a.executive_summary||state.p.summary;state.p.mvpFeatures=a.mvp_features||state.p.mvpFeatures;state.p.techStack=a.tech_stack||state.p.techStack;state.p.serviceFlow=a.service_flow||state.p.serviceFlow;state.p.buildPlan=a.build_plan||state.p.buildPlan;state.p.costBreakdown=a.cost_breakdown||state.p.costBreakdown;state.p.risks=a.risks||state.p.risks;state.p.launchGates=a.launch_gates||state.p.launchGates;state.p.nextExperiment=a.next_experiment||state.p.nextExperiment;state.p.agentNotes=a.agent_notes||state.p.agentNotes;state.p.estimatedMvpCost=a.estimated_mvp_external_cost_usd;state.p.estimatedOpsCost=a.estimated_monthly_ops_usd_at_1000_mau;if(a.next_action)state.p.decisions.unshift(a.next_action);if(a.next_experiment)state.p.decisions.unshift("실험: "+a.next_experiment);var provider=Number(data.cost&&data.cost.provider_usd||0);state.p.costs.unshift(["Startup OS Runtime","OpenAI / "+(data.model||"GPT"),data.mode||"analyze",provider]);state.p.runtimeLast={model:data.model||"GPT",tokens:String((data.usage&&data.usage.input_tokens||0)+(data.usage&&data.usage.output_tokens||0)),latency:String(data.latency_ms||0)+" ms",responseId:data.response_id||""};state.p._phase="blueprint";state.p._briefStale=false;addSessionEvent("blueprint_completed","AI Venture Blueprint completed",{model:data.model,cost:data.cost&&data.cost.provider_usd});state.runtimeStatus="live";save()}
-async function run(mode){if(state.running)return;state.running=true;state.runMode=mode||"cycle";state.runStage="prepare";state.runStartedAt=Date.now();state.runMessage="Founder brief를 정리하고 실제 Runtime 요청을 준비합니다.";state.runError="";render();startRunClock();try{var data=await callRuntime(mode||"cycle");applyAnalysis(data);state.runStage="done";state.runMessage="실제 OpenAI 응답을 Venture State에 반영했습니다. Cost Ledger도 업데이트되었습니다.";state.runtimeStatus="live";toast("GPT venture decision complete · "+money(data.cost.provider_usd)+" API cost")}catch(e){state.runtimeStatus="error";state.runStage="error";state.runError=e.message;state.runMessage=e.message;toast(e.message)}finally{state.running=false;state.runMode="";stopRunClock();render()}}
+function compactRuntimeProject(p){
+  return {
+    _sessionId:p._sessionId,name:p.name,idea:String(p.idea||"").slice(0,700),
+    customer:String(p.customer||"").slice(0,400),
+    problem:String(p.problem||"").slice(0,600),
+    desiredOutcome:String(p.desiredOutcome||"").slice(0,400),
+    constraints:String(p.constraints||"").slice(0,450),
+    model:p.model,price:p.price,budget:p.budget,_phase:p._phase,
+    mvpFeatures:(p.mvpFeatures||[]).slice(0,7),
+    serviceFlow:(p.serviceFlow||[]).slice(0,6).map(function(x){return {title:x.title,user_action:x.user_action,system_action:x.system_action}}),
+    techStack:(p.techStack||[]).slice(0,8).map(function(x){return {area:x.area,service:x.service,monthly_cost_usd:x.monthly_cost_usd}}),
+    metricsSource:p.metricsSource||"not_connected",
+    metrics:p.metricsSource==="connected"?p.metrics:undefined,
+    functionalBuild:p.functionalBuild?{
+      bid:p.functionalBuild.bid,
+      verification:p.functionalBuild.verification?{status:p.functionalBuild.verification.status}:null,
+      deployment:p.functionalBuild.deployment?{readyState:p.functionalBuild.deployment.readyState}:null
+    }:undefined,
+    decisions:(p.decisions||[]).slice(0,4),
+    agentCycle:p.agentCycle?{bottleneck:p.agentCycle.bottleneck,next_action:p.agentCycle.next_action,action_status:p.agentCycle.action_status}:undefined,
+    phoneTest:p.phoneTest?{notes:String(p.phoneTest.notes||"").slice(0,300)}:undefined,
+    risks:(p.risks||[]).slice(0,4),
+    buildPlan:(p.buildPlan||[]).slice(0,4).map(function(x){return {title:x.title,deliverable:x.deliverable}})
+  };
+}
+async function callRuntime(mode,p){
+  var url=runtimeUrl();if(!url)throw new Error("Runtime endpoint가 없습니다.");
+  var payload=JSON.stringify({mode:mode,project:compactRuntimeProject(p)});
+  setRunStage("request","Session context 전송 · "+payload.length+" bytes");
+  var responsePromise=fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:payload});
+  setRunStage("waiting",mode==="cycle"?"GPT 역할별 검토·병목 판단 대기 중":"GPT Blueprint 생성 대기 중");
+  var resp=await responsePromise;
+  setRunStage("apply","API 응답 수신 · 결과 검증 및 세션 저장");
+  var data=await resp.json().catch(function(){return {error:"Runtime returned non-JSON response"}});
+  if(!resp.ok||!data.ok)throw new Error((data.error||("HTTP "+resp.status))+(data.stage?" · "+data.stage:""));
+  return data
+}
+function applyAnalysis(data,p){
+  var a=data.analysis||{};
+  if(a.venture_name)p.name=a.venture_name;
+  if(a.target_customer)p.customer=a.target_customer;
+  if(a.problem)p.problem=a.problem;
+  if(a.monetization)p.model=a.monetization;
+  if(Number.isFinite(a.recommended_price_usd))p.price=a.recommended_price_usd;
+  if(Number.isFinite(a.venture_score))p.score=a.venture_score;
+  p.summary=a.executive_summary||p.summary;
+  p.mvpFeatures=a.mvp_features||p.mvpFeatures;p.techStack=a.tech_stack||p.techStack;
+  p.serviceFlow=a.service_flow||p.serviceFlow;p.buildPlan=a.build_plan||p.buildPlan;
+  p.costBreakdown=a.cost_breakdown||p.costBreakdown;p.risks=a.risks||p.risks;
+  p.launchGates=a.launch_gates||p.launchGates;p.nextExperiment=a.next_experiment||p.nextExperiment;
+  p.agentNotes=a.agent_notes||p.agentNotes;
+  p.estimatedMvpCost=a.estimated_mvp_external_cost_usd;p.estimatedOpsCost=a.estimated_monthly_ops_usd_at_1000_mau;
+  if(a.next_action)p.decisions.unshift(a.next_action);
+  p._phase="blueprint";p._briefStale=false;
+  addEventToSession(p,"blueprint_completed","Blueprint generated",{model:data.model});
+}
+function applyCycle(data,p){
+  var a=data.cycle;
+  if(!a||!a.next_action||!a.role_notes)throw new Error("Cycle response missing decision data");
+  var cycle={
+    bottleneck:a.bottleneck,evidence:a.evidence,evidence_level:a.evidence_level,
+    decision:a.decision,rationale:a.rationale,experiment:a.experiment,
+    next_action:a.next_action,success_metric:a.success_metric,
+    success_threshold:a.success_threshold,
+    estimated_external_cost_usd:a.estimated_external_cost_usd,
+    human_approval_required:a.human_approval_required,
+    missing_evidence:a.missing_evidence,role_notes:a.role_notes,
+    action_status:"pending", // GPT has not actually executed external tasks
+    at:new Date().toISOString(),model:data.model,response_id:data.response_id,
+    latency_ms:data.latency_ms,
+    actual_api_cost_usd:Number(data.cost&&data.cost.provider_usd||0)
+  };
+  p.agentCycle=cycle;
+  p.agentCycleHistory=[cycle].concat(p.agentCycleHistory||[]).slice(0,12);
+  p.nextExperiment=a.experiment;
+  p.decisions.unshift("Cycle decision: "+a.next_action);
+  if(p.decisions.length>40)p.decisions=p.decisions.slice(0,40);
+  addEventToSession(p,"agent_cycle_completed","Decision generated; action pending",{response_id:data.response_id,cost:cycle.actual_api_cost_usd,bottleneck:a.bottleneck});
+}
+async function run(mode){
+  if(state.running)return;
+  mode=mode==="cycle"?"cycle":"analyze";
+  var p=state.p,sessionId=p._sessionId;
+  state.running=true;state.runMode=mode;state.runStage="prepare";
+  state.runStartedAt=Date.now();
+  state.runMessage=mode==="cycle"?"세션 컨텍스트 준비":"Founder brief 확인";
+  state.runError="";render();startRunClock();
+  try{
+    var data=await callRuntime(mode,p);
+    if(p._sessionId!==sessionId)throw new Error("Run session mismatch");
+    if(mode==="cycle")applyCycle(data,p);else applyAnalysis(data,p);
+    p.costs=p.costs||[];
+    p.costs.unshift(["Startup OS Runtime","OpenAI / "+(data.model||"GPT"),mode==="cycle"?"Agent cycle":"Blueprint analysis",Number(data.cost&&data.cost.provider_usd||0),data.response_id||""]);
+    p.runtimeLast={model:data.model||"GPT",tokens:String((data.usage&&data.usage.input_tokens||0)+(data.usage&&data.usage.output_tokens||0)),latency:String(data.latency_ms||0)+" ms",responseId:data.response_id||""};
+    saveSessionWithoutSwitch(p);
+    state.runStage="done";state.runMessage=mode==="cycle"?"역할별 의사결정 저장 완료 · 다음 액션 실행 대기":"Blueprint 저장 완료";
+    state.runtimeStatus="live";toast("GPT "+(mode==="cycle"?"cycle":"analysis")+" complete");
+  }catch(e){
+    state.runtimeStatus="error";state.runStage="error";state.runError=e.message;state.runMessage=e.message;toast(e.message);
+  }finally{
+    state.running=false;state.runMode="";stopRunClock();render();
+  }
+}
 async function generateMvp(){
   if(state.builderRunning)return;
   if(!(state.p.serviceFlow&&state.p.serviceFlow.length)){toast("먼저 Venture Blueprint를 생성하세요");state.view="venture";render();return}
