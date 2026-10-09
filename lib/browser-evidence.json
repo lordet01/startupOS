@@ -1,14 +1,14 @@
 {
   "suite": "functional-build-browser-v3",
-  "sourceHash": "4d8915172cec8904c1858041229f2429a33c92b3e32ea2c44c5778114f4c9328",
-  "checkedAt": "2026-10-09T11:58:19Z",
+  "sourceHash": "c9540fe61bbe1d6ac4ea412d4d81c75f12d828e35d9eb12a251a024ca2167f4d",
+  "checkedAt": "2026-10-09T12:24:50Z",
   "browser": "153.0.8010.12",
   "viewport": {
     "width": 390,
     "height": 844
   },
-  "ocrTransport": "Browser workflows use mocked OCR and skin Vision transport. Separate live provider gate is mandatory before verified Build.",
-  "camera": "Chromium synthetic camera and mocked Vision transport. Physical Android/iOS camera, UVC and skin observation accuracy were not verified.",
+  "ocrTransport": "Browser flow mocks skin and receipt API transport; backend Verify independently calls the real provider with synthetic fixtures; real-user capture/analysis/save requires explicit manual acceptance.",
+  "camera": "Chromium synthetic camera and mocked skin API response; physical phone and real image-provider integration require separate Verify stages.",
   "physicalPhone": false,
   "checks": [
     {
@@ -97,6 +97,18 @@
     },
     {
       "id": "skin_api_failure_never_masquerades_as_success",
+      "status": "passed"
+    },
+    {
+      "id": "skin_photo_ready_displays_next_action_and_report_path",
+      "status": "passed"
+    },
+    {
+      "id": "skin_success_scrolls_to_real_result_step",
+      "status": "passed"
+    },
+    {
+      "id": "skin_failure_exposes_verify_report_action",
       "status": "passed"
     }
   ]

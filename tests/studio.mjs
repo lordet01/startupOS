@@ -45,6 +45,50 @@ try{
   assert.equal(await page.locator('#phone-stage').getByText('LOCKED').count(),1);
  });
  await test('build_button_shows_inline_working_state',async()=>{if(!(await page.locator('#scope').isChecked()))await page.locator('#scope').check();await page.locator('#assemble').click();await page.locator('.workBtn.running').waitFor({state:'visible'});assert.match(await page.locator('.btnRunText').innerText(),/Working/);await page.locator('.workBtn.running').waitFor({state:'detached',timeout:5000});await page.screenshot({path:'test-results/build-studio-mobile.png',fullPage:true});});
+ await test('live_api_check_alone_does_not_unlock_deploy_before_real_flow_acceptance',async()=>{
+  const sid='vs_studio_skin';
+  await page.evaluate(({key,sid})=>{
+   const pack=JSON.parse(localStorage.getItem(key)),p=pack.sessions.find(x=>x._sessionId===sid);
+   p.functionalBuild.verification={status:'INTEGRATION_VERIFIED',checks:[]};
+   localStorage.setItem(key,JSON.stringify(pack));
+  },{key,sid});
+  await page.reload();await page.locator('#journeyPass').waitFor();
+  assert.equal(await page.locator('#publish').isDisabled(),true);
+  await page.locator('#journeyConfirm').check();await page.locator('#journeyPass').click();
+  assert.equal(await page.locator('#publish').isEnabled(),true);
+  const p=await page.evaluate(({key,sid})=>JSON.parse(localStorage.getItem(key)).sessions.find(x=>x._sessionId===sid),{key,sid});
+  assert.equal(p.functionalJourneyCheck.status,'PASSED');
+  assert.equal(p.functionalJourneyCheck.buildId,p.functionalBuild.bid);
+ });
+ await test('skin_user_failure_enters_verify_and_blocks_deploy',async()=>{
+  const sid='vs_studio_skin';
+  const desc=await page.evaluate(({sid,key})=>{
+   const pack=JSON.parse(localStorage.getItem(key));
+   const p=pack.sessions.find(x=>x._sessionId===sid);
+   if(!p.functionalBuild)throw Error('skin build missing');
+   p.functionalBuild.verification={status:'INTEGRATION_VERIFIED',checks:[]};
+   localStorage.setItem(key,JSON.stringify(pack));return p.functionalBuild;
+  },{sid,key});
+  const issue={source:'user_report',kind:'skin',sessionId:sid,buildId:desc.bid,sourceHash:desc.sourceHash,stage:'image_analysis',code:'PHOTO_FLOW_STUCK',message:'촬영 후 분석으로 이동하지 않음'};
+  await page.goto(base+'/builder/?sessionId='+sid+'&verifyIssue='+encodeURIComponent(JSON.stringify(issue))+'#verify-stage');
+  await page.locator('#repair-stage').waitFor();
+  assert.equal(await page.locator('#publish').isDisabled(),true);
+  assert.match(await page.locator('#repair-stage').innerText(),/PHOTO_FLOW_STUCK/);
+  const p=await page.evaluate(({sid,key})=>JSON.parse(localStorage.getItem(key)).sessions.find(x=>x._sessionId===sid),{sid,key});
+  assert.equal(p.functionalRepair.status,'REPAIR_REQUIRED');
+  assert.equal(p.functionalRepair.buildId,desc.bid);
+  assert.equal(await page.locator('.stages .stagebox.pass').count(),2); // contract + built, but reported failure overrides any client 'verified' claim
+  assert.ok(!new URL(page.url()).searchParams.has('verifyIssue')); // avoid repeating report on refresh
+ });
+ await test('same_source_rebuild_is_rejected_until_code_is_repaired',async()=>{
+  await page.locator('#backToBuild').click();
+  const el=page.locator('#assemble');await el.click();
+  await page.locator('[role=alert]').first().waitFor();
+  const text=await page.locator('[role=alert]').first().innerText();
+  assert.match(text,/먼저 기능 코드를 수정/);
+  assert.match(text,/SAME_SOURCE_UNREPAIRED/);
+ });
+
 }finally{
  fs.mkdirSync('test-results',{recursive:true});fs.writeFileSync('test-results/studio-report.json',JSON.stringify({suite:'functional-build-studio-v3',checkedAt:new Date().toISOString(),checks},null,2));await browser.close();server.close();if(checks.some(x=>x.status!=='passed'))process.exitCode=1;
 }

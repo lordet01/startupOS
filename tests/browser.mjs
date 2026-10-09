@@ -85,6 +85,12 @@ try{
   await visible(page.getByAltText('선택한 피부 사진 미리보기'));
   assert.equal(await page.locator('#analyze').isDisabled(),true);assert.equal(skinCalls,0);
  });
+ await check('skin_photo_ready_displays_next_action_and_report_path',async()=>{
+  await visible(page.locator('#previewPhase'));
+  await visible(page.locator('#stuckReport'));
+  assert.equal(await page.locator('#analyze').isDisabled(),true);
+  assert.match(await page.locator('#app').innerText(),/촬영 완료/);
+ });
  await check('skin_real_api_boundary_and_ingredient_result',async()=>{
   await page.locator('#consent').check();
   await page.locator('#analyze').click();
@@ -93,6 +99,10 @@ try{
   assert.match(await page.locator('#app').innerText(),/사진상 표면 광택/);
   assert.match(await page.locator('#app').innerText(),/단일 사진/);
   await page.screenshot({path:'test-results/myskin-mobile.png',fullPage:true});
+ });
+ await check('skin_success_scrolls_to_real_result_step',async()=>{
+  await visible(page.locator('#analysisResult'));
+  await page.waitForFunction(()=>{const x=document.getElementById('analysisResult');return !!x&&x.getBoundingClientRect().top<window.innerHeight;});
  });
  await check('skin_save_reload_and_delete',async()=>{
   await page.locator('#saveResult').click();
@@ -114,6 +124,10 @@ try{
   await visible(page.getByRole('alert'));
   assert.match(await page.getByRole('alert').innerText(),/TEST skin API unavailable/);
   assert.equal(await page.locator('#saveResult').count(),0);skinMode='success';
+ });
+ await check('skin_failure_exposes_verify_report_action',async()=>{
+  assert.equal(await page.locator('#reportIssue').count(),1);
+  assert.match(await page.getByRole('alert').innerText(),/분석 단계 오류/);
  });
  await check('travel_trip_dates_and_creation',async()=>{await page.goto(base+'/travel/');await page.getByRole('button',{name:'첫 여행 만들기',exact:true}).click();await page.locator('[name="destination"]').fill('부산');await page.locator('[name="start"]').fill('2026-10-20');await page.locator('[name="end"]').fill('2026-10-22');await page.getByRole('button',{name:'여행 저장',exact:true}).click();await visible(page.getByRole('heading',{name:'부산',exact:true}));});
  await check('travel_task_completion_and_reload',async()=>{await page.getByRole('button',{name:'+ 항목',exact:true}).click();await page.locator('[name="title"]').fill('기차표 예약');await page.locator('[name="due"]').fill('2026-10-18');await page.getByRole('button',{name:'항목 저장',exact:true}).click();await page.getByLabel('기차표 예약 완료',{exact:true}).check();await page.reload();assert.equal(await page.getByLabel('기차표 예약 완료',{exact:true}).isChecked(),true);assert.match(await page.locator('#app').innerText(),/1 \/ 1 완료/);});
