@@ -76,7 +76,8 @@ test('Incomplete after retry returns actionable failure, not fake success',async
   assert.equal(calls,2);assert.equal(result.status,502);assert.equal(result.body.code,'MODEL_INCOMPLETE');assert.equal(result.body.attempts,2);
  });
 });
-test('No note provided rejects invalid Idea Note safely',async()=>{
- const result=await ideaNote({method:'POST',body:{action:'structure',note:'hello'}},response());
- assert.equal(result.status,503); // no token, never leaks or calls external provider
+test('Invalid short note is rejected without contacting the provider',async()=>{
+ const old=process.env.OPENAI_API_KEY;process.env.OPENAI_API_KEY='unit-test-key';
+ try{const result=await ideaNote({method:'POST',body:{action:'structure',note:'hello'}},response());assert.equal(result.status,400);}
+ finally{if(old===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=old;}
 });
