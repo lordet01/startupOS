@@ -229,6 +229,20 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{ou
 .agentReview{background:#0b192b;border:1px solid #243b56;border-radius:12px;padding:11px}
 .agentReview b{font-size:12px;color:#bcd0fc}.agentReview p{color:#b0c0d3;font-size:11px;line-height:1.6;margin:7px 0 0}
 @media(max-width:720px){.agentReviewGrid{grid-template-columns:1fr}.agentSection>strong{font-size:14px}.agentMeta{font-size:10px}}
+
+/* Idea Note dictation and genuinely multiline founder fields */
+.modal.wide .longField{display:block;width:100%;height:88px;min-height:88px;max-height:300px;overflow-y:auto;resize:vertical;white-space:pre-wrap;line-height:1.55;font-size:13px}
+.noteEntry{margin:0 0 15px;padding:12px;border:1px solid #355d84;background:#0c2038;border-radius:13px}
+.noteEntry>#ideaNoteToggle{width:100%;min-height:44px;text-align:left;background:#173457;border-color:#365a80}
+#ideaNotePanel{padding:12px 0 0}
+#ideaNotePanel[hidden]{display:none!important}
+.ideaTextarea{width:100%;height:165px;min-height:135px;max-height:360px;overflow-y:auto;resize:vertical;line-height:1.65;font-size:13px;padding:12px!important}
+.noteTools{display:flex;gap:8px;flex-wrap:wrap}.noteTools .btn{min-height:43px;flex:1}
+.noteTools .recording{background:#5b2031;border-color:#cc5167;color:white}
+.noteStatus{font-size:11px;color:#a1b7d3;line-height:1.55;padding:10px 2px 0;min-height:28px}
+.noteStatus.error{color:#ff9dad}
+.noteStatus.success{color:#75e1b6}
+@media(max-width:760px){.modal.wide .longField{height:97px;min-height:90px}.ideaTextarea{height:200px!important}.noteEntry{padding:10px}.noteTools{flex-direction:column}.noteTools .btn{width:100%}}
 </style>
 </head>
 <body>
@@ -609,30 +623,34 @@ function settings(){
 function modal(){
  var edit=state.modalMode==="edit",p=edit?state.p:{};
  function val(x){return esc(x==null?"":x)}
- function opt(v,label){return '<option value="'+val(v)+'" '+((p.model||"")===v?"selected":"")+'>'+val(label||v)+'</option>'}
+ function textArea(id,label,placeholder,value,full){return '<div class="field '+(full?'full':'')+'"><label>'+label+'</label><textarea class="longField" rows="3" id="'+id+'" placeholder="'+placeholder+'">'+val(value)+'</textarea></div>'}
+ var note=!edit?'<div class="noteEntry"><button type="button" class="btn" id="ideaNoteToggle">✍ Idea Note · 말하거나 자유롭게 입력</button><div id="ideaNotePanel" hidden><div class="field"><label>아이디어 노트</label><textarea class="ideaTextarea" id="ideaNoteText" rows="7" maxlength="15000" placeholder="서비스 아이디어, 대상 고객, 사용 과정, 필요한 기능, 비용, 제약 사항을 순서 없이 편하게 말하거나 적으세요."></textarea></div><div class="noteTools"><button type="button" class="btn" id="ideaNoteMic">🎙 녹음 시작</button><button type="button" class="btn primary" id="ideaNoteStructure">AI로 항목 채우기</button></div><div id="ideaNoteStatus" class="noteStatus" aria-live="polite">녹음은 이 화면에서만 처리됩니다. 서버 전송 전에 마이크 권한을 요청합니다.</div></div></div>':'';
  return '<div class="modalWrap"><div class="modal wide"><div class="head"><h2>'+(edit?"Edit brief":"New Venture")+'</h2><button class="btn" id="closeModal" aria-label="닫기">×</button></div>'+
+ note+
  '<div class="form"><div class="field"><label>Project name</label><input id="newName" value="'+val(p.name)+'" placeholder="서비스 이름"></div>'+
  '<div class="field"><label>MVP budget (USD)</label><input id="newBudget" type="number" min="0" value="'+Number(p.budget===undefined?100:p.budget)+'"></div>'+
- '<div class="field full"><label>Idea *</label><textarea id="newIdea" placeholder="무슨 앱을 만들고 싶은가요?">'+val(p.idea)+'</textarea></div>'+
- '<div class="field"><label>Target customer *</label><input id="newCustomer" value="'+val(p.customer)+'" placeholder="누가 사용하나요?"></div>'+
- '<div class="field"><label>Expected outcome</label><input id="newOutcome" value="'+val(p.desiredOutcome)+'" placeholder="무엇이 자동화되거나 개선되나요?"></div>'+
- '<div class="field full"><label>Problem *</label><textarea id="newProblem" placeholder="현재 사용자가 겪는 문제">'+val(p.problem)+'</textarea></div>'+
- '<div class="field"><label>Revenue model</label><select id="newModel">'+opt("","AI 추천")+opt("무료 + 유료 기능")+opt("월 구독")+opt("건당 결제")+opt("광고")+opt("아직 모름")+'</select></div>'+
- '<div class="field"><label>Selling price (USD)</label><input id="newPrice" type="number" min="0" step="0.01" value="'+(p.price||"")+'"></div>'+
- '<div class="field full"><label>Constraints</label><textarea id="newConstraints" placeholder="예: 모바일 PWA, 카메라, 최저 운영비">'+val(p.constraints)+'</textarea></div></div>'+
- '<div class="modalActions">'+(edit?"":'<div class="presetRow"><button class="btn" id="loadTravel">여행 ToDo 예시</button><button class="btn" id="loadOcr">OCR 가계부 예시</button></div>')+
+ textArea("newIdea","Idea *","서비스를 어떻게 사용할지 자유롭게 서술",p.idea,true)+
+ textArea("newCustomer","Target customer *","누가 어떤 상황에서 사용하나요?",p.customer,false)+
+ textArea("newOutcome","Expected outcome","어떤 결과를 얻어야 하나요?",p.desiredOutcome,false)+
+ textArea("newProblem","Problem *","현재 사용자가 겪는 불편이나 문제",p.problem,true)+
+ textArea("newModel","Revenue model","수익모델을 자유롭게 설명하거나 AI가 추천하도록 비워 두세요",p.model,false)+
+ '<div class="field"><label>Selling price (USD)</label><input id="newPrice" type="number" min="0" step="0.01" value="'+val(p.price||"")+'"></div>'+
+ textArea("newConstraints","Constraints","필수 기술·외부 API·피해야 할 기능·예산 등을 입력",p.constraints,true)+
+ '</div><div class="modalActions">'+(edit?"":'<div class="presetRow"><button class="btn" id="loadTravel">여행 ToDo 예시</button><button class="btn" id="loadOcr">OCR 가계부 예시</button></div>')+
  '<button class="btn primary" id="createVenture">'+(edit?"Save changes":"Create & analyze")+'</button></div></div></div>';
 }
+
 function render(){var map={sessions:sessionsView,overview:overview,venture:venture,build:buildView,deploy:deployView,phone:phoneView,agents:agentView,cost:costView,growth:growth,settings:settings};document.getElementById("app").innerHTML=(map[state.view]||overview)()+(state.modal?modal():"");bind()}
 function toast(msg){var d=document.createElement("div");d.className="toast";d.textContent=msg;document.body.appendChild(d);setTimeout(function(){d.remove()},1600)}
-function compactRuntimeProject(p){
+function compactRuntimeProject(p,mode){
   return {
-    _sessionId:p._sessionId,name:p.name,idea:String(p.idea||"").slice(0,700),
-    customer:String(p.customer||"").slice(0,400),
-    problem:String(p.problem||"").slice(0,600),
-    desiredOutcome:String(p.desiredOutcome||"").slice(0,400),
-    constraints:String(p.constraints||"").slice(0,450),
+    _sessionId:p._sessionId,name:p.name,idea:String(p.idea||"").slice(0,mode==="cycle"?700:1800),
+    customer:String(p.customer||"").slice(0,mode==="cycle"?400:900),
+    problem:String(p.problem||"").slice(0,mode==="cycle"?600:1600),
+    desiredOutcome:String(p.desiredOutcome||"").slice(0,mode==="cycle"?400:900),
+    constraints:String(p.constraints||"").slice(0,mode==="cycle"?450:1400),
     model:p.model,price:p.price,budget:p.budget,_phase:p._phase,
+    ideaNote:mode==="cycle"?undefined:String(p._ideaNote||"").slice(0,2500),
     mvpFeatures:(p.mvpFeatures||[]).slice(0,7),
     serviceFlow:(p.serviceFlow||[]).slice(0,6).map(function(x){return {title:x.title,user_action:x.user_action,system_action:x.system_action}}),
     techStack:(p.techStack||[]).slice(0,8).map(function(x){return {area:x.area,service:x.service,monthly_cost_usd:x.monthly_cost_usd}}),
@@ -652,7 +670,7 @@ function compactRuntimeProject(p){
 }
 async function callRuntime(mode,p){
   var url=runtimeUrl();if(!url)throw new Error("Runtime endpoint가 없습니다.");
-  var payload=JSON.stringify({mode:mode,project:compactRuntimeProject(p)});
+  var payload=JSON.stringify({mode:mode,project:compactRuntimeProject(p,mode)});
   setRunStage("request","Session context 전송 · "+payload.length+" bytes");
   var responsePromise=fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:payload});
   setRunStage("waiting",mode==="cycle"?"GPT 역할별 검토·병목 판단 대기 중":"GPT Blueprint 생성 대기 중");
@@ -790,10 +808,93 @@ async function testRuntime(){var url=runtimeUrl();if(!url){toast("Runtime endpoi
 function loadTravelTemplate(){createSession(TRAVEL_TEMPLATE,"example-travel");state.modal=false;state.view="venture";render();toast("New Travel ToDo session created")}
 function loadOcrTemplate(){createSession(OCR_LEDGER_TEMPLATE,"example-ocr");state.modal=false;state.view="venture";render();toast("New OCR Ledger session created")}
 
+var ideaRecorder=null,ideaStream=null,ideaChunks=[],ideaRecordClock=null,ideaStopTimer=null,ideaStartedAt=0;
+function ideaNoteStatus(message,type){
+ var el=document.getElementById("ideaNoteStatus");if(!el)return;
+ el.textContent=message;el.className="noteStatus "+(type||"");
+}
+function ideaStopMedia(){
+ if(ideaStopTimer){clearTimeout(ideaStopTimer);ideaStopTimer=null}
+ if(ideaRecordClock){clearInterval(ideaRecordClock);ideaRecordClock=null}
+ if(ideaStream){ideaStream.getTracks().forEach(function(t){t.stop()});ideaStream=null}
+ ideaRecorder=null;
+}
+function ideaRecorderStop(){if(ideaRecorder&&ideaRecorder.state==="recording")ideaRecorder.stop()}
+async function ideaNoteRequest(payload,seconds){
+ var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},seconds*1000);
+ try{
+  var res=await fetch("/api/idea-note",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:controller.signal});
+  var data=await res.json().catch(function(){return {error:"서버 응답을 읽을 수 없습니다."}});
+  if(!res.ok||!data.ok)throw new Error(data.error||"Idea Note 실패 · HTTP "+res.status);
+  return data
+ }finally{clearTimeout(timer)}
+}
+async function ideaNoteStructure(){
+ var el=document.getElementById("ideaNoteText"),button=document.getElementById("ideaNoteStructure");
+ if(!el||!button)return;
+ var note=el.value.trim();
+ if(note.length<20){ideaNoteStatus("아이디어를 최소 20자 이상 입력하거나 마이크로 말해주세요.","error");return}
+ if(note.length>15000){ideaNoteStatus("아이디어 노트는 15,000자 이내로 입력해주세요.","error");return}
+ button.disabled=true;button.textContent="⏳ GPT 분석 중…";ideaNoteStatus("서술형 내용을 세션 입력항목으로 분류 중입니다.");
+ try{
+  var data=await ideaNoteRequest({action:"structure",note:note},48),draft=data.draft||{};
+  if(!document.getElementById("newIdea"))return;
+  var mapping={newName:draft.name,newIdea:draft.idea,newCustomer:draft.customer,newProblem:draft.problem,newOutcome:draft.desiredOutcome,newModel:draft.model,newConstraints:draft.constraints};
+  Object.keys(mapping).forEach(function(id){var control=document.getElementById(id);if(control&&mapping[id]!=null)control.value=String(mapping[id])});
+  if(draft.priceUsd!=null)document.getElementById("newPrice").value=draft.priceUsd;
+  if(draft.budgetUsd!=null)document.getElementById("newBudget").value=draft.budgetUsd;
+  ideaNoteStatus("✓ 항목을 채웠습니다. 내용을 수정·확인한 후 Create & analyze를 누르세요.","success");
+  document.getElementById("newIdea").focus({preventScroll:true});
+ }catch(e){ideaNoteStatus("분류 실패: "+e.message,"error")}
+ finally{button.disabled=false;button.textContent="AI로 항목 채우기"}
+}
+async function ideaNoteMic(){
+ var button=document.getElementById("ideaNoteMic");
+ if(!button)return;
+ if(ideaRecorder&&ideaRecorder.state==="recording"){ideaRecorderStop();return}
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||typeof MediaRecorder==="undefined"){
+  ideaNoteStatus("이 브라우저는 녹음을 지원하지 않습니다. 노트에 직접 입력해 주세요.","error");return
+ }
+ try{
+  ideaStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
+  if(!document.getElementById("ideaNoteText")){ideaStopMedia();return}
+  var types=["audio/mp4","audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus"];
+  var chosen=types.find(function(x){return MediaRecorder.isTypeSupported(x)});
+  if(!chosen){ideaStopMedia();ideaNoteStatus("지원 가능한 음성 녹음 형식이 없습니다.","error");return}
+  ideaChunks=[];ideaRecorder=new MediaRecorder(ideaStream,{mimeType:chosen,audioBitsPerSecond:48000});
+  ideaRecorder.ondataavailable=function(event){if(event.data&&event.data.size)ideaChunks.push(event.data)};
+  ideaRecorder.onstop=async function(){
+   var blob=new Blob(ideaChunks,{type:chosen});ideaChunks=[];ideaStopMedia();
+   var currentButton=document.getElementById("ideaNoteMic");
+   if(!currentButton)return;
+   currentButton.classList.remove("recording");currentButton.textContent="🎙 녹음 시작";
+   if(blob.size<100){ideaNoteStatus("녹음이 너무 짧습니다. 다시 시도하세요.","error");return}
+   if(blob.size>1800000){ideaNoteStatus("녹음이 너무 큽니다. 더 짧게 나눠 말해주세요.","error");return}
+   currentButton.disabled=true;ideaNoteStatus("녹음한 음성을 텍스트로 변환 중입니다.");
+   try{
+    var encoded=await new Promise(function(resolve,reject){var reader=new FileReader();reader.onload=function(){resolve(reader.result)};reader.onerror=reject;reader.readAsDataURL(blob)});
+    var data=await ideaNoteRequest({action:"transcribe",audio:encoded},50);
+    var note=document.getElementById("ideaNoteText");
+    if(note){note.value+=(note.value.trim()?"\n\n":"")+data.text;note.scrollTop=note.scrollHeight}
+    ideaNoteStatus("✓ 음성 인식 완료. 이어서 말하거나 AI로 항목을 채우세요.","success")
+   }catch(e){ideaNoteStatus("음성 인식 실패: "+e.message,"error")}
+   finally{currentButton.disabled=false}
+  };
+  ideaRecorder.onerror=function(){ideaStopMedia();ideaNoteStatus("녹음에 실패했습니다. 다시 시도하세요.","error")};
+  ideaRecorder.start(500);ideaStartedAt=Date.now();
+  button.classList.add("recording");button.textContent="■ 녹음 종료";ideaNoteStatus("녹음 중 · 0초 (최대 60초)");
+  ideaRecordClock=setInterval(function(){ideaNoteStatus("녹음 중 · "+Math.floor((Date.now()-ideaStartedAt)/1000)+"초 (최대 60초)")},1000);
+  ideaStopTimer=setTimeout(ideaRecorderStop,60000);
+ }catch(e){ideaStopMedia();ideaNoteStatus(e.name==="NotAllowedError"?"마이크 권한이 거부되었습니다. 브라우저 설정에서 허용하거나 글로 입력하세요.":e.message,"error")}
+}
 function bind(){
+var noteToggle=document.getElementById("ideaNoteToggle");
+if(noteToggle)noteToggle.onclick=function(){var panel=document.getElementById("ideaNotePanel");panel.hidden=!panel.hidden;noteToggle.textContent=panel.hidden?"✍ Idea Note · 말하거나 자유롭게 입력":"✍ Idea Note 접기"};
+var noteAi=document.getElementById("ideaNoteStructure");if(noteAi)noteAi.onclick=ideaNoteStructure;
+var noteMic=document.getElementById("ideaNoteMic");if(noteMic)noteMic.onclick=ideaNoteMic;
 document.querySelectorAll("[data-view]").forEach(function(b){b.onclick=function(){state.view=b.dataset.view;render()}});var mm=document.getElementById("moreMobile"),ms=document.getElementById("moreSheet");if(mm&&ms)mm.onclick=function(){ms.classList.add("open")};if(ms){ms.onclick=function(e){if(e.target===ms)ms.classList.remove("open")};ms.querySelectorAll("[data-more-view]").forEach(function(b){b.onclick=function(){state.view=b.dataset.moreView;render()}})};var ss=document.getElementById("sessionSelect");if(ss)ss.onchange=function(){switchSession(ss.value)};document.querySelectorAll(".openSession").forEach(function(b){b.onclick=function(){switchSession(b.dataset.session)}});
 var n=document.getElementById("newVenture");if(n)n.onclick=function(){state.modalMode="new";state.modal=true;render()};var eb=document.getElementById("editBrief");if(eb)eb.onclick=function(){state.modalMode="edit";state.modal=true;render()};
-var cbtn=document.getElementById("closeModal");if(cbtn)cbtn.onclick=function(){state.modal=false;render()};var gm=document.getElementById("generateMvp");if(gm)gm.onclick=generateMvp;var op=document.getElementById("openPrototype");if(op)op.onclick=openPrototype;var pm=document.getElementById("publishMvp");if(pm)pm.onclick=publishMvp;var tpa=document.getElementById("testPublishAuth");if(tpa)tpa.onclick=testPublishAuth;var cu=document.getElementById("copyDeployUrl");if(cu)cu.onclick=function(){if(state.p.deployment&&navigator.clipboard){navigator.clipboard.writeText(state.p.deployment.url);toast("URL copied")}};var mo=document.getElementById("markOpened");if(mo)mo.onclick=function(){updatePhoneTest({opened:true})};var mi=document.getElementById("markInstalled");if(mi)mi.onclick=function(){updatePhoneTest({installed:true})};var sn=document.getElementById("savePhoneNotes");if(sn)sn.onclick=function(){updatePhoneTest({notes:document.getElementById("phoneNotes").value});toast("Phone feedback saved")};var si=document.getElementById("startIteration");if(si)si.onclick=function(){var notes=document.getElementById("phoneNotes")?document.getElementById("phoneNotes").value:"";state.p.phoneTest=Object.assign({},state.p.phoneTest||{},{notes:notes,updatedAt:new Date().toISOString()});state.p._phase="iterate";addSessionEvent("iteration_started","Founder started next iteration",{notes:notes});save();state.view="growth";render()};
+var cbtn=document.getElementById("closeModal");if(cbtn)cbtn.onclick=function(){ideaRecorderStop();ideaStopMedia();state.modal=false;render()};var gm=document.getElementById("generateMvp");if(gm)gm.onclick=generateMvp;var op=document.getElementById("openPrototype");if(op)op.onclick=openPrototype;var pm=document.getElementById("publishMvp");if(pm)pm.onclick=publishMvp;var tpa=document.getElementById("testPublishAuth");if(tpa)tpa.onclick=testPublishAuth;var cu=document.getElementById("copyDeployUrl");if(cu)cu.onclick=function(){if(state.p.deployment&&navigator.clipboard){navigator.clipboard.writeText(state.p.deployment.url);toast("URL copied")}};var mo=document.getElementById("markOpened");if(mo)mo.onclick=function(){updatePhoneTest({opened:true})};var mi=document.getElementById("markInstalled");if(mi)mi.onclick=function(){updatePhoneTest({installed:true})};var sn=document.getElementById("savePhoneNotes");if(sn)sn.onclick=function(){updatePhoneTest({notes:document.getElementById("phoneNotes").value});toast("Phone feedback saved")};var si=document.getElementById("startIteration");if(si)si.onclick=function(){var notes=document.getElementById("phoneNotes")?document.getElementById("phoneNotes").value:"";state.p.phoneTest=Object.assign({},state.p.phoneTest||{},{notes:notes,updatedAt:new Date().toISOString()});state.p._phase="iterate";addSessionEvent("iteration_started","Founder started next iteration",{notes:notes});save();state.view="growth";render()};
 document.querySelectorAll("#runCycle").forEach(function(r){r.onclick=function(){run("cycle")}});var doneAgent=document.getElementById("completeAgentAction");if(doneAgent)doneAgent.onclick=function(){
  var note=document.getElementById("agentActionEvidence").value.trim();
  if(note.length<8){toast("실제 수행 내용과 결과를 8자 이상 기록하세요");return}
@@ -823,6 +924,7 @@ var create=document.getElementById("createVenture");if(create)create.onclick=fun
     price:Number(document.getElementById("newPrice").value||0),
     budget:Number(document.getElementById("newBudget").value||100),
     constraints:document.getElementById("newConstraints").value.trim(),
+    _ideaNote:(document.getElementById("ideaNoteText")?document.getElementById("ideaNoteText").value.trim():""),
     stage:"Discovery",score:50,metrics:{visitors:0,activation:0,trial:0,paid:0,mrr:0},
     costs:[],decisions:["새 Venture 생성: founder brief 입력 완료"],
     mvpFeatures:[],techStack:[],serviceFlow:[],buildPlan:[],costBreakdown:[],risks:[],launchGates:[],

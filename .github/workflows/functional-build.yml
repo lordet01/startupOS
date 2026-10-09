@@ -24,7 +24,7 @@ jobs:
       - name: Domain, API and authorization tests
         run: npm test
       - name: Agent Cycle contracts and sanitized payload
-        run: node --test tests/agent-cycle.test.cjs
+        run: node --test tests/agent-cycle.test.cjs tests/idea-note.test.cjs
       - run: npx playwright install --with-deps chromium
       - name: Mobile browser workflows (mocked OCR transport; not live provider)
         run: npm run test:browser
@@ -36,6 +36,8 @@ jobs:
         run: node tests/ui-audit.mjs
       - name: Agent Cycle browser integration and session isolation
         run: node tests/agent-cycle.mjs
+      - name: Idea Note microphone and new Venture form
+        run: node tests/idea-note-ui.mjs
       - name: Committed evidence check on main
         if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
         run: node -e "const assert=require('node:assert/strict');const B=require('./lib/build-contract');const r=require('./lib/browser-evidence.json');assert.equal(r.sourceHash,B.sourceHash());assert.ok(r.checks.length>=18 && r.checks.every(x=>x.status==='passed'));"

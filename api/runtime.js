@@ -1,4 +1,5 @@
 const {projectContext}=require("../lib/venture-context");
+const {blueprintSchema,blueprintPrompt,normalizeBlueprint}=require("../lib/blueprint");
 const MODEL = process.env.OPENAI_MODEL || "gpt-6-luna";
 const INPUT_USD_PER_M = Number(process.env.OPENAI_INPUT_USD_PER_M || "0.10");
 const OUTPUT_USD_PER_M = Number(process.env.OPENAI_OUTPUT_USD_PER_M || "0.50");
@@ -25,113 +26,6 @@ function extractText(data) {
     }
   }
   return parts.join("\n");
-}
-
-function schema() {
-  return {
-    type: "object",
-    properties: {
-      venture_name: { type: "string" },
-      executive_summary: { type: "string" },
-      venture_score: { type: "integer", minimum: 0, maximum: 100 },
-      target_customer: { type: "string" },
-      problem: { type: "string" },
-      value_proposition: { type: "string" },
-      monetization: { type: "string" },
-      recommended_price_usd: { type: "number", minimum: 0 },
-      mvp_features: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 7 },
-      tech_stack: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            area: { type: "string" },
-            service: { type: "string" },
-            reason: { type: "string" },
-            monthly_cost_usd: { type: "number", minimum: 0 }
-          },
-          required: ["area","service","reason","monthly_cost_usd"],
-          additionalProperties: false
-        },
-        minItems: 4,
-        maxItems: 8
-      },
-      service_flow: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            step: { type: "integer", minimum: 1 },
-            title: { type: "string" },
-            user_action: { type: "string" },
-            system_action: { type: "string" }
-          },
-          required: ["step","title","user_action","system_action"],
-          additionalProperties: false
-        },
-        minItems: 3,
-        maxItems: 7
-      },
-      build_plan: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            phase: { type: "integer", minimum: 1 },
-            title: { type: "string" },
-            deliverable: { type: "string" },
-            estimated_external_cost_usd: { type: "number", minimum: 0 }
-          },
-          required: ["phase","title","deliverable","estimated_external_cost_usd"],
-          additionalProperties: false
-        },
-        minItems: 3,
-        maxItems: 6
-      },
-      cost_breakdown: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            item: { type: "string" },
-            cost_type: { type: "string" },
-            estimated_cost_usd: { type: "number", minimum: 0 },
-            note: { type: "string" }
-          },
-          required: ["item","cost_type","estimated_cost_usd","note"],
-          additionalProperties: false
-        },
-        minItems: 3,
-        maxItems: 8
-      },
-      estimated_mvp_external_cost_usd: { type: "number", minimum: 0 },
-      estimated_monthly_ops_usd_at_1000_mau: { type: "number", minimum: 0 },
-      risks: { type: "array", items: { type: "string" }, minItems: 2, maxItems: 6 },
-      launch_gates: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 6 },
-      next_experiment: { type: "string" },
-      next_action: { type: "string" },
-      agent_notes: {
-        type: "object",
-        properties: {
-          ceo: { type: "string" },
-          market: { type: "string" },
-          product: { type: "string" },
-          finance: { type: "string" },
-          tech: { type: "string" },
-          legal: { type: "string" },
-          growth: { type: "string" }
-        },
-        required: ["ceo","market","product","finance","tech","legal","growth"],
-        additionalProperties: false
-      }
-    },
-    required: [
-      "venture_name","executive_summary","venture_score","target_customer","problem","value_proposition",
-      "monetization","recommended_price_usd","mvp_features","tech_stack","service_flow","build_plan","cost_breakdown",
-      "estimated_mvp_external_cost_usd","estimated_monthly_ops_usd_at_1000_mau","risks","launch_gates","next_experiment","next_action","agent_notes"
-    ],
-    additionalProperties: false
-  };
 }
 
 function cycleSchema(){
@@ -176,127 +70,85 @@ Given only the current session context:
 6. Preserve the founder's B2C intent, low-cost API/serverless-only stack and web/PWA boundaries. Do not invent facts or make claims about new market research.
 7. Respond in Korean (role keys in English). Keep it compact and no buzzwords.`;
 }
-function systemPrompt(mode) {
-  return `You are Startup OS, an AI venture operating committee for a non-developer founder.
-Your objective is not to produce impressive documents. Move the venture toward a profitable released product with the least reasonable external cost.
 
-Hard product constraints:
-- Build mobile-first web apps/PWAs. Avoid native iOS/Android unless absolutely unavoidable.
-- Backend should use minimum-cost managed/serverless cloud services.
-- AI must be consumed through APIs; do not propose self-hosting or model training for the MVP.
-- Prefer deterministic rules, database lookup, or simple code when AI is unnecessary.
-- Prefer free tiers and usage-based services for early validation.
-- Recommend concrete third-party services where useful (for example Vercel, Firebase/Supabase, Stripe, PostHog, Resend, OpenAI). Every service must have a practical reason and an estimated early-stage monthly cost.
-- Design the actual end-user service flow step by step: what the user does, what the system does, and what output is produced.
-- Produce an implementation plan in build order. Each phase must have one concrete deliverable and a realistic external cash cost. Do not include founder labor as an external cash cost.
-- Produce a cost breakdown that distinguishes one-time/setup, monthly fixed, and usage-based costs where relevant.
-- If the founder leaves monetization, price, technology, or flow uncertain, choose the simplest testable option instead of inheriting assumptions from unrelated ventures.
-- Separate assumptions from evidence.
-- Keep the MVP small enough for one founder to validate.
-- Consider privacy, copyright, platform policy, and user-data risks.
-- Write all human-facing content in Korean. Product/service names may stay in English.
-- Be concise and actionable.
-
-For mode="${mode}", produce a structured venture decision that a founder can directly use to build the product. Avoid vague labels such as "AI backend" or "cloud"; name the concrete service/API and where it is used. If this is a cycle, use current metrics and prior decisions to identify the single biggest bottleneck and the cheapest next experiment. Do not expand scope without a measurable reason.`;
+const BLUEPRINT_MODEL=process.env.OPENAI_BLUEPRINT_MODEL||'gpt-4.1-mini';
+const CYCLE_MODEL=process.env.OPENAI_CYCLE_MODEL||MODEL;
+function tokenCost(usage,model){
+ const input=Number(usage?.input_tokens||0),output=Number(usage?.output_tokens||0);
+ const mini=/^gpt-4\.1-mini(?:-|$)/.test(model);
+ const inRate=mini?0.40:INPUT_USD_PER_M,outRate=mini?1.60:OUTPUT_USD_PER_M;
+ return {input,output,reasoning:Number(usage?.output_tokens_details?.reasoning_tokens||0),usd:(input*inRate+output*outRate)/1e6};
 }
-
-module.exports = async function handler(req, res) {
-  setCors(req, res);
-  if (req.method === "OPTIONS") return res.status(204).end();
-  if (req.method === "GET") {
-    return res.status(200).json({ ok: true, service: "Startup OS Runtime", model: MODEL, api: "OpenAI Responses API" });
+function feeCost(usd){return {provider_usd:Number(usd.toFixed(8)),startup_os_fee_usd:Number((usd*.05).toFixed(8)),total_usd:Number((usd*1.05).toFixed(8)),kind:'estimated_token_cost'};}
+module.exports=async function handler(req,res){
+ setCors(req,res);res.setHeader('Cache-Control','no-store');
+ if(req.method==='OPTIONS')return res.status(204).end();
+ if(req.method==='GET')return res.status(200).json({ok:true,service:'Startup OS Runtime',model:BLUEPRINT_MODEL,cycle_model:CYCLE_MODEL,blueprint_version:'compact-v2'});
+ if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
+ if(!process.env.OPENAI_API_KEY)return res.status(503).json({error:'OPENAI_API_KEY is not configured'});
+ let body=req.body;
+ if(typeof body==='string'){try{body=JSON.parse(body);}catch{return res.status(400).json({error:'Invalid JSON body'});}}
+ const mode=body?.mode==='cycle'?'cycle':'analyze';
+ const project=projectContext(body?.project||{},mode);
+ if(!project.session_id||!project.idea)return res.status(400).json({error:'Venture session ID and idea are required'});
+ const serialized=JSON.stringify(project);
+ if(serialized.length>16000)return res.status(413).json({error:'Sanitized Venture context too large',stage:'context_validation'});
+ const model=mode==='cycle'?CYCLE_MODEL:BLUEPRINT_MODEL;
+ const limit=mode==='cycle'?Math.max(3000,Math.min(MAX_OUTPUT,6000)):Math.max(5000,Math.min(MAX_OUTPUT,7500));
+ const input=mode==='cycle'?
+  [{role:'system',content:cyclePrompt()},{role:'user',content:'세션 상태의 사실과 가정을 구분하고 가장 작은 다음 실험을 결정하라.\n'+serialized}]:
+  [{role:'system',content:blueprintPrompt()},{role:'user',content:'Build a concise, specific mobile PWA Blueprint for this original idea (not a template):\n'+serialized}];
+ const schemaValue=mode==='cycle'?cycleSchema():blueprintSchema();
+ const started=Date.now(),controller=new AbortController(),timer=setTimeout(()=>controller.abort(),55000);
+ let total=0,totalInput=0,totalOutput=0,reasoning=0,lastReason='unknown',attempted=0;
+ console.log(JSON.stringify({event:'venture_runtime_start',model,mode,context_bytes:serialized.length,output_limit:limit}));
+ try{
+  for(let attempt=1;attempt<=2;attempt++){
+   if(Date.now()-started>37500)break;
+   attempted=attempt;
+   const maxOutput=attempt===1?limit:Math.min(9000,Math.round(limit*1.5));
+   const request={model,input,store:false,max_output_tokens:maxOutput,
+     text:{format:{type:'json_schema',name:mode==='cycle'?'startup_os_cycle_decision':'startup_os_compact_blueprint',strict:true,schema:schemaValue}}};
+   const upstream=await fetch('https://api.openai.com/v1/responses',{
+      method:'POST',headers:{Authorization:'Bearer '+process.env.OPENAI_API_KEY,'Content-Type':'application/json'},
+      signal:controller.signal,body:JSON.stringify(request)
+   });
+   const data=await upstream.json().catch(()=>null);
+   if(!data)return res.status(502).json({error:'OpenAI returned non-JSON response',stage:'provider_response'});
+   if(!upstream.ok)return res.status(upstream.status).json({error:data.error?.message||'OpenAI request failed',stage:'provider',provider_status:upstream.status});
+   const t=tokenCost(data.usage,data.model||model);total+=t.usd;totalInput+=t.input;totalOutput+=t.output;reasoning+=t.reasoning;
+   const incomplete=(data.status==='incomplete'||Boolean(data.incomplete_details));
+   lastReason=data.incomplete_details?.reason||(incomplete?'model_incomplete':'unknown');
+   let parsed;
+   if(!incomplete&&data.status!=='failed'){
+     try{parsed=JSON.parse(extractText(data));}catch{lastReason='invalid_structured_output';}
+   }
+   if(parsed){
+     let result;
+     try{result=mode==='cycle'?parsed:normalizeBlueprint(parsed,project);}
+     catch(e){lastReason='blueprint_validation_failed';console.warn(JSON.stringify({event:'blueprint_validation_failed',error:e.message,attempt}));}
+     if(result){
+       const response={
+         ok:true,mode,model:data.model||model,response_id:data.id,latency_ms:Date.now()-started,
+         usage:{input_tokens:totalInput,output_tokens:totalOutput,reasoning_tokens:reasoning,attempts:attempt},
+         cost:feeCost(total),...(mode==='cycle'?{cycle:result}:{analysis:result})
+       };
+       console.log(JSON.stringify({event:'venture_runtime_success',mode,model:response.model,attempt,latency_ms:response.latency_ms,output_tokens:totalOutput,reasoning_tokens:reasoning}));
+       return res.status(200).json(response);
+     }
+   }
+   console.warn(JSON.stringify({event:'venture_runtime_incomplete',mode,attempt,reason:lastReason,max_output_tokens:maxOutput,reasoning_tokens:t.reasoning,elapsed_ms:Date.now()-started}));
+   if(attempt===2)break;
   }
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-  if (!process.env.OPENAI_API_KEY) {
-    return res.status(503).json({ error: "OPENAI_API_KEY is not configured on the server." });
-  }
-
-  let body = req.body;
-  if (typeof body === "string") {
-    try { body = JSON.parse(body); } catch { return res.status(400).json({ error: "Invalid JSON body" }); }
-  }
-  const mode = body && body.mode === "cycle" ? "cycle" : "analyze";
-  const rawProject = body && body.project ? body.project : {};
-  const project = projectContext(rawProject,mode);
-  if (!project.session_id || !project.idea) return res.status(400).json({error:"Venture session ID and idea are required."});
-  const serialized = JSON.stringify(project);
-  if (serialized.length > 16000) return res.status(413).json({error:"Sanitized Venture context too large",stage:"context_validation"});
-  const input = mode==="cycle" ? [
-    {role:"system",content:cyclePrompt()},
-    {role:"user",content:"현재 세션에서 증거가 확인되는 사항과 불확실한 사항을 구분하여 다음 액션을 결정해라.\\nVenture context:\\n"+serialized}
-  ] : [
-    {role:"system",content:systemPrompt(mode)},
-    {role:"user",content:"현재 Venture State(JSON):\\n"+serialized+"\\n\\n이 상태를 분석하여 사업 Blueprint를 작성하라."}
-  ];
-
-  const started = Date.now();
-  console.log(JSON.stringify({event:"venture_runtime_start",mode,model:MODEL,payload_bytes:serialized.length}));
-  const controller = new AbortController();
-  const upstreamTimer = setTimeout(() => controller.abort(), 55000);
-  try {
-    const upstream = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      signal: controller.signal,
-      body: JSON.stringify({
-        model: MODEL,
-        input,
-        max_output_tokens: mode==="cycle" ? Math.min(MAX_OUTPUT,2600) : MAX_OUTPUT,
-        text: {
-          format: {
-            type: "json_schema",
-            name: mode==="cycle" ? "startup_os_cycle_decision" : "startup_os_venture_decision",
-            strict: true,
-            schema: mode==="cycle" ? cycleSchema() : schema()
-          }
-        }
-      })
-    });
-
-    clearTimeout(upstreamTimer);
-    const data = await upstream.json();
-    if (!upstream.ok) {
-      return res.status(upstream.status).json({ error: data.error?.message || "OpenAI API error", provider_status: upstream.status });
-    }
-
-    if (data.status && data.status !== "completed") return res.status(502).json({error:"Model output incomplete",stage:"model_completion"});
-    const raw = extractText(data);
-    let analysis;
-    try { analysis = JSON.parse(raw); }
-    catch { return res.status(502).json({error:"Model returned non-JSON output",stage:"structured_output"}); }
-    if (mode==="cycle" && (!analysis.role_notes || !analysis.next_action || !analysis.bottleneck)) {
-      return res.status(502).json({error:"Cycle response missing required decisions",stage:"structured_output"});
-    }
-
-    const inputTokens = Number(data.usage?.input_tokens || 0);
-    const outputTokens = Number(data.usage?.output_tokens || 0);
-    const providerCost = (inputTokens / 1e6) * INPUT_USD_PER_M + (outputTokens / 1e6) * OUTPUT_USD_PER_M;
-    const platformFee = providerCost * 0.05;
-
-    return res.status(200).json({
-      ok: true,
-      mode,
-      model: data.model || MODEL,
-      response_id: data.id,
-      latency_ms: Date.now() - started,
-      usage: { input_tokens: inputTokens, output_tokens: outputTokens },
-      cost: {
-        provider_usd: Number(providerCost.toFixed(8)),
-        startup_os_fee_usd: Number(platformFee.toFixed(8)),
-        total_usd: Number((providerCost + platformFee).toFixed(8))
-      },
-      ...(mode==="cycle" ? {cycle:analysis} : {analysis})
-    });
-  } catch (err) {
-    clearTimeout(upstreamTimer);
-    const isTimeout = err && (err.name === "AbortError" || /aborted/i.test(err.message || ""));
-    console.error(JSON.stringify({event:"venture_runtime_error",mode,latency_ms:Date.now()-started,error:err && err.message ? err.message : "Runtime failure"}));
-    return res.status(isTimeout ? 504 : 500).json({
-      error: isTimeout ? "OpenAI response exceeded 55 seconds. Please retry." : (err && err.message ? err.message : "Runtime failure"),
-      stage: "openai_request"
-    });
-  }
+  return res.status(502).json({
+   error:'GPT 결과가 완성되지 않았습니다. 기존 Idea Note와 입력값은 보존되었습니다. 다시 분석해 주세요.',
+   code:'MODEL_INCOMPLETE',stage:'model_completion',reason:lastReason,attempts:attempted,
+   latency_ms:Date.now()-started,usage:{input_tokens:totalInput,output_tokens:totalOutput,reasoning_tokens:reasoning},
+   cost:feeCost(total)
+  });
+ }catch(e){
+   const timedOut=e.name==='AbortError'||e.name==='TimeoutError';
+   console.error(JSON.stringify({event:'venture_runtime_error',mode,error:e.message,latency_ms:Date.now()-started}));
+   return res.status(timedOut?504:500).json({error:timedOut?'GPT 응답 시간 초과. 입력값은 보존되어 있습니다.':(e.message||'Runtime failed'),stage:'openai_request'});
+ }finally{clearTimeout(timer);}
 };
