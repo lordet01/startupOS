@@ -1,3 +1,4 @@
+const {projectContext}=require("../lib/venture-context");
 const MODEL = process.env.OPENAI_MODEL || "gpt-6-luna";
 const INPUT_USD_PER_M = Number(process.env.OPENAI_INPUT_USD_PER_M || "0.10");
 const OUTPUT_USD_PER_M = Number(process.env.OPENAI_OUTPUT_USD_PER_M || "0.50");
@@ -133,6 +134,48 @@ function schema() {
   };
 }
 
+function cycleSchema(){
+  return {
+    type:"object",
+    properties:{
+      bottleneck:{type:"string"},
+      evidence:{type:"string"},
+      evidence_level:{type:"string",enum:["observed","hypothesis","missing"]},
+      decision:{type:"string",enum:["continue","refine","pivot","pause"]},
+      rationale:{type:"string"},
+      experiment:{type:"string"},
+      next_action:{type:"string"},
+      success_metric:{type:"string"},
+      success_threshold:{type:"string"},
+      estimated_external_cost_usd:{type:"number",minimum:0},
+      human_approval_required:{type:"boolean"},
+      missing_evidence:{type:"array",items:{type:"string"},maxItems:4},
+      role_notes:{
+        type:"object",
+        properties:{
+          ceo:{type:"string"},market:{type:"string"},product:{type:"string"},
+          tech:{type:"string"},finance:{type:"string"},legal:{type:"string"},growth:{type:"string"}
+        },
+        required:["ceo","market","product","tech","finance","legal","growth"],
+        additionalProperties:false
+      }
+    },
+    required:["bottleneck","evidence","evidence_level","decision","rationale","experiment","next_action","success_metric","success_threshold","estimated_external_cost_usd","human_approval_required","missing_evidence","role_notes"],
+    additionalProperties:false
+  };
+}
+function cyclePrompt(){
+  return `You are StartupOS Venture Operating Committee. Provide ONE actual structured decision, not a generic report.
+This is a *single LLM committee pass* considering CEO, Market, Product, Tech, Finance, Legal and Growth perspectives. Do not pretend seven independent agents, web research, code changes, deployment or experiments were performed.
+Given only the current session context:
+1. Identify the single biggest verified obstacle to the NEXT useful release or test.
+2. Distinguish observed facts from hypotheses and missing information. If metrics.source=not_connected, do not claim real traffic, conversion, users, sales or measured outcomes.
+3. Propose ONE low-cost concrete experiment, the next practical action, measurable success metric and threshold. Never treat model-generated scores as evidence.
+4. Each role note must be concise, actionable and context-specific. The CEO selects the final decision; Tech references the existing PWA, integrations and functional verification when relevant; Finance states an estimated EXTERNAL cost (not a charge already incurred); Legal notes real privacy/consent risks only if relevant.
+5. Do not overwrite Blueprint, change code, call services, charge payment, deploy or buy ads. The next action must explicitly remain pending for the founder to perform/approve.
+6. Preserve the founder's B2C intent, low-cost API/serverless-only stack and web/PWA boundaries. Do not invent facts or make claims about new market research.
+7. Respond in Korean (role keys in English). Keep it compact and no buzzwords.`;
+}
 function systemPrompt(mode) {
   return `You are Startup OS, an AI venture operating committee for a non-developer founder.
 Your objective is not to produce impressive documents. Move the venture toward a profitable released product with the least reasonable external cost.
@@ -161,7 +204,6 @@ module.exports = async function handler(req, res) {
   setCors(req, res);
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method === "GET") {
-    console.log(JSON.stringify({event:"venture_runtime_success",mode,model:data.model||MODEL,latency_ms:Date.now()-started,input_tokens:inputTokens,output_tokens:outputTokens}));
     return res.status(200).json({ ok: true, service: "Startup OS Runtime", model: MODEL, api: "OpenAI Responses API" });
   }
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
@@ -174,13 +216,17 @@ module.exports = async function handler(req, res) {
     try { body = JSON.parse(body); } catch { return res.status(400).json({ error: "Invalid JSON body" }); }
   }
   const mode = body && body.mode === "cycle" ? "cycle" : "analyze";
-  const project = body && body.project ? body.project : {};
+  const rawProject = body && body.project ? body.project : {};
+  const project = projectContext(rawProject,mode);
+  if (!project.session_id || !project.idea) return res.status(400).json({error:"Venture session ID and idea are required."});
   const serialized = JSON.stringify(project);
-  if (serialized.length > 16000) return res.status(413).json({ error: "Project payload too large" });
-
-  const input = [
-    { role: "system", content: systemPrompt(mode) },
-    { role: "user", content: `현재 Venture State(JSON):\n${serialized}\n\n이 상태를 분석하여 다음 의사결정을 내려라.` }
+  if (serialized.length > 16000) return res.status(413).json({error:"Sanitized Venture context too large",stage:"context_validation"});
+  const input = mode==="cycle" ? [
+    {role:"system",content:cyclePrompt()},
+    {role:"user",content:"현재 세션에서 증거가 확인되는 사항과 불확실한 사항을 구분하여 다음 액션을 결정해라.\\nVenture context:\\n"+serialized}
+  ] : [
+    {role:"system",content:systemPrompt(mode)},
+    {role:"user",content:"현재 Venture State(JSON):\\n"+serialized+"\\n\\n이 상태를 분석하여 사업 Blueprint를 작성하라."}
   ];
 
   const started = Date.now();
@@ -198,13 +244,13 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({
         model: MODEL,
         input,
-        max_output_tokens: MAX_OUTPUT,
+        max_output_tokens: mode==="cycle" ? Math.min(MAX_OUTPUT,2600) : MAX_OUTPUT,
         text: {
           format: {
             type: "json_schema",
-            name: "startup_os_venture_decision",
+            name: mode==="cycle" ? "startup_os_cycle_decision" : "startup_os_venture_decision",
             strict: true,
-            schema: schema()
+            schema: mode==="cycle" ? cycleSchema() : schema()
           }
         }
       })
@@ -216,10 +262,14 @@ module.exports = async function handler(req, res) {
       return res.status(upstream.status).json({ error: data.error?.message || "OpenAI API error", provider_status: upstream.status });
     }
 
+    if (data.status && data.status !== "completed") return res.status(502).json({error:"Model output incomplete",stage:"model_completion"});
     const raw = extractText(data);
     let analysis;
     try { analysis = JSON.parse(raw); }
-    catch { return res.status(502).json({ error: "Model returned non-JSON output", raw: raw.slice(0, 1000) }); }
+    catch { return res.status(502).json({error:"Model returned non-JSON output",stage:"structured_output"}); }
+    if (mode==="cycle" && (!analysis.role_notes || !analysis.next_action || !analysis.bottleneck)) {
+      return res.status(502).json({error:"Cycle response missing required decisions",stage:"structured_output"});
+    }
 
     const inputTokens = Number(data.usage?.input_tokens || 0);
     const outputTokens = Number(data.usage?.output_tokens || 0);
@@ -238,7 +288,7 @@ module.exports = async function handler(req, res) {
         startup_os_fee_usd: Number(platformFee.toFixed(8)),
         total_usd: Number((providerCost + platformFee).toFixed(8))
       },
-      analysis
+      ...(mode==="cycle" ? {cycle:analysis} : {analysis})
     });
   } catch (err) {
     clearTimeout(upstreamTimer);
