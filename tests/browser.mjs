@@ -12,6 +12,10 @@ const receipt=B.descriptor({_sessionId:'vs_browser_receipt_a',name:'ReceiptLens 
 const other=B.descriptor({_sessionId:'vs_browser_receipt_b',name:'Other Session'},'receipt',true);
 const travel=B.descriptor({_sessionId:'vs_browser_travel_a',name:'TripTodo · 여행 준비'},'travel',true);
 const skin=B.descriptor({_sessionId:'vs_browser_skin_a',name:'MySkin AI · 사진 관찰'},'skin',true);
+const Repair=require('../lib/repair'),Fixtures=require('../lib/smoke-fixtures');
+const repairedSkin=Repair.selectRepair(B.descriptor({_sessionId:'vs_browser_skin_repair',name:'MySkin AI · Repaired'},'skin',true),'skin-photo-flow-v2');
+const webFace=Fixtures.fixture('skin_face');
+const webFaceInput={name:'public-cc0-face.jpg',mimeType:'image/jpeg',buffer:Buffer.from(webFace.dataUrl.split(',')[1],'base64')};
 let skinCalls=0,skinMode='success';
 const skinResult={ok:true,response_id:'resp_mock_skin_browser',model:'mock-browser-transport',latency_ms:18,result:{
  image_status:'face_visible',summary:'사진상 표면 광택 및 일부 피부톤 차이가 관찰됩니다.',
@@ -31,7 +35,8 @@ const server=http.createServer(async(req,res)=>{
  if(url.pathname==='/api/skin-analysis'){
   let raw='';for await(const chunk of req)raw+=chunk;
   const body=JSON.parse(raw);
-  assert.equal(body.sessionId,skin.sid);assert.equal(body.buildId,skin.bid);
+  assert.ok([skin.sid,repairedSkin.sid].includes(body.sessionId));
+  assert.equal(body.buildId,body.sessionId===skin.sid?skin.bid:repairedSkin.bid);
   assert.equal(body.sourceHash,skin.sourceHash);assert.equal(body.consent,true);
   assert.ok(body.image.startsWith('data:image/jpeg;base64,'));
   skinCalls++;
@@ -44,7 +49,7 @@ const server=http.createServer(async(req,res)=>{
   if(mode==='failure'){res.writeHead(503,{'Content-Type':'application/json'});res.end(JSON.stringify({ok:false,error:'TEST provider unavailable'}));return;}
   res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(ocrResult));return;
  }
- const doc={'/receipt/':receipt,'/receipt-b/':other,'/travel/':travel,'/skin/':skin}[url.pathname];
+ const doc={'/receipt/':receipt,'/receipt-b/':other,'/travel/':travel,'/skin/':skin,'/skin-repair/':repairedSkin}[url.pathname];
  if(doc){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(A.html(doc,true));return;}
  if(url.pathname.startsWith('/installed/')){
   const name=url.pathname.slice('/installed/'.length)||'index.html';
@@ -128,6 +133,45 @@ try{
  await check('skin_failure_exposes_verify_report_action',async()=>{
   assert.equal(await page.locator('#reportIssue').count(),1);
   assert.match(await page.getByRole('alert').innerText(),/분석 단계 오류/);
+ });
+ await check('skin_web_face_fixture_full_journey',async()=>{
+  skinMode='success';
+  await page.goto(base+'/skin/');
+  await page.locator('#album').click();
+  await page.locator('#albumInput').setInputFiles(webFaceInput);
+  await visible(page.locator('#previewPhase'));
+  assert.equal(await page.locator('#consent').isChecked(),false);
+  await page.locator('#consent').check();
+  await page.locator('#analyze').click();
+  await visible(page.getByText('나이아신아마이드'));
+  await visible(page.locator('#analysisResult'));
+  await page.locator('#saveResult').click();
+  await visible(page.getByText('사진상 표면 광택 및 일부 피부톤 차이가 관찰됩니다.'));
+  await page.reload();await page.locator('[data-view="history"]').click();
+  await visible(page.getByText('사진상 표면 광택 및 일부 피부톤 차이가 관찰됩니다.'));
+  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('startup-os:app:v3:vs_browser_skin_a:skin')));
+  assert.equal(saved.length,1);
+  assert.ok(skinCalls>=3);
+ });
+ await check('skin_repair_next_step_visible',async()=>{
+  await page.goto(base+'/skin-repair/');
+  await page.locator('#albumInput').setInputFiles(webFaceInput);
+  await visible(page.locator('#photoRepairNext'));
+  assert.equal(await page.evaluate(()=>window.STARTUP_OS_REPAIR?.id),'skin-photo-flow-v2');
+  await page.locator('#photoRepairNext').click();
+  await visible(page.locator('#photoRepairStatus'));
+  assert.match(await page.locator('#photoRepairStatus').innerText(),/동의/);
+  assert.equal(await page.locator('#analyze').isDisabled(),true);
+ });
+ await check('skin_repair_consent_to_analysis',async()=>{
+  await page.locator('#consent').check();
+  await page.locator('#photoRepairNext').click();
+  assert.match(await page.locator('#photoRepairStatus').innerText(),/분석 버튼/);
+  await page.locator('#analyze').click();
+  await visible(page.locator('#analysisResult'));
+  await visible(page.getByText('나이아신아마이드'));
+  await page.locator('#saveResult').click();
+  await visible(page.getByText('사진상 표면 광택 및 일부 피부톤 차이가 관찰됩니다.'));
  });
  await check('travel_trip_dates_and_creation',async()=>{await page.goto(base+'/travel/');await page.getByRole('button',{name:'첫 여행 만들기',exact:true}).click();await page.locator('[name="destination"]').fill('부산');await page.locator('[name="start"]').fill('2026-10-20');await page.locator('[name="end"]').fill('2026-10-22');await page.getByRole('button',{name:'여행 저장',exact:true}).click();await visible(page.getByRole('heading',{name:'부산',exact:true}));});
  await check('travel_task_completion_and_reload',async()=>{await page.getByRole('button',{name:'+ 항목',exact:true}).click();await page.locator('[name="title"]').fill('기차표 예약');await page.locator('[name="due"]').fill('2026-10-18');await page.getByRole('button',{name:'항목 저장',exact:true}).click();await page.getByLabel('기차표 예약 완료',{exact:true}).check();await page.reload();assert.equal(await page.getByLabel('기차표 예약 완료',{exact:true}).isChecked(),true);assert.match(await page.locator('#app').innerText(),/1 \/ 1 완료/);});
