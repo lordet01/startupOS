@@ -94,7 +94,7 @@ function reportFailure(){
  const issue=lastFailure||{stage:photoStage,message:error||'사진 촬영→분석이 진행되지 않음',code:'PHOTO_FLOW_FAILED',at:new Date().toISOString()};
  const report={source:'user_report',kind:'skin',sessionId:C.sessionId,buildId:C.buildId,stage:issue.stage,code:issue.code,message:issue.message,at:issue.at,sourceHash:C.sourceHash};
  const url='https://startup-os-beige.vercel.app/builder/?sessionId='+encodeURIComponent(C.sessionId)+'&verifyIssue='+encodeURIComponent(JSON.stringify(report))+'#verify-stage';
- const opened=window.open(url,'_blank','noopener');if(!opened)window.location.assign(url);
+ const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener noreferrer';document.body.appendChild(link);link.click();link.remove();
 }
 window.addEventListener('error',event=>{if(view==='scan'&&!busy){lastFailure={stage:photoStage,code:'CLIENT_JS_ERROR',message:String(event.message||'JavaScript error').slice(0,260),at:new Date().toISOString()};}});
 window.addEventListener('pagehide',()=>{stopCamera();aborter?.abort();releasePhoto()});
