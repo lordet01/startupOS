@@ -45,6 +45,21 @@ try{
   assert.equal(await page.locator('#phone-stage').getByText('LOCKED').count(),1);
  });
  await test('build_button_shows_inline_working_state',async()=>{if(!(await page.locator('#scope').isChecked()))await page.locator('#scope').check();await page.locator('#assemble').click();await page.locator('.workBtn.running').waitFor({state:'visible'});assert.match(await page.locator('.btnRunText').innerText(),/Working/);await page.locator('.workBtn.running').waitFor({state:'detached',timeout:5000});await page.screenshot({path:'test-results/build-studio-mobile.png',fullPage:true});});
+ await test('live_api_check_alone_does_not_unlock_deploy_before_real_flow_acceptance',async()=>{
+  const sid='vs_studio_skin';
+  await page.evaluate(({key,sid})=>{
+   const pack=JSON.parse(localStorage.getItem(key)),p=pack.sessions.find(x=>x._sessionId===sid);
+   p.functionalBuild.verification={status:'INTEGRATION_VERIFIED',checks:[]};
+   localStorage.setItem(key,JSON.stringify(pack));
+  },{key,sid});
+  await page.reload();await page.locator('#journeyPass').waitFor();
+  assert.equal(await page.locator('#publish').isDisabled(),true);
+  await page.locator('#journeyConfirm').check();await page.locator('#journeyPass').click();
+  assert.equal(await page.locator('#publish').isEnabled(),true);
+  const p=await page.evaluate(({key,sid})=>JSON.parse(localStorage.getItem(key)).sessions.find(x=>x._sessionId===sid),{key,sid});
+  assert.equal(p.functionalJourneyCheck.status,'PASSED');
+  assert.equal(p.functionalJourneyCheck.buildId,p.functionalBuild.bid);
+ });
  await test('skin_user_failure_enters_verify_and_blocks_deploy',async()=>{
   const sid='vs_studio_skin';
   const desc=await page.evaluate(({sid,key})=>{
