@@ -1,30 +1,26 @@
 window.STARTUP_OS_CONFIG = {
-  runtimeUrl: '/api/runtime',
-  runtimeProvider: 'Vercel + OpenAI Responses API',
-  functionalBuildVersion: '3.0.0'
+  runtimeUrl: "/api/runtime",
+  runtimeProvider: "Vercel + OpenAI Responses API",
+  functionalBuildVersion: "3.1.0"
 };
-// Preserve the existing session workspace while replacing legacy Build/Deploy.
 (function(){
-  function destination(){
+  function destination(stage){
+    var id="";
     try {
-      const pack=JSON.parse(localStorage.getItem('startupOS.sessions.v1')||'null');
-      return '/builder/'+(pack&&pack.activeId?'?sessionId='+encodeURIComponent(pack.activeId):'');
-    } catch { return '/builder/'; }
+      var pack=JSON.parse(localStorage.getItem("startupOS.sessions.v1")||"null");
+      if(pack&&pack.activeId)id="?sessionId="+encodeURIComponent(pack.activeId);
+    } catch(e){}
+    var section=stage==="deploy"?"#deploy-stage":stage==="phone"?"#phone-stage":"#scope-stage";
+    return "/builder/"+id+section;
   }
-  document.addEventListener('click',function(event){
-    const button=event.target.closest('button');
+  document.addEventListener("click",function(event){
+    var button=event.target.closest("button");
     if(!button)return;
-    if(['build','deploy','phone'].includes(button.dataset.view)||['generateMvp','publishMvp','openPrototype','testPublishAuth'].includes(button.id)){
-      event.preventDefault();event.stopImmediatePropagation();location.assign(destination());
+    var stage=button.dataset.view;
+    if(["build","deploy","phone"].includes(stage)||["generateMvp","publishMvp","openPrototype","testPublishAuth"].includes(button.id)){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      location.assign(destination(stage||"build"));
     }
   },true);
-  function update(){
-    document.querySelectorAll('.side .small').forEach(el=>{if(el.textContent.includes('Pilot'))el.textContent='Build v3 · Functional gates';});
-    document.querySelectorAll('button[data-view="build"]').forEach(el=>{el.textContent='Build · 기능 검증';});
-  }
-  window.addEventListener('DOMContentLoaded',()=>{
-    update();
-    const app=document.getElementById('app');
-    if(app)new MutationObserver(()=>{if(!document.querySelector('button[data-view="build"]')?.textContent.includes('기능 검증'))update();}).observe(app,{childList:true,subtree:true});
-  });
 })();

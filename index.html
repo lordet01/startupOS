@@ -136,6 +136,87 @@
   .moreGrid button{min-height:70px;border:1px solid #29405e;border-radius:13px;background:#102039;color:#dbe7f8;font-size:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px}
   .moreGrid button .navIcon{font-size:20px}
 }
+
+/* Unified actionable UI — applies to all Venture Session pages */
+.shell,.main,.content,.card,.pageHead,.sessionCard{min-width:0;max-width:100%}
+.content{overflow-wrap:anywhere}
+.pageHead{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}
+.pageHead h2{font-size:23px;margin:0;letter-spacing:-.03em}
+.pageHead .pageActions{display:flex;gap:8px;flex-wrap:wrap}
+.pageCount{font-size:12px;color:#8096b3}
+.sectionHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.sectionHead h3{font-size:16px;margin:0;letter-spacing:-.02em}
+.emptyState{padding:26px 12px;text-align:center;color:var(--muted);font-size:13px;line-height:1.6}
+.sessionGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.sessionCard{padding:18px;display:flex;flex-direction:column;gap:12px}
+.sessionCardTop{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.sessionCard h3{font-size:17px;margin:0;letter-spacing:-.025em;min-width:0}
+.sessionCard p{font-size:12px;line-height:1.5;color:#8da3be;margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sessionCardFooter{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto}
+.sessionCardFooter span{font-size:10px;color:#8095b0}.sessionCardFooter button{min-height:40px;white-space:nowrap}
+.overviewCard{background:#102039;border:1px solid #29405e;border-radius:18px;padding:20px}
+.overviewEyebrow{color:#859cba;font-size:10px;letter-spacing:.11em;font-weight:800}
+.overviewTitle{font-size:24px;letter-spacing:-.04em;font-weight:850;margin:6px 0}
+.overviewGoal{margin:0;color:#9caec5;font-size:13px;line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.overviewProgress{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:18px 0 14px}
+.overviewStep{border:1px solid #29405e;background:#0c1a2d;border-radius:11px;padding:10px 7px;display:flex;align-items:center;justify-content:center;gap:7px;color:#8198b4;font-size:12px;font-weight:750}
+.overviewStep.done{border-color:#27654f;background:#0c2922;color:#9de6cd}
+.overviewStep.current{border-color:#547bda;background:#142a4d;color:#fff}
+.stepDot{width:8px;height:8px;border-radius:50%;border:1px solid #6c7f9c;flex-shrink:0}
+.overviewStep.done .stepDot{background:#45d7aa;border-color:#45d7aa}
+.overviewStep.current .stepDot{background:#8ba4ff;border-color:#8ba4ff}
+.overviewActions{display:flex;align-items:center;gap:8px}
+.overviewActions button{min-width:190px;min-height:46px}
+.overviewNumbers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.overviewNumbers>div{border:1px solid var(--line);background:#0f1d32;border-radius:13px;padding:14px}
+.overviewNumbers span,.costMini span{color:#879bb7;font-size:11px;display:block}
+.overviewNumbers strong,.costMini strong{color:#f4f8ff;font-size:18px;display:block;margin-top:6px}
+.overviewFeatures{margin-top:12px}.simpleFeature{font-size:12px;display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #203451}
+.simpleFeature:last-child{border-bottom:0}
+.briefCard{margin-bottom:12px}.briefGoal{font-size:13px;line-height:1.65;color:#c3d2e3;margin:8px 0 13px}
+.briefFields{display:grid;grid-template-columns:1fr 1fr 100px;gap:12px}
+.briefFields>div{min-width:0}.briefFields span{font-size:10px;color:#7890ac;display:block;margin-bottom:4px}
+.briefFields strong{font-size:12px;line-height:1.5;color:#e3edf9;font-weight:550;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.costMini{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px}
+.costMini>div{padding:11px;border:1px solid #274360;border-radius:11px;background:#0c1b2e}
+.compactDetails,.subHeading{margin-top:16px}
+.simpleChecklist{display:grid;gap:8px;font-size:12px;color:#a8bdd6}
+.simpleChecklist>div{padding:4px 0}
+.noteList>div{padding:11px 0;border-bottom:1px solid #203451}
+.noteList>div:last-child{border-bottom:0}
+.noteList strong{font-size:11px;color:#89abec}.noteList p{font-size:12px;line-height:1.6;color:#c2d0e1;margin:6px 0 0}
+.costTotals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.costTotals .card{padding:14px}.costTotals span{display:block;font-size:11px;color:#90a4be}
+.costTotals strong{display:block;font-size:20px;margin-top:7px}
+.tableWrap{overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch}
+.tableWrap .table{min-width:560px}
+.settingRow{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 0;flex-wrap:wrap}
+.settingRow span{color:#93a6c1;font-size:12px}.settingRow code{font-size:12px;overflow-wrap:anywhere}
+.card details{margin-top:12px}.card details summary{font-size:12px;font-weight:650;color:#9db7e5;cursor:pointer}
+.presetRow{display:flex;gap:8px;flex-wrap:wrap}
+.modalActions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:16px}
+.modalActions>.btn{min-height:43px;white-space:nowrap}
+.btn.danger{border-color:#6b3847;color:#ffa9b9;background:#2c1821}
+button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid #8ba5ff;outline-offset:2px}
+@media(max-width:900px){.sessionGrid{grid-template-columns:1fr}.briefFields{grid-template-columns:1fr 1fr}}
+@media(max-width:760px){
+ .main{width:100%;overflow:hidden}
+ .content{padding:14px 12px 100px}
+ .pageHead{margin:0 0 12px;align-items:center;gap:10px}
+ .pageHead h2{font-size:20px}.pageHead .pageActions{width:auto;flex-wrap:wrap;justify-content:flex-end}.pageHead .pageActions .btn{min-height:40px;font-size:11px;padding:8px 10px}
+ .sessionGrid{grid-template-columns:1fr;gap:10px}.sessionCard{padding:15px}
+ .overviewCard{padding:15px;border-radius:15px}
+ .overviewTitle{font-size:22px}.overviewGoal{font-size:12px}
+ .overviewProgress{gap:5px;margin:15px 0 12px}.overviewStep{flex-direction:column;gap:5px;font-size:10px;padding:9px 3px}
+ .overviewActions,.overviewActions button{width:100%;min-height:46px}
+ .overviewNumbers{gap:8px}.overviewNumbers>div{padding:11px}.overviewNumbers strong{font-size:16px}
+ .briefFields{grid-template-columns:1fr 1fr}.briefFields>div:last-child{grid-column:1/-1}
+ .costTotals{grid-template-columns:1fr 1fr}.costTotals>div:last-child{grid-column:1/-1}
+ .modalActions{flex-direction:column-reverse;align-items:stretch}.modalActions>.btn{width:100%}.presetRow{width:100%;display:grid;grid-template-columns:1fr 1fr}.presetRow button{font-size:11px;min-height:42px}
+ .morePanel{max-height:min(70vh,460px);overflow-y:auto}
+ .runPanel{margin:10px 0}.card{border-radius:14px}
+}
+
 </style>
 </head>
 <body>
@@ -364,13 +445,13 @@ function switchSession(id){
 }
 function shortSessionId(p){return (p&&p._sessionId?p._sessionId:"").replace("vs_","").slice(0,8).toUpperCase()}
 function money(n){return "$"+Number(n).toFixed(n<10?2:0)}
-function spend(){return state.p.costs.reduce(function(s,x){return s+x[3]},0)}
+function spend(){return (state.p.costs||[]).filter(function(x){return x[0]!=="Manual test"}).reduce(function(s,x){return s+Number(x[3]||0)},0)}
 function fee(){return spend()*.05}
 function runtimeUrl(){var saved=localStorage.getItem("startupOS.runtimeUrl");if(saved)return saved;if(window.STARTUP_OS_CONFIG&&window.STARTUP_OS_CONFIG.runtimeUrl)return window.STARTUP_OS_CONFIG.runtimeUrl;if(location.hostname.endsWith(".vercel.app")||location.hostname==="localhost")return "/api/runtime";return ""}
 function stackServices(){var t=state.p.techStack;if(t&&t.length)return t.map(function(x){return typeof x==="string"?x:(x.service||x.area)});return ["OpenAI GPT","Firebase","Vercel","GitHub","Stripe","PostHog","Resend"]}
 function esc(s){return String(s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function sessionStageStatus(p){
-  var blueprint=!!(p&&Array.isArray(p.serviceFlow)&&p.serviceFlow.length&&Array.isArray(p.mvpFeatures)&&p.mvpFeatures.length);
+  var blueprint=!!(p&&!p._briefStale&&Array.isArray(p.serviceFlow)&&p.serviceFlow.length&&Array.isArray(p.mvpFeatures)&&p.mvpFeatures.length);
   var build=!!(p&&p.functionalBuild&&p.functionalBuild.verification&&p.functionalBuild.verification.status==="INTEGRATION_VERIFIED");
   var deploy=!!(p&&p.functionalBuild&&p.functionalBuild.deployment&&p.functionalBuild.deployment.readyState==="READY");
   var phone=!!(p&&(p.functionalDeviceEvidence&&p.functionalDeviceEvidence.note||p.functionalDeviceNote));
@@ -390,7 +471,15 @@ function metric(t,v,n,c){return '<div class="card metric"><span>'+t+'</span><b c
 function agents(){var notes=state.p.agentNotes||{};var a=[["CEO","ceo","Goal / priority / gate"],["Market","market","Customer / competition"],["Product","product","MVP / UX / conversion"],["Finance","finance","Cost / pricing / margin"],["Tech","tech","Architecture / APIs"],["Builder","tech","Implementation / deploy"],["Legal","legal","Privacy / IP / policy"],["Growth","growth","Acquisition / experiments"]];return '<div class="agents">'+a.map(function(x,i){var note=notes[x[1]]||x[2];return '<div class="agent"><div class="head"><b>'+x[0]+' Agent</b><span class="tag '+(state.runtimeStatus==="live"?"ok":"")+'">'+(state.running&&i<4?"Running":state.runtimeStatus==="live"?"Synced":"Ready")+'</span></div><p>'+esc(note)+'</p></div>'}).join("")+'</div>'}
 
 function gates(){return '<div class="gate"><div class="pass">✓<br><b>Problem</b></div><div class="pass">✓<br><b>Customer</b></div><div class="pass">✓<br><b>MVP</b></div><div>!<br><b>Payment</b></div><div>!<br><b>Legal</b></div></div>'}
-function sessionsView(){var rows=sessionPack.sessions;return shell('<div class="head"><div><h2 style="font-size:27px">Venture Sessions</h2><div class="small">New Venture마다 독립 세션이 생성되고 Brief → Blueprint → Build → Deploy → Phone Test → Iterate 전체 이력이 이 세션에 묶입니다.</div></div><button class="btn primary" id="newVenture">+ New venture</button></div><div class="grid g2">'+rows.map(function(s){var phase=s._phase||"brief";return '<div class="card"><div class="head"><div><h2>'+esc(s.name||"Untitled venture")+'</h2><div class="small">Session '+shortSessionId(s)+' · '+esc(phase)+' · '+new Date(s._updatedAt||s._createdAt).toLocaleString()+'</div></div><span class="tag '+(s.runtimeLast?"ok":"")+'">'+(s.runtimeLast?"AI synced":"Local")+'</span></div><p class="small" style="line-height:1.6">'+esc(s.idea||"")+'</p><div class="row"><button class="btn primary openSession" data-session="'+esc(s._sessionId)+'">Open session</button></div></div>'}).join("")+'</div>')}
+function sessionsView(){
+ var rows=sessionPack.sessions;
+ return shell('<div class="pageHead"><div><h2>Sessions</h2><span class="pageCount">'+rows.length+' projects</span></div></div>'+
+ '<div class="sessionGrid">'+rows.map(function(s){
+ var d=s.functionalBuild&&s.functionalBuild.deployment;
+ var status=d&&d.readyState==="READY"?"Deployed":s.functionalBuild?"Built":(s.serviceFlow&&s.serviceFlow.length?"Blueprint":"Draft");
+ return '<article class="card sessionCard"><div class="sessionCardTop"><h3>'+esc(s.name||"Untitled venture")+'</h3><span class="tag">'+status+'</span></div><p>'+esc(s.desiredOutcome||s.idea||"")+'</p><div class="sessionCardFooter"><span>'+shortSessionId(s)+' · '+new Date(s._updatedAt||s._createdAt).toLocaleDateString()+'</span><button class="btn openSession" data-session="'+esc(s._sessionId)+'">Open →</button></div></article>'
+ }).join("")+'</div>');
+}
 function mobileNextAction(p){
   var s=sessionStageStatus(p);
   if(!s.venture)return {view:"venture",label:"Blueprint 만들기",icon:"🧩",step:0};
@@ -399,38 +488,23 @@ function mobileNextAction(p){
   if(!s.phone)return {view:"phone",label:"Phone Test 하기",icon:"📱",step:3};
   return {view:"growth",label:"다음 개선 사이클",icon:"↻",step:4};
 }
-function mobileOverviewCard(p,spendValue){
-  var s=sessionStageStatus(p),next=mobileNextAction(p);
-  var steps=[["🧩","Blueprint",s.venture],["🛠","Build",s.build],["🚀","Deploy",s.deploy],["📱","Test",s.phone]];
-  return '<section class="mobileDashboard mobileOnly"><div class="sessionEyebrow">SESSION '+shortSessionId(p)+'</div><h1>'+esc(p.name||"Untitled venture")+'</h1><div class="mobileDesc">'+esc(p.desiredOutcome||p.idea||"")+'</div><div class="mobileProgress">'+steps.map(function(x,i){return '<div class="mobileStep '+(x[2]?"done":i===next.step?"current":"")+'"><span class="ico">'+x[0]+'</span><b>'+x[1]+'</b></div>'}).join("")+'</div><button class="btn primary mobilePrimary" data-view="'+next.view+'">'+next.icon+' '+next.label+'</button><button class="btn mobileSecondary" id="runCycle">↻ Run cycle</button><div class="mobileSummary"><div class="mobileMini"><span>Blueprint</span><b>'+(s.venture?"Ready":"Pending")+'</b></div><div class="mobileMini"><span>API Cost</span><b>'+money(spendValue)+'</b></div></div></section>'
-}
 function runtimeButton(id,label,mode,primary){
   var running=state.running&&state.runMode===mode;
   return '<button class="btn '+(primary?'primary ':'')+'inlineWork '+(running?'running':'')+'" id="'+id+'" '+(state.running?'disabled':'')+'><span class="workInner">'+(running?'<span class="workSpin"></span><span>Working · <span class="mainRunElapsed">'+elapsedSeconds().toFixed(1)+'s</span></span>':label)+'</span></button>'
 }
 function lifecycleStepper(p){var phases=[["brief","📝","1 · Brief","문제·고객"],["blueprint","🧩","2 · Blueprint","흐름·기술·비용"],["build","🛠","3 · Build","실제 구현"],["deploy","🚀","4 · Deploy","웹 배포"],["test","📱","5 · Phone","PWA 설치·사용"],["iterate","↻","6 · Iterate","피드백·개선"]];var rank={brief:0,blueprint:1,build:2,deploy:3,test:4,iterate:5};var cur=rank[p._phase||"brief"]||0;return '<div class="wizardSteps" style="grid-template-columns:repeat(6,1fr)">'+phases.map(function(x,i){return '<div class="wizardStep '+(i<=cur?"active":"")+'"><div class="stepIcon">'+x[1]+'</div><b>'+x[2]+'</b>'+x[3]+'</div>'}).join("")+'</div>'}
 function overview(){
-var p=state.p,s=spend(),fb=p.functionalBuild||null,ver=fb&&fb.verification,dep=fb&&fb.deployment;
-var buildState=ver&&ver.status==="INTEGRATION_VERIFIED"?"Verified":fb?"Built":"Not built";
-var deployState=dep&&dep.readyState==="READY"?"Live":dep?dep.readyState||"Deploying":"Not deployed";
-var bp=(p.serviceFlow&&p.serviceFlow.length)?"Ready":"Needs analysis";
-var features=(p.mvpFeatures||[]).slice(0,6);
-var desc=p.desiredOutcome||p.idea||"";
-var next=p.nextExperiment||"다음 단계가 아직 정해지지 않았습니다.";
-return shell(
-mobileOverviewCard(p,s)+
-'<section class="projectHead desktopOnly"><div><div class="eyebrow">SESSION '+shortSessionId(p)+'</div><h1>'+esc(p.name||"Untitled venture")+'</h1><div class="desc">'+esc(desc)+'</div><div class="quickActions"><button class="btn" data-view="venture">Blueprint</button><button class="btn primary" data-view="build">Build</button><button class="btn" data-view="deploy">Deploy</button><button class="btn" data-view="phone">Phone Test</button>'+runtimeButton("runCycle","Run cycle","cycle",false)+'</div></div><div class="miniMeta"><span class="miniTag">'+esc(p._phase||"brief")+'</span><span class="miniTag">'+(state.runtimeStatus==="live"?"AI connected":"Runtime ready")+'</span></div></section>'+
-'<section class="statusGrid">'+
-'<div class="statusCard"><span>Blueprint</span><b>'+bp+'</b><small>'+(p.serviceFlow&&p.serviceFlow.length?(p.serviceFlow.length+" steps"):"Analyze first")+'</small></div>'+
-'<div class="statusCard"><span>Build</span><b>'+buildState+'</b><small>'+(fb?esc(fb.kind||"functional app"):"No artifact")+'</small></div>'+
-'<div class="statusCard"><span>Deploy</span><b>'+deployState+'</b><small>'+(dep&&dep.url?"URL issued":"No URL")+'</small></div>'+
-'<div class="statusCard"><span>Cost</span><b>'+money(s)+'</b><small>External API spend</small></div>'+
-'</section>'+
-'<section class="coreGrid"><div class="compactCard"><div class="sectionTitle">Core functions</div><div class="featureList">'+(features.length?features.map(function(x){return '<div class="featureRow"><span class="featureDot"></span><span>'+esc(x)+'</span></div>'}).join(""):'<div class="mutedLine">Blueprint에서 핵심 기능을 정의하세요.</div>')+'</div></div>'+
-'<div class="compactCard"><div class="sectionTitle">Next action</div><div class="nextAction">'+esc(next)+'</div><div class="quickActions" style="margin-top:14px">'+runtimeButton("analyzeNow","Analyze","analyze",false)+'<button class="btn" data-view="venture">Edit blueprint</button></div></div></section>'+
-runPanel()
-)}
-
+ var p=state.p,s=spend(),steps=sessionStageStatus(p),next=mobileNextAction(p);
+ var feats=(p.mvpFeatures||[]).slice(0,4), fb=p.functionalBuild,dep=fb&&fb.deployment;
+ var phases=[["Blueprint",steps.venture],["Build",steps.build],["Deploy",steps.deploy],["Test",steps.phone]];
+ return shell('<section class="overviewCard"><div class="overviewEyebrow">SESSION '+shortSessionId(p)+'</div><div class="overviewTitle">'+esc(p.name||"Untitled venture")+'</div>'+
+ '<p class="overviewGoal">'+esc(p.desiredOutcome||p.idea||"사업 목표를 입력하세요.")+'</p>'+
+ '<div class="overviewProgress">'+phases.map(function(x,i){return '<div class="overviewStep '+(x[1]?"done":next.step===i?"current":"")+'"><span class="stepDot"></span>'+x[0]+'</div>'}).join("")+'</div>'+
+ '<div class="overviewActions"><button class="btn primary" data-view="'+next.view+'">'+next.icon+' '+next.label+'</button></div></section>'+
+ '<div class="overviewNumbers"><div><span>External cost</span><strong>'+money(s)+'</strong></div><div><span>Latest build</span><strong>'+(steps.build?"Verified":fb?"Pending verification":"Not built")+'</strong></div></div>'+
+ (feats.length?'<section class="card overviewFeatures"><div class="sectionTitle">Core features</div>'+feats.map(function(x){return '<div class="simpleFeature"><span class="featureDot"></span><span>'+esc(x)+'</span></div>'}).join("")+'</section>':'')+
+ (state.runStage==="error"?runPanel():""));
+}
 function item(a,b){return '<div class="item"><div><b>'+esc(a)+'</b><div>'+esc(b)+'</div></div></div>'}
 function runStageIndex(){return {prepare:0,request:1,waiting:2,apply:3,done:4,error:4}[state.runStage]||0}
 function elapsedSeconds(){return state.runStartedAt?Math.max(0,(Date.now()-state.runStartedAt)/1000):0}
@@ -444,8 +518,18 @@ function serviceIcon(meta){return meta.icon?'<img class="svcIcon" src="'+meta.ic
 function techCards(p){var tech=p.techStack||[];if(!tech.length)return '<div class="loadingPanel"><b>'+(state.running?"Blueprint 응답 대기 중":"아직 기술 스택이 생성되지 않았습니다.")+'</b>'+(state.running?"응답 수신 후 구체 API/SaaS와 비용을 표시합니다.":"GPT 분석 후 구체 API/SaaS와 이유를 표시합니다.")+'</div>';return '<div class="serviceGrid">'+tech.map(function(x){var meta=serviceMeta(x.service||x);return '<div class="serviceCard"><div class="role">'+esc(x.area||"Service")+'</div><div class="svcHead">'+serviceIcon(meta)+'<h3 style="margin:6px 0">'+esc(x.service||x)+'</h3></div><p>'+esc(x.reason||"")+'</p><strong>'+money(Number(x.monthly_cost_usd||0))+'/mo est.</strong>'+(meta.url?'<br><a class="serviceLink" href="'+meta.url+'" target="_blank" rel="noopener noreferrer">Official site ↗</a>':'')+'</div>'}).join("")+'</div>'}
 function buildPlanView(p){var plan=p.buildPlan||[];if(!plan.length)return '<div class="loadingPanel"><b>'+(state.running?"Blueprint 응답 대기 중":"아직 구현 순서가 생성되지 않았습니다.")+'</b>'+(state.running?"응답 수신 후 구현 Phase와 산출물을 표시합니다.":"GPT 분석 후 구현 순서와 산출물을 표시합니다.")+'</div>';return '<div class="phaseGrid">'+plan.map(function(x,i){return '<div class="phaseCard"><div class="num">PHASE '+esc(x.phase||i+1)+'</div><h3>'+esc(x.title)+'</h3><p>'+esc(x.deliverable)+'</p><strong>외부비용 '+money(Number(x.estimated_external_cost_usd||0))+'</strong></div>'}).join("")+'</div>'}
 function costBreakdownView(p){var rows=p.costBreakdown||[];if(!rows.length)return '<div class="loadingPanel"><b>'+(state.running?"Blueprint 응답 대기 중":"아직 비용 구조가 생성되지 않았습니다.")+'</b>'+(state.running?"응답 수신 후 초기비·월 고정비·사용량 비용을 분리합니다.":"GPT 분석 후 비용 구조를 생성합니다.")+'</div>';return '<table class="table"><tr><th>항목</th><th>비용 형태</th><th>설명</th><th class="right">초기 추정</th></tr>'+rows.map(function(x){return '<tr><td>'+esc(x.item)+'</td><td>'+esc(x.cost_type)+'</td><td>'+esc(x.note)+'</td><td class="right">'+money(Number(x.estimated_cost_usd||0))+'</td></tr>'}).join("")+'</table>'}
-function venture(){var p=state.p;var live=state.runtimeStatus==="live";return shell('<div class="head"><div><h2 style="font-size:24px">Blueprint</h2><div class="small">기능 · 흐름 · 기술 · 비용</div></div><div class="row"><button class="btn" id="editBrief">Edit founder brief</button>'+runtimeButton("analyzeNow","Re-analyze with GPT","analyze",true)+'</div></div>'+lifecycleStepper(p)+''+runPanel()+'<section class="blueprintHero"><div class="card"><div class="head"><h2>Project</h2><span class="tag '+(live?"ok":"")+'">'+(live?"LIVE AI":"Founder input")+'</span></div><div class="founderBrief"><h2 style="margin-bottom:5px">'+esc(p.name||"Untitled venture")+'</h2><div class="small">'+esc(p.idea||"")+'</div></div><div class="list" style="margin-top:14px">'+item("Target customer",p.customer||"미입력")+item("Problem",p.problem||"미입력")+item("Desired outcome",p.desiredOutcome||"GPT가 제안")+item("Monetization",p.model||"GPT가 제안")+'</div></div><div class="card"><h2>Status</h2><div class="callout">'+esc(p.summary||"Analyze with GPT를 실행하면 이 아이디어를 최소 비용 MVP로 바꾸는 설계가 생성됩니다.")+'</div><div class="list" style="margin-top:10px">'+item("Venture score",(p.score||0)+"/100")+item("Selling price",p.price?money(p.price):"GPT 제안")+item("MVP budget",money(p.budget||0))+item("Next experiment",p.nextExperiment||"분석 전")+'</div></div></section><section class="section card"><div class="head"><div><h2>Flow</h2><div class="small">User → System</div></div></div>'+serviceFlowView(p)+'</section><section class="section card"><div class="head"><div><h2>Stack</h2><div class="small">API / SaaS / Runtime</div></div></div>'+techCards(p)+'</section><section class="section card"><div class="head"><div><h2>Cost</h2><div class="small">MVP / Ops / AI</div></div></div><div class="costSummary">'+metric("MVP external cost",money(p.estimatedMvpCost||0),"초기 외부 현금비용")+metric("Ops @ 1,000 MAU",money(p.estimatedOpsCost||0)+"/mo","월 예상 운영비")+metric("AI spend so far",money(spend()),"Startup OS 분석 API 비용")+'</div>'+costBreakdownView(p)+'</section><section class="section card"><div class="head"><div><h2>Build plan</h2><div class="small">Phase별 구현</div></div></div>'+buildPlanView(p)+'</section><section class="section grid g2"><div class="card"><h2>In scope</h2><div class="list">'+((p.mvpFeatures||[]).length?p.mvpFeatures:["GPT 분석 후 생성"]).map(function(x){return item(x,"MVP scope")}).join("")+'</div></div><div class="card"><h2>Out / Risk</h2><div class="list">'+((p.risks||[]).length?p.risks:["GPT 분석 후 생성"]).map(function(x){return item(x,"Risk / scope guard")}).join("")+'</div></div></section>')}
-
+function venture(){
+ var p=state.p,analyzed=!!(p.serviceFlow&&p.serviceFlow.length);
+ return shell('<div class="pageHead"><h2>Blueprint</h2><div class="pageActions"><button class="btn" id="editBrief">Edit brief</button>'+runtimeButton("analyzeNow",analyzed?"Re-analyze":"Analyze with GPT","analyze",true)+'</div></div>'+
+ (state.running||state.runStage==="error"?runPanel():"")+
+ '<section class="card briefCard"><div class="sectionHead"><h3>'+esc(p.name||"Untitled venture")+'</h3><span class="tag '+(analyzed?"ok":"")+'">'+(analyzed?"Ready":"Draft")+'</span></div><p class="briefGoal">'+esc(p.idea||"아이디어를 입력하세요.")+'</p><div class="briefFields"><div><span>Customer</span><strong>'+esc(p.customer||"—")+'</strong></div><div><span>Problem</span><strong>'+esc(p.problem||"—")+'</strong></div><div><span>Price</span><strong>'+(p.price?money(p.price):"TBD")+'</strong></div></div></section>'+
+ '<section class="card"><div class="sectionHead"><h3>Flow</h3><span class="mutedLine">'+(p.serviceFlow||[]).length+' steps</span></div>'+serviceFlowView(p)+'</section>'+
+ '<section class="card"><div class="sectionHead"><h3>Services / APIs</h3></div>'+techCards(p)+'</section>'+
+ '<section class="card"><div class="sectionHead"><h3>Cost estimate</h3></div><div class="costMini"><div><span>MVP</span><strong>'+money(p.estimatedMvpCost||0)+'</strong></div><div><span>Monthly at 1K MAU</span><strong>'+money(p.estimatedOpsCost||0)+'</strong></div></div><details><summary>Cost breakdown</summary>'+costBreakdownView(p)+'</details></section>'+
+ '<details class="card"><summary>Build plan / Scope</summary>'+buildPlanView(p)+
+ '<h3 class="subHeading">In scope</h3><div class="simpleChecklist">'+(p.mvpFeatures||[]).map(function(x){return '<div>✓ '+esc(x)+'</div>'}).join("")+'</div>'+
+ '<h3 class="subHeading">Risks</h3><div class="simpleChecklist">'+(p.risks||[]).map(function(x){return '<div>• '+esc(x)+'</div>'}).join("")+'</div></details>');
+}
 function builderElapsed(){return state.builderStartedAt?Math.max(0,(Date.now()-state.builderStartedAt)/1000):0}
 function stopBuilderClock(){if(state.builderTimer){clearInterval(state.builderTimer);state.builderTimer=null}}
 function startBuilderClock(){stopBuilderClock();state.builderTimer=setInterval(function(){var el=document.getElementById("builderElapsed");if(el)el.textContent=builderElapsed().toFixed(1)+"s"},100)}
@@ -455,23 +539,59 @@ function buildDiagnostics(){return '<section class="section card"><div class="he
 function buildView(){var p=state.p,proto=p.prototype;return shell('<div class="stageHero"><div class="eyebrow">SESSION '+shortSessionId(p)+' · BUILD</div><h2>Blueprint를 실제 동작하는 MVP로 바꿉니다.</h2><p>현재 세션의 문제·사용자 흐름·MVP 범위만 사용해 설치 가능한 모바일 웹앱 프로토타입을 생성합니다. 외부 API가 아직 연결되지 않은 기능은 성공한 척하지 않고 명확한 integration boundary로 남깁니다.</p><div class="row" style="margin-top:14px"><button class="btn primary" id="generateMvp">'+(state.builderRunning?"Building…":proto?"Rebuild MVP":"Generate working MVP")+'</button>'+(proto?'<button class="btn" id="openPrototype">Open full preview</button><button class="btn" data-view="deploy">Continue to Deploy →</button>':'')+'</div></div>'+lifecycleStepper(p)+builderStatus()+(proto?'<section class="section grid g2"><div class="card"><div class="head"><h2>Build artifact</h2><span class="tag ok">READY</span></div><div class="list">'+item("App",proto.app_name)+item("Build summary",proto.build_summary)+item("Model",proto._model||"-")+item("Generated",proto._builtAt?new Date(proto._builtAt).toLocaleString():"-")+item("Smoke tests",(proto.smoke_tests||[]).join(" · "))+'</div></div><div class="card"><h2>Session continuity</h2><div class="callout">이 Build artifact는 Session '+shortSessionId(p)+'에 귀속됩니다. 다른 New Venture 세션과 섞이지 않습니다.</div></div></section><section class="section card"><div class="head"><div><h2>Live preview</h2><div class="small">생성된 실제 HTML을 sandbox iframe에서 실행</div></div></div><iframe class="prototypeFrame" sandbox="allow-scripts allow-forms allow-modals" srcdoc="'+esc(proto.index_html)+'"></iframe></section>':'<section class="section card"><div class="loadingPanel"><b>아직 Build artifact가 없습니다.</b>Blueprint 검토 후 Generate working MVP를 실행하세요.</div></section>')+buildDiagnostics())}
 function deployView(){var p=state.p,proto=p.prototype,d=p.deployment;return shell('<div class="stageHero"><div class="eyebrow">SESSION '+shortSessionId(p)+' · DEPLOY</div><h2>세션의 Build artifact를 실제 웹 주소로 배포합니다.</h2><p>StartupOS의 기존 Vercel 프로젝트에 이 Venture Session 전용 Preview Deployment를 만듭니다. Production 서비스에는 영향을 주지 않으며 발급된 URL을 휴대폰에서 바로 열 수 있습니다.</p><div class="row" style="margin-top:14px">'+(proto?'<button class="btn primary" id="publishMvp">'+(state.publishRunning?"Publishing…":d?"Republish current build":"Publish to Vercel")+'</button><button class="btn" id="testPublishAuth">Test publish access</button>':'<button class="btn" data-view="build">Build MVP first</button>')+'</div></div>'+lifecycleStepper(p)+(state.publishAuth?'<section class="section card"><div class="head"><h2>Publish Access</h2><span class="tag '+(state.publishAuth.ok?"ok":"")+'">'+(state.publishAuth.ok?"AUTHORIZED":"CHECK REQUIRED")+'</span></div><div class="list">'+item("Token auth",state.publishAuth.token_auth_ok?"OK":"Failed")+item("Target team access",state.publishAuth.target_team_access?"OK":"Missing")+item("Diagnosis",state.publishAuth.diagnosis||state.publishAuth.error||"-")+'</div></section>':'')+(state.publishRunning||state.publishError?'<section class="runPanel '+(state.publishError?"runError":"")+'"><div class="runTop"><h3>'+(state.publishError?"Publish 오류":"Vercel 배포 중")+'</h3><span class="tag">'+(state.publishError?"ERROR":"DEPLOY")+'</span></div>'+(!state.publishError?'<div class="runBar"><i></i></div>':'')+'<div class="runDetail"><span>'+esc(state.publishError||state.publishMessage)+'</span></div><div class="list" style="margin-top:10px">'+item("HTTP status",state.publishHttpStatus==null?"-":String(state.publishHttpStatus))+item("Stage",state.publishStage||"-")+item("Strategy",state.publishStrategy||"-")+(state.publishHint?item("Hint",state.publishHint):"")+'</div></section>':'')+(d?'<section class="section grid g2"><div class="card"><div class="head"><h2>Deployment</h2><span class="tag ok">'+esc(d.readyState||"CREATED")+'</span></div><div class="list">'+item("Project",d.projectName||"-")+item("Deployment ID",d.id||"-")+'</div><a class="deployUrl" href="'+esc(d.url)+'" target="_blank" rel="noopener">'+esc(d.url)+' ↗</a><div class="row" style="margin-top:14px"><button class="btn primary" data-view="phone">Continue to Phone Test →</button></div></div><div class="card"><h2>What is deployed</h2><div class="list">'+item("index.html","Generated working MVP")+item("manifest.webmanifest","Standalone PWA metadata")+item("sw.js","Offline shell cache")+item("icon.svg","Generated install icon")+'</div></div></section>':'<section class="section card"><div class="loadingPanel"><b>아직 배포된 앱이 없습니다.</b>Build artifact를 만든 후 Publish to Vercel을 실행하세요.</div></section>'))}
 function phoneView(){var p=state.p,d=p.deployment,t=p.phoneTest||{};return shell('<div class="stageHero"><div class="eyebrow">SESSION '+shortSessionId(p)+' · PHONE TEST</div><h2>내 폰에 넣어 실제 생활에서 써봅니다.</h2><p>배포 URL을 휴대폰에서 열고 홈 화면에 추가한 뒤 실제 사용 중 발견한 문제를 같은 Venture Session에 기록합니다.</p></div>'+lifecycleStepper(p)+(d?'<section class="section grid g2"><div class="card"><h2>1. 휴대폰에서 열기</h2><a class="deployUrl" href="'+esc(d.url)+'" target="_blank" rel="noopener">'+esc(d.url)+' ↗</a><div class="row" style="margin-top:14px"><button class="btn" id="copyDeployUrl">Copy URL</button><button class="btn '+(t.opened?"primary":"")+'" id="markOpened">'+(t.opened?"✓ Opened on phone":"Mark opened on phone")+'</button></div><div class="callout" style="margin-top:14px"><b>iPhone</b>: Safari → 공유 → 홈 화면에 추가<br><b>Android</b>: Chrome → 메뉴 → 앱 설치 / 홈 화면에 추가</div></div><div class="card"><h2>2. Web App 설치 확인</h2><div class="phoneMock"><div class="phoneScreen"><div class="eyebrow">PHONE TEST</div><h2>'+esc(p.name)+'</h2><p class="small">실제 배포 앱을 홈 화면에서 standalone으로 실행해보세요.</p><div style="margin-top:30px" class="tag '+(t.installed?"ok":"")+'">'+(t.installed?"Installed ✓":"Not confirmed")+'</div></div></div><div class="row" style="margin-top:14px;justify-content:center"><button class="btn primary" id="markInstalled">'+(t.installed?"✓ Installed":"Mark installed as web app")+'</button></div></div></section><section class="section card"><h2>3. 실제 사용 피드백</h2><div class="field"><label>써보면서 불편했던 점 / 다음에 고칠 것</label><textarea id="phoneNotes" placeholder="예: 첫 화면에서 영수증 촬영 버튼이 더 커야 함">'+esc(t.notes||"")+'</textarea></div><div class="row" style="margin-top:12px"><button class="btn" id="savePhoneNotes">Save feedback</button><button class="btn primary" id="startIteration">Start next iteration →</button></div></section>':'<section class="section card"><div class="loadingPanel"><b>Phone Test 전에 배포가 필요합니다.</b>Deploy 단계에서 실제 URL을 만든 뒤 진행하세요.</div></section>'))}
-function agentView(){return shell('<div class="head"><div><h2 style="font-size:27px">Agent Control Room</h2><div class="small">Evidence → Decision → Action · OpenAI structured runtime</div></div><button class="btn primary" id="runCycle">Run next cycle</button></div>'+agents()+'<section class="section grid g2"><div class="card"><h2>Scheduler policy</h2><div class="list">'+item("Goal","유료 사용 의향을 확인하고 최소비용 MVP 출시")+item("Current bottleneck",state.p.nextExperiment||"첫 GPT 분석 필요")+item("Budget cap",money(state.p.budget)+" MVP total")+item("Approval","배포·결제·광고비는 Human approval")+'</div></div><div class="card"><h2>Runtime</h2><div class="list">'+item("Provider","OpenAI Responses API")+item("Last model",(state.p.runtimeLast&&state.p.runtimeLast.model)||"not called")+item("Last tokens",(state.p.runtimeLast&&state.p.runtimeLast.tokens)||"0")+item("Last latency",(state.p.runtimeLast&&state.p.runtimeLast.latency)||"-")+'</div></div></section>')}
-
-function costView(){var s=spend(),f=fee();return shell('<div class="head"><div><h2 style="font-size:27px">Cost Ledger</h2><div class="small">모든 외부 비용과 수수료를 투명하게 추적</div></div><button class="btn" id="addCost">+ Add test cost</button></div><div class="grid g4">'+metric("External spend",money(s),"3rd party cost")+metric("Platform fee",money(f),"5% pilot fee")+metric("Customer bill",money(s+f),"실비 + Startup OS")+metric("Budget left",money(Math.max(0,state.p.budget-s-f)),"MVP budget")+'</div><section class="section card"><table class="table"><tr><th>Agent</th><th>Provider</th><th>Type</th><th class="right">External cost</th></tr>'+state.p.costs.map(function(x){return '<tr><td>'+x[0]+'</td><td>'+x[1]+'</td><td>'+x[2]+'</td><td class="right">'+money(x[3])+'</td></tr>'}).join("")+'</table></section><section class="section grid g2"><div class="card"><h2>Billing formula</h2><div class="callout"><b>Customer bill = External cost + Startup OS fee</b><br><br>Pilot fee: 5%. 실제 상품화 시 최소 수수료 또는 월 기본료 추가 가능.</div></div><div class="card"><h2>Cost guardrails</h2><div class="list">'+item("Agent cycle","$10 hard cap")+item("AI feature","Gross margin 70%+")+item("MVP build",money(state.p.budget)+" max")+item("Unexpected spike","Pause & approval")+'</div></div></section>')}
-function launch(){return shell('<div class="head"><div><h2 style="font-size:27px">Launch Center</h2><div class="small">사업·기술·법률·계측 조건 확인</div></div><button class="btn primary" data-toast="Launch checklist prepared">Prepare launch</button></div><div class="card">'+gates()+'</div><section class="section grid g2"><div class="card"><h2>Checklist</h2><div class="list">'+item("Product","핵심 happy path 완료")+item("Analytics","activation / paid event 정의")+item("Payments","Stripe sandbox 검증 필요")+item("Legal","Privacy / Terms 검토 필요")+item("Ops","오류/비용 alert 준비")+'</div></div><div class="card"><h2>Human approval</h2><div class="callout">Production 배포, 실제 결제 활성화, 광고비 집행, 법률 정책 변경은 자동 실행하지 않고 승인 요청을 생성합니다.</div></div></section>')}
-function growth(){var m=state.p.metrics;return shell('<div class="head"><div><h2 style="font-size:27px">Growth Loop</h2><div class="small">출시 후 숫자로 다음 실험을 결정</div></div><button class="btn primary" id="simulate">Simulate +200 sessions</button></div><div class="kpis">'+[["Visitors",m.visitors],["Activation",m.activation+"%"],["Trial intent",m.trial+"%"],["Paid",m.paid+"%"],["MRR",money(m.mrr)]].map(function(x){return '<div class="kpi"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>'}).join("")+'</div><section class="section grid g2"><div class="card"><h2>Current bottleneck</h2><div style="font-size:28px;font-weight:900;color:var(--amber);margin:15px 0">Activation → Paid</div><p class="small" style="line-height:1.7">광고 확장보다 사용자가 첫 가치를 경험하고 결제로 이동하는 구간을 먼저 고칩니다.</p></div><div class="card"><h2>Next experiment</h2><div class="list">'+item("Hypothesis","결제 전 미리보기 → paid intent 상승")+item("Variant B","30초 미리보기 + 즉시 가격")+item("Sample","200 qualified sessions")+item("Success gate","Paid intent ≥ 5%")+'</div></div></section>')}
-function settings(){var ru=runtimeUrl();return shell('<div class="grid g2"><div class="card"><div class="head"><h2>AI runtime</h2><span class="tag '+(state.runtimeStatus==="live"?"ok":"")+'">'+(state.runtimeStatus==="live"?"LIVE":"not verified")+'</span></div><div class="field"><label>Runtime endpoint</label><input id="runtimeEndpoint" placeholder="https://your-project.vercel.app/api/runtime" value="'+esc(ru)+'"></div><div class="row" style="margin-top:10px"><button class="btn primary" id="saveRuntime">Save endpoint</button><button class="btn" id="testRuntime">Test runtime</button></div><div class="callout" style="margin-top:12px">StartupOS는 Vercel 하나에서 UI와 Serverless Runtime을 함께 제공합니다. OpenAI secret은 Vercel Environment Variables에만 보관하고 브라우저에는 노출하지 않습니다.</div></div><div class="card"><h2>Local data</h2><p class="small">Venture State와 runtime endpoint는 현재 브라우저 localStorage에 저장됩니다. OpenAI API key는 브라우저에 저장하지 않습니다.</p><button class="btn" id="reset">Reset pilot data</button></div></div>')}
-
-function modal(){
-var edit=state.modalMode==="edit",p=edit?state.p:{},model=p.model||"";
-function opt(v,label){return '<option value="'+esc(v)+'" '+(model===v?"selected":"")+'>'+esc(label||v)+'</option>'}
-return '<div class="modalWrap"><div class="modal wide"><div class="head"><div><div class="eyebrow">'+(edit?"Edit founder brief":"New venture · Step 1")+'</div><h2>'+(edit?"사업 입력값을 수정하세요":"새 사업을 있는 그대로 입력하세요")+'</h2><div class="small">기술이나 수익모델을 몰라도 됩니다. 모르는 항목은 AI가 제안합니다.</div></div><button class="btn" id="closeModal">×</button></div><div class="wizardSteps"><div class="wizardStep active"><b>1 · 입력</b>문제·고객·원하는 결과</div><div class="wizardStep"><b>2 · AI 설계</b>서비스 흐름·기술·비용</div><div class="wizardStep"><b>3 · Build plan</b>MVP 구현 순서</div></div><div class="form"><div class="field"><label>서비스 이름</label><input id="newName" placeholder="예: 영수증 가계부" value="'+esc(p.name||"")+'"></div><div class="field"><label>최대 MVP 예산 (USD)</label><input id="newBudget" type="number" value="'+Number(p.budget||100)+'"><div class="helper">외부 API·클라우드·결제 등 현금 지출 한도</div></div><div class="field full"><label>무엇을 만들고 싶나요? *</label><textarea id="newIdea" placeholder="예: 영수증을 사진으로 찍으면 가격과 품목을 OCR로 읽어 자동으로 가계부를 써주는 서비스">'+esc(p.idea||"")+'</textarea></div><div class="field"><label>누가 쓰나요? *</label><input id="newCustomer" placeholder="예: 나와 가족들" value="'+esc(p.customer||"")+'"></div><div class="field"><label>사용자가 얻어야 하는 결과</label><input id="newOutcome" placeholder="예: 영수증 촬영만으로 지출이 품목별 자동 정리" value="'+esc(p.desiredOutcome||"")+'"></div><div class="field full"><label>지금 겪는 문제 *</label><textarea id="newProblem" placeholder="예: 카드 내역만으로는 무엇을 샀는지 몰라 실제 소비 품목을 관리하기 어렵다">'+esc(p.problem||"")+'</textarea></div><div class="field"><label>생각 중인 수익모델</label><select id="newModel">'+opt("","AI가 추천")+opt("무료 + 유료 기능")+opt("월 구독")+opt("건당 결제")+opt("광고")+opt("아직 모름")+'</select></div><div class="field"><label>예상 판매가격 (USD)</label><input id="newPrice" type="number" step=".01" placeholder="모르면 비워두기" value="'+(p.price||"")+'"></div><div class="field full"><label>반드시 포함하거나 피해야 할 조건</label><textarea id="newConstraints" placeholder="예: 모바일 웹만, 카메라 사용, 월 운영비 최소화, 별도 HW 없음">'+esc(p.constraints||"")+'</textarea></div></div><div class="callout" style="margin-top:14px"><b>다음 단계에서 자동 설계</b><br>사용자 흐름 → MVP 기능 → OCR/AI/DB/결제 등 필요한 기술 → 구체 SaaS/API → 초기비/월비용 → 구현 Phase → 첫 시장검증까지 생성합니다.</div><div class="row" style="justify-content:space-between;margin-top:16px"><div class="row"><button class="btn" id="loadTravel">예시 · 여행 ToDo</button><button class="btn" id="loadOcr">예시 · OCR 가계부</button></div><button class="btn primary" id="createVenture">'+(edit?"Save & re-design with GPT →":"Create & design with GPT →")+'</button></div></div></div>'
+function agentView(){
+ var p=state.p,notes=p.agentNotes||{},hasRun=!!p.runtimeLast;
+ var labels=[["ceo","CEO"],["market","Market"],["product","Product"],["finance","Finance"],["tech","Tech"],["legal","Legal"],["growth","Growth"]];
+ var present=labels.filter(function(x){return !!notes[x[0]]});
+ return shell('<div class="pageHead"><h2>Agents</h2>'+runtimeButton("runCycle","Run cycle","cycle",true)+'</div>'+
+ (state.running||state.runStage==="error"?runPanel():"")+
+ '<section class="card"><div class="sectionHead"><h3>Latest decision</h3><span class="tag">'+(hasRun?"AI result":"Template")+'</span></div>'+
+ '<p class="briefGoal">'+esc((p.decisions||[])[0]||"아직 실행된 의사결정이 없습니다.")+'</p>'+
+ (hasRun?'<div class="mutedLine">'+esc(p.runtimeLast.model)+' · '+esc(p.runtimeLast.latency)+'</div>':'')+'</section>'+
+ (present.length?'<section class="card"><h3>Agent notes</h3><div class="noteList">'+present.map(function(x){return '<div><strong>'+x[1]+'</strong><p>'+esc(notes[x[0]])+'</p></div>'}).join("")+'</div></section>':''));
 }
-
+function costView(){
+ var rows=(state.p.costs||[]).filter(function(x){return x[0]!=="Manual test"}),total=rows.reduce(function(s,x){return s+Number(x[3]||0)},0),feeTotal=total*.05,budget=Number(state.p.budget||0);
+ return shell('<div class="pageHead"><h2>Cost Ledger</h2><span class="pageCount">'+rows.length+' entries</span></div>'+
+ '<div class="costTotals"><div class="card"><span>External</span><strong>'+money(total)+'</strong></div><div class="card"><span>Fee · 5%</span><strong>'+money(feeTotal)+'</strong></div><div class="card"><span>Budget left</span><strong>'+money(Math.max(0,budget-total-feeTotal))+'</strong></div></div>'+
+ '<section class="card"><h3>Transactions</h3>'+(rows.length?'<div class="tableWrap"><table class="table"><thead><tr><th>Action</th><th>Provider</th><th>Type</th><th class="right">Cost</th></tr></thead><tbody>'+rows.map(function(x){return '<tr><td>'+esc(x[0])+'</td><td>'+esc(x[1])+'</td><td>'+esc(x[2])+'</td><td class="right">'+money(Number(x[3]||0))+'</td></tr>'}).join("")+'</tbody></table></div>':'<div class="emptyState">기록된 실제 API 비용이 없습니다.</div>')+'</section>');
+}
+function launch(){return shell('<div class="head"><div><h2 style="font-size:27px">Launch Center</h2><div class="small">사업·기술·법률·계측 조건 확인</div></div><button class="btn primary" data-toast="Launch checklist prepared">Prepare launch</button></div><div class="card">'+gates()+'</div><section class="section grid g2"><div class="card"><h2>Checklist</h2><div class="list">'+item("Product","핵심 happy path 완료")+item("Analytics","activation / paid event 정의")+item("Payments","Stripe sandbox 검증 필요")+item("Legal","Privacy / Terms 검토 필요")+item("Ops","오류/비용 alert 준비")+'</div></div><div class="card"><h2>Human approval</h2><div class="callout">Production 배포, 실제 결제 활성화, 광고비 집행, 법률 정책 변경은 자동 실행하지 않고 승인 요청을 생성합니다.</div></div></section>')}
+function growth(){
+ var p=state.p,m=p.metrics||{},hasAnalytics=p.metricsSource==="connected";
+ return shell('<div class="pageHead"><h2>Growth</h2><span class="tag '+(hasAnalytics?"ok":"")+'">'+(hasAnalytics?"Connected":"Not connected")+'</span></div>'+
+ (hasAnalytics?'<div class="kpis">'+[["Visitors",m.visitors],["Activation",(m.activation||0)+"%"],["Paid",(m.paid||0)+"%"],["MRR",money(m.mrr||0)]].map(function(x){return '<div class="kpi"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>'}).join("")+'</div>':
+ '<section class="card emptyState">분석 데이터가 연결되지 않았습니다. 방문자·결제 수치를 임의로 생성하지 않습니다.</section>')+
+ (p.nextExperiment?'<section class="card"><h3>Next experiment</h3><p class="briefGoal">'+esc(p.nextExperiment)+'</p></section>':''));
+}
+function settings(){
+ var ru=runtimeUrl(),count=sessionPack.sessions.length;
+ return shell('<div class="pageHead"><h2>Settings</h2></div>'+
+ '<section class="card"><div class="sectionHead"><h3>Runtime</h3><span class="tag '+(state.runtimeStatus==="live"?"ok":"")+'">'+(state.runtimeStatus==="live"?"Connected":"Not checked")+'</span></div><div class="settingRow"><span>Endpoint</span><code>'+esc(ru)+'</code></div><button class="btn" id="testRuntime">Test connection</button>'+
+ '<details><summary>Advanced: change endpoint</summary><div class="field"><label>Runtime URL</label><input id="runtimeEndpoint" value="'+esc(ru)+'"></div><button class="btn" id="saveRuntime">Save endpoint</button></details></section>'+
+ '<section class="card"><h3>Local sessions</h3><p class="mutedLine">'+count+' sessions · stored in this browser</p><details><summary>Clear local data</summary><p class="mutedLine">이 브라우저에 저장된 Venture 세션 데이터가 삭제됩니다.</p><button class="btn danger" id="reset">Delete local sessions</button></details></section>');
+}
+function modal(){
+ var edit=state.modalMode==="edit",p=edit?state.p:{};
+ function val(x){return esc(x==null?"":x)}
+ function opt(v,label){return '<option value="'+val(v)+'" '+((p.model||"")===v?"selected":"")+'>'+val(label||v)+'</option>'}
+ return '<div class="modalWrap"><div class="modal wide"><div class="head"><h2>'+(edit?"Edit brief":"New Venture")+'</h2><button class="btn" id="closeModal" aria-label="닫기">×</button></div>'+
+ '<div class="form"><div class="field"><label>Project name</label><input id="newName" value="'+val(p.name)+'" placeholder="서비스 이름"></div>'+
+ '<div class="field"><label>MVP budget (USD)</label><input id="newBudget" type="number" min="0" value="'+Number(p.budget===undefined?100:p.budget)+'"></div>'+
+ '<div class="field full"><label>Idea *</label><textarea id="newIdea" placeholder="무슨 앱을 만들고 싶은가요?">'+val(p.idea)+'</textarea></div>'+
+ '<div class="field"><label>Target customer *</label><input id="newCustomer" value="'+val(p.customer)+'" placeholder="누가 사용하나요?"></div>'+
+ '<div class="field"><label>Expected outcome</label><input id="newOutcome" value="'+val(p.desiredOutcome)+'" placeholder="무엇이 자동화되거나 개선되나요?"></div>'+
+ '<div class="field full"><label>Problem *</label><textarea id="newProblem" placeholder="현재 사용자가 겪는 문제">'+val(p.problem)+'</textarea></div>'+
+ '<div class="field"><label>Revenue model</label><select id="newModel">'+opt("","AI 추천")+opt("무료 + 유료 기능")+opt("월 구독")+opt("건당 결제")+opt("광고")+opt("아직 모름")+'</select></div>'+
+ '<div class="field"><label>Selling price (USD)</label><input id="newPrice" type="number" min="0" step="0.01" value="'+(p.price||"")+'"></div>'+
+ '<div class="field full"><label>Constraints</label><textarea id="newConstraints" placeholder="예: 모바일 PWA, 카메라, 최저 운영비">'+val(p.constraints)+'</textarea></div></div>'+
+ '<div class="modalActions">'+(edit?"":'<div class="presetRow"><button class="btn" id="loadTravel">여행 ToDo 예시</button><button class="btn" id="loadOcr">OCR 가계부 예시</button></div>')+
+ '<button class="btn primary" id="createVenture">'+(edit?"Save changes":"Create & analyze")+'</button></div></div></div>';
+}
 function render(){var map={sessions:sessionsView,overview:overview,venture:venture,build:buildView,deploy:deployView,phone:phoneView,agents:agentView,cost:costView,growth:growth,settings:settings};document.getElementById("app").innerHTML=(map[state.view]||overview)()+(state.modal?modal():"");bind()}
 function toast(msg){var d=document.createElement("div");d.className="toast";d.textContent=msg;document.body.appendChild(d);setTimeout(function(){d.remove()},1600)}
 async function callRuntime(mode){var url=runtimeUrl();if(!url)throw new Error("Runtime endpoint가 없습니다. Settings에서 Vercel runtime URL을 연결하세요.");setRunStage("request","Vercel /api/runtime으로 Venture State를 전송했습니다.");var respPromise=fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:mode,project:state.p})});setRunStage("waiting","OpenAI가 서비스 흐름·기술·비용·구현 계획을 구조화된 JSON으로 생성 중입니다.");var resp=await respPromise;setRunStage("apply","응답을 수신했습니다. JSON Schema와 비용 정보를 검증하고 화면에 반영합니다.");var data=await resp.json().catch(function(){return {error:"Invalid runtime response"}});if(!resp.ok||!data.ok)throw new Error(data.error||("Runtime HTTP "+resp.status));return data}
-function applyAnalysis(data){var a=data.analysis||{};if(a.venture_name)state.p.name=a.venture_name;if(a.target_customer)state.p.customer=a.target_customer;if(a.problem)state.p.problem=a.problem;if(a.monetization)state.p.model=a.monetization;if(Number.isFinite(a.recommended_price_usd))state.p.price=a.recommended_price_usd;if(Number.isFinite(a.venture_score))state.p.score=a.venture_score;state.p.summary=a.executive_summary||state.p.summary;state.p.mvpFeatures=a.mvp_features||state.p.mvpFeatures;state.p.techStack=a.tech_stack||state.p.techStack;state.p.serviceFlow=a.service_flow||state.p.serviceFlow;state.p.buildPlan=a.build_plan||state.p.buildPlan;state.p.costBreakdown=a.cost_breakdown||state.p.costBreakdown;state.p.risks=a.risks||state.p.risks;state.p.launchGates=a.launch_gates||state.p.launchGates;state.p.nextExperiment=a.next_experiment||state.p.nextExperiment;state.p.agentNotes=a.agent_notes||state.p.agentNotes;state.p.estimatedMvpCost=a.estimated_mvp_external_cost_usd;state.p.estimatedOpsCost=a.estimated_monthly_ops_usd_at_1000_mau;if(a.next_action)state.p.decisions.unshift(a.next_action);if(a.next_experiment)state.p.decisions.unshift("실험: "+a.next_experiment);var provider=Number(data.cost&&data.cost.provider_usd||0);state.p.costs.unshift(["Startup OS Runtime","OpenAI / "+(data.model||"GPT"),data.mode||"analyze",provider]);state.p.runtimeLast={model:data.model||"GPT",tokens:String((data.usage&&data.usage.input_tokens||0)+(data.usage&&data.usage.output_tokens||0)),latency:String(data.latency_ms||0)+" ms",responseId:data.response_id||""};state.p._phase="blueprint";addSessionEvent("blueprint_completed","AI Venture Blueprint completed",{model:data.model,cost:data.cost&&data.cost.provider_usd});state.runtimeStatus="live";save()}
+function applyAnalysis(data){var a=data.analysis||{};if(a.venture_name)state.p.name=a.venture_name;if(a.target_customer)state.p.customer=a.target_customer;if(a.problem)state.p.problem=a.problem;if(a.monetization)state.p.model=a.monetization;if(Number.isFinite(a.recommended_price_usd))state.p.price=a.recommended_price_usd;if(Number.isFinite(a.venture_score))state.p.score=a.venture_score;state.p.summary=a.executive_summary||state.p.summary;state.p.mvpFeatures=a.mvp_features||state.p.mvpFeatures;state.p.techStack=a.tech_stack||state.p.techStack;state.p.serviceFlow=a.service_flow||state.p.serviceFlow;state.p.buildPlan=a.build_plan||state.p.buildPlan;state.p.costBreakdown=a.cost_breakdown||state.p.costBreakdown;state.p.risks=a.risks||state.p.risks;state.p.launchGates=a.launch_gates||state.p.launchGates;state.p.nextExperiment=a.next_experiment||state.p.nextExperiment;state.p.agentNotes=a.agent_notes||state.p.agentNotes;state.p.estimatedMvpCost=a.estimated_mvp_external_cost_usd;state.p.estimatedOpsCost=a.estimated_monthly_ops_usd_at_1000_mau;if(a.next_action)state.p.decisions.unshift(a.next_action);if(a.next_experiment)state.p.decisions.unshift("실험: "+a.next_experiment);var provider=Number(data.cost&&data.cost.provider_usd||0);state.p.costs.unshift(["Startup OS Runtime","OpenAI / "+(data.model||"GPT"),data.mode||"analyze",provider]);state.p.runtimeLast={model:data.model||"GPT",tokens:String((data.usage&&data.usage.input_tokens||0)+(data.usage&&data.usage.output_tokens||0)),latency:String(data.latency_ms||0)+" ms",responseId:data.response_id||""};state.p._phase="blueprint";state.p._briefStale=false;addSessionEvent("blueprint_completed","AI Venture Blueprint completed",{model:data.model,cost:data.cost&&data.cost.provider_usd});state.runtimeStatus="live";save()}
 async function run(mode){if(state.running)return;state.running=true;state.runMode=mode||"cycle";state.runStage="prepare";state.runStartedAt=Date.now();state.runMessage="Founder brief를 정리하고 실제 Runtime 요청을 준비합니다.";state.runError="";render();startRunClock();try{var data=await callRuntime(mode||"cycle");applyAnalysis(data);state.runStage="done";state.runMessage="실제 OpenAI 응답을 Venture State에 반영했습니다. Cost Ledger도 업데이트되었습니다.";state.runtimeStatus="live";toast("GPT venture decision complete · "+money(data.cost.provider_usd)+" API cost")}catch(e){state.runtimeStatus="error";state.runStage="error";state.runError=e.message;state.runMessage=e.message;toast(e.message)}finally{state.running=false;state.runMode="";stopRunClock();render()}}
 async function generateMvp(){
   if(state.builderRunning)return;
@@ -544,9 +664,7 @@ document.querySelectorAll("#analyzeNow").forEach(function(r){r.onclick=function(
 document.querySelectorAll("#loadTravel").forEach(function(r){r.onclick=loadTravelTemplate});document.querySelectorAll("#loadOcr").forEach(function(r){r.onclick=loadOcrTemplate});
 document.querySelectorAll("[data-toast]").forEach(function(b){b.onclick=function(){toast(b.dataset.toast)}});
 var s=document.getElementById("saveThesis");if(s)s.onclick=function(){captureThesis();toast("Venture thesis saved")};
-var a=document.getElementById("addCost");if(a)a.onclick=function(){state.p.costs.unshift(["Manual test","External API","Test",1.25]);save();render()};
-var sim=document.getElementById("simulate");if(sim)sim.onclick=function(){var m=state.p.metrics;m.visitors+=200;m.activation=+(m.activation+1.7).toFixed(1);m.trial=+(m.trial+.9).toFixed(1);m.paid=+(m.paid+.4).toFixed(1);m.mrr=+(m.mrr+state.p.price*8).toFixed(2);save();render();toast("200 sessions simulated")};
-var reset=document.getElementById("reset");if(reset)reset.onclick=function(){localStorage.removeItem(SESSION_KEY);localStorage.removeItem("startupOS.project");sessionPack=loadSessionPack();state.p=activeSession();render();toast("All local sessions reset")};
+var reset=document.getElementById("reset");if(reset)reset.onclick=function(){if(!confirm("이 브라우저의 모든 Venture 세션 데이터를 삭제할까요?"))return;localStorage.removeItem(SESSION_KEY);localStorage.removeItem("startupOS.project");sessionPack=loadSessionPack();state.p=activeSession();render();toast("Local sessions cleared")};
 var saveRt=document.getElementById("saveRuntime");if(saveRt)saveRt.onclick=function(){var v=document.getElementById("runtimeEndpoint").value.trim();if(v&&v.endsWith("/"))v=v.slice(0,-1);localStorage.setItem("startupOS.runtimeUrl",v);state.runtimeStatus="unknown";render();toast("Runtime endpoint saved")};
 var testRt=document.getElementById("testRuntime");if(testRt)testRt.onclick=testRuntime;
 var create=document.getElementById("createVenture");if(create)create.onclick=function(){
@@ -567,6 +685,12 @@ var create=document.getElementById("createVenture");if(create)create.onclick=fun
     mvpFeatures:[],techStack:[],serviceFlow:[],buildPlan:[],costBreakdown:[],risks:[],launchGates:[],
     nextExperiment:"",summary:"AI가 서비스 구조를 설계 중입니다.",estimatedMvpCost:0,estimatedOpsCost:0,agentNotes:{}
   };
+  if(state.modalMode==="edit"){
+    var current=state.p,old=[current.idea,current.problem,current.customer,current.desiredOutcome,current.constraints].join("|");
+    Object.assign(current,{name:project.name,idea:project.idea,customer:project.customer,problem:project.problem,desiredOutcome:project.desiredOutcome,model:project.model,price:project.price,budget:project.budget,constraints:project.constraints});
+    if(old!==[current.idea,current.problem,current.customer,current.desiredOutcome,current.constraints].join("|")){current._briefStale=true;current._phase="brief";}
+    addSessionEvent("brief_updated","Founder brief updated");save();state.modal=false;state.view="venture";render();toast("Brief saved");return;
+  }
   createSession(project,"manual");state.modal=false;state.view="venture";render();run("analyze");
 };
 }
