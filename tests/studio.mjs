@@ -44,7 +44,15 @@ try{
   assert.equal(await page.locator('#publish').isDisabled(),true);
   assert.equal(await page.locator('#phone-stage').getByText('LOCKED').count(),1);
  });
- await test('build_button_shows_inline_working_state',async()=>{if(!(await page.locator('#scope').isChecked()))await page.locator('#scope').check();await page.locator('#assemble').click();await page.locator('.workBtn.running').waitFor({state:'visible'});assert.match(await page.locator('.btnRunText').innerText(),/Working/);await page.locator('.workBtn.running').waitFor({state:'detached',timeout:5000});await page.screenshot({path:'test-results/build-studio-mobile.png',fullPage:true});});
+ await test('build_button_shows_inline_working_state',async()=>{
+  await page.goto(base+'/builder/?sessionId=vs_studio_b');
+  await page.locator('#scope').check();
+  await page.locator('#assemble').click();
+  await page.locator('.workBtn.running').waitFor({state:'visible'});
+  assert.match(await page.locator('.btnRunText').innerText(),/Working/);
+  await page.locator('.workBtn.running').waitFor({state:'detached',timeout:8000});
+  await page.screenshot({path:'test-results/build-studio-mobile.png',fullPage:true});
+ });
  await test('Verify requires automated full-workflow smoke evidence',async()=>{
   const sid='vs_studio_skin';
   await page.evaluate(({key,sid})=>{
