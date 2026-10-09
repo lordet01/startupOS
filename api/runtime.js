@@ -108,7 +108,7 @@ module.exports=async function handler(req,res){
    attempted=attempt;
    const maxOutput=attempt===1?limit:Math.min(9000,Math.round(limit*1.5));
    const request={model,input,store:false,max_output_tokens:maxOutput,
-     text:{format:{type:'json_schema',name:mode==='cycle'?'startup_os_cycle':'startup_os_compact_blueprint',strict:true,schema:schemaValue}}};
+     text:{format:{type:'json_schema',name:mode==='cycle'?'startup_os_cycle_decision':'startup_os_compact_blueprint',strict:true,schema:schemaValue}}};
    const upstream=await fetch('https://api.openai.com/v1/responses',{
       method:'POST',headers:{Authorization:'Bearer '+process.env.OPENAI_API_KEY,'Content-Type':'application/json'},
       signal:controller.signal,body:JSON.stringify(request)
