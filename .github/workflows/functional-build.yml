@@ -30,6 +30,8 @@ jobs:
         run: node -e "const assert=require('node:assert/strict');const B=require('./lib/build-contract');const r=require('./test-results/browser-report.json');assert.equal(r.sourceHash,B.sourceHash());assert.ok(r.checks.length>=18 && r.checks.every(x=>x.status==='passed'));"
       - name: Session continuity and keyless operator setup
         run: node tests/studio.mjs && node tests/setup.mjs
+      - name: All-page UI and responsive action audit
+        run: node tests/ui-audit.mjs
       - name: Committed evidence check on main
         if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
         run: node -e "const assert=require('node:assert/strict');const B=require('./lib/build-contract');const r=require('./lib/browser-evidence.json');assert.equal(r.sourceHash,B.sourceHash());assert.ok(r.checks.length>=18 && r.checks.every(x=>x.status==='passed'));"
