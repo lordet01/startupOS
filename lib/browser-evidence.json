@@ -1,14 +1,14 @@
 {
   "suite": "functional-build-browser-v3",
-  "sourceHash": "1ef4f0e30910afe5ca4c93cbfd9cb07d3bc118d26b1a062e14f9599a92747d1a",
-  "checkedAt": "2026-10-09T12:45:00Z",
+  "sourceHash": "15641e816845346ee8636f8ac5e7ac60fa29765979f035aab7c50c5dee47cc56",
+  "checkedAt": "2026-10-09T13:12:00Z",
   "browser": "153.0.8010.12",
   "viewport": {
     "width": 390,
     "height": 844
   },
-  "ocrTransport": "Browser tests mock OCR and skin provider responses; integration Verify performs real provider fixture request.",
-  "camera": "CI verified Chrome simulated camera and mocked server responses; physical phone validation is separate and requires a user-confirmed test in Build Studio.",
+  "ocrTransport": "Chromium exercised complete file/consent/response/save workflows with mocked HTTP provider responses. Live Vision/OCR image fixture provider calls are executed separately at Verify time.",
+  "camera": "Browser CI uses simulated camera. A cached CC0 Wikimedia face photo is uploaded through the browser file chooser and compared with a provider mock. Real phone hardware is NOT verified.",
   "physicalPhone": false,
   "checks": [
     {
@@ -109,6 +109,18 @@
     },
     {
       "id": "skin_failure_exposes_verify_report_action",
+      "status": "passed"
+    },
+    {
+      "id": "skin_web_face_fixture_full_journey",
+      "status": "passed"
+    },
+    {
+      "id": "skin_repair_next_step_visible",
+      "status": "passed"
+    },
+    {
+      "id": "skin_repair_consent_to_analysis",
       "status": "passed"
     }
   ]
