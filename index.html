@@ -217,6 +217,18 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{ou
  .runPanel{margin:10px 0}.card{border-radius:14px}
 }
 
+
+.agentDecision .agentMeta{display:flex;flex-wrap:wrap;gap:7px 14px;font-size:11px;color:#879ebd;margin:10px 0 16px}
+.agentSection{padding:12px 0;border-top:1px solid #203755}
+.agentSection>span{display:block;font-size:10px;font-weight:800;text-transform:uppercase;color:#8ca8d7;margin-bottom:7px;letter-spacing:.035em}
+.agentSection>strong{font-size:15px;line-height:1.5;display:block;color:#eff5ff}
+.agentSection>p{font-size:12px;line-height:1.6;color:#afc0d7;margin:4px 0}
+.agentActionForm{margin-top:12px;border-top:1px solid #203755;padding-top:14px}
+.agentActionForm textarea{min-height:80px}
+.agentReviewGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.agentReview{background:#0b192b;border:1px solid #243b56;border-radius:12px;padding:11px}
+.agentReview b{font-size:12px;color:#bcd0fc}.agentReview p{color:#b0c0d3;font-size:11px;line-height:1.6;margin:7px 0 0}
+@media(max-width:720px){.agentReviewGrid{grid-template-columns:1fr}.agentSection>strong{font-size:14px}.agentMeta{font-size:10px}}
 </style>
 </head>
 <body>
@@ -552,16 +564,27 @@ function buildView(){var p=state.p,proto=p.prototype;return shell('<div class="s
 function deployView(){var p=state.p,proto=p.prototype,d=p.deployment;return shell('<div class="stageHero"><div class="eyebrow">SESSION '+shortSessionId(p)+' · DEPLOY</div><h2>세션의 Build artifact를 실제 웹 주소로 배포합니다.</h2><p>StartupOS의 기존 Vercel 프로젝트에 이 Venture Session 전용 Preview Deployment를 만듭니다. Production 서비스에는 영향을 주지 않으며 발급된 URL을 휴대폰에서 바로 열 수 있습니다.</p><div class="row" style="margin-top:14px">'+(proto?'<button class="btn primary" id="publishMvp">'+(state.publishRunning?"Publishing…":d?"Republish current build":"Publish to Vercel")+'</button><button class="btn" id="testPublishAuth">Test publish access</button>':'<button class="btn" data-view="build">Build MVP first</button>')+'</div></div>'+lifecycleStepper(p)+(state.publishAuth?'<section class="section card"><div class="head"><h2>Publish Access</h2><span class="tag '+(state.publishAuth.ok?"ok":"")+'">'+(state.publishAuth.ok?"AUTHORIZED":"CHECK REQUIRED")+'</span></div><div class="list">'+item("Token auth",state.publishAuth.token_auth_ok?"OK":"Failed")+item("Target team access",state.publishAuth.target_team_access?"OK":"Missing")+item("Diagnosis",state.publishAuth.diagnosis||state.publishAuth.error||"-")+'</div></section>':'')+(state.publishRunning||state.publishError?'<section class="runPanel '+(state.publishError?"runError":"")+'"><div class="runTop"><h3>'+(state.publishError?"Publish 오류":"Vercel 배포 중")+'</h3><span class="tag">'+(state.publishError?"ERROR":"DEPLOY")+'</span></div>'+(!state.publishError?'<div class="runBar"><i></i></div>':'')+'<div class="runDetail"><span>'+esc(state.publishError||state.publishMessage)+'</span></div><div class="list" style="margin-top:10px">'+item("HTTP status",state.publishHttpStatus==null?"-":String(state.publishHttpStatus))+item("Stage",state.publishStage||"-")+item("Strategy",state.publishStrategy||"-")+(state.publishHint?item("Hint",state.publishHint):"")+'</div></section>':'')+(d?'<section class="section grid g2"><div class="card"><div class="head"><h2>Deployment</h2><span class="tag ok">'+esc(d.readyState||"CREATED")+'</span></div><div class="list">'+item("Project",d.projectName||"-")+item("Deployment ID",d.id||"-")+'</div><a class="deployUrl" href="'+esc(d.url)+'" target="_blank" rel="noopener">'+esc(d.url)+' ↗</a><div class="row" style="margin-top:14px"><button class="btn primary" data-view="phone">Continue to Phone Test →</button></div></div><div class="card"><h2>What is deployed</h2><div class="list">'+item("index.html","Generated working MVP")+item("manifest.webmanifest","Standalone PWA metadata")+item("sw.js","Offline shell cache")+item("icon.svg","Generated install icon")+'</div></div></section>':'<section class="section card"><div class="loadingPanel"><b>아직 배포된 앱이 없습니다.</b>Build artifact를 만든 후 Publish to Vercel을 실행하세요.</div></section>'))}
 function phoneView(){var p=state.p,d=p.deployment,t=p.phoneTest||{};return shell('<div class="stageHero"><div class="eyebrow">SESSION '+shortSessionId(p)+' · PHONE TEST</div><h2>내 폰에 넣어 실제 생활에서 써봅니다.</h2><p>배포 URL을 휴대폰에서 열고 홈 화면에 추가한 뒤 실제 사용 중 발견한 문제를 같은 Venture Session에 기록합니다.</p></div>'+lifecycleStepper(p)+(d?'<section class="section grid g2"><div class="card"><h2>1. 휴대폰에서 열기</h2><a class="deployUrl" href="'+esc(d.url)+'" target="_blank" rel="noopener">'+esc(d.url)+' ↗</a><div class="row" style="margin-top:14px"><button class="btn" id="copyDeployUrl">Copy URL</button><button class="btn '+(t.opened?"primary":"")+'" id="markOpened">'+(t.opened?"✓ Opened on phone":"Mark opened on phone")+'</button></div><div class="callout" style="margin-top:14px"><b>iPhone</b>: Safari → 공유 → 홈 화면에 추가<br><b>Android</b>: Chrome → 메뉴 → 앱 설치 / 홈 화면에 추가</div></div><div class="card"><h2>2. Web App 설치 확인</h2><div class="phoneMock"><div class="phoneScreen"><div class="eyebrow">PHONE TEST</div><h2>'+esc(p.name)+'</h2><p class="small">실제 배포 앱을 홈 화면에서 standalone으로 실행해보세요.</p><div style="margin-top:30px" class="tag '+(t.installed?"ok":"")+'">'+(t.installed?"Installed ✓":"Not confirmed")+'</div></div></div><div class="row" style="margin-top:14px;justify-content:center"><button class="btn primary" id="markInstalled">'+(t.installed?"✓ Installed":"Mark installed as web app")+'</button></div></div></section><section class="section card"><h2>3. 실제 사용 피드백</h2><div class="field"><label>써보면서 불편했던 점 / 다음에 고칠 것</label><textarea id="phoneNotes" placeholder="예: 첫 화면에서 영수증 촬영 버튼이 더 커야 함">'+esc(t.notes||"")+'</textarea></div><div class="row" style="margin-top:12px"><button class="btn" id="savePhoneNotes">Save feedback</button><button class="btn primary" id="startIteration">Start next iteration →</button></div></section>':'<section class="section card"><div class="loadingPanel"><b>Phone Test 전에 배포가 필요합니다.</b>Deploy 단계에서 실제 URL을 만든 뒤 진행하세요.</div></section>'))}
 function agentView(){
- var p=state.p,notes=p.agentNotes||{},hasRun=!!p.runtimeLast;
- var labels=[["ceo","CEO"],["market","Market"],["product","Product"],["finance","Finance"],["tech","Tech"],["legal","Legal"],["growth","Growth"]];
- var present=labels.filter(function(x){return !!notes[x[0]]});
- return shell('<div class="pageHead"><h2>Agents</h2>'+runtimeButton("runCycle","Run cycle","cycle",true)+'</div>'+
+ var p=state.p,a=p.agentCycle,history=p.agentCycleHistory||[];
+ var labels=[["ceo","CEO"],["market","Market"],["product","Product"],["tech","Tech"],["finance","Finance"],["legal","Legal"],["growth","Growth"]];
+ var decision={continue:"Continue",refine:"Refine",pivot:"Pivot",pause:"Pause"};
+ var level={observed:"Observed",hypothesis:"Hypothesis",missing:"Evidence missing"};
+ return shell('<div class="pageHead"><div><h2>Agents</h2><span class="pageCount">GPT committee · 현재 세션 검토</span></div>'+runtimeButton("runCycle",a?"Run next cycle":"Run cycle","cycle",true)+'</div>'+
  (state.running||state.runStage==="error"?runPanel():"")+
- '<section class="card"><div class="sectionHead"><h3>Latest decision</h3><span class="tag">'+(hasRun?"AI result":"Template")+'</span></div>'+
- '<p class="briefGoal">'+esc((p.decisions||[])[0]||"아직 실행된 의사결정이 없습니다.")+'</p>'+
- (hasRun?'<div class="mutedLine">'+esc(p.runtimeLast.model)+' · '+esc(p.runtimeLast.latency)+'</div>':'')+'</section>'+
- (present.length?'<section class="card"><h3>Agent notes</h3><div class="noteList">'+present.map(function(x){return '<div><strong>'+x[1]+'</strong><p>'+esc(notes[x[0]])+'</p></div>'}).join("")+'</div></section>':''));
+ (!a?'<section class="card emptyState"><h3>아직 실행된 Agent cycle이 없습니다.</h3><p>현재 세션의 병목과 다음 실험을 GPT로 검토합니다. 분석만 수행하며 코드를 수정하거나 비용을 집행하지 않습니다.</p></section>':
+ '<section class="card agentDecision"><div class="sectionHead"><h3>Latest decision</h3><span class="tag '+(a.action_status==="completed"?"ok":"")+'">'+(a.action_status==="completed"?"Recorded":"Action pending")+'</span></div>'+
+ '<div class="agentMeta"><span>'+esc(new Date(a.at).toLocaleString())+'</span><span>'+esc(decision[a.decision]||a.decision)+'</span><span>'+esc(a.model||"GPT")+'</span><span>API '+money(a.actual_api_cost_usd||0)+'</span></div>'+
+ '<div class="agentSection"><span>Bottleneck</span><strong>'+esc(a.bottleneck)+'</strong></div>'+
+ '<div class="agentSection"><span>Evidence · '+esc(level[a.evidence_level]||a.evidence_level)+'</span><p>'+esc(a.evidence)+'</p></div>'+
+ '<div class="agentSection"><span>Next action</span><strong>'+esc(a.next_action)+'</strong><p>'+esc(a.rationale||"")+'</p></div>'+
+ '<div class="agentSection"><span>Experiment / Success</span><p>'+esc(a.experiment)+'</p><div class="agentMeta"><span>'+esc(a.success_metric||"")+'</span><span>'+esc(a.success_threshold||"")+'</span><span>Estimated external cost '+money(a.estimated_external_cost_usd||0)+'</span></div></div>'+
+ (a.human_approval_required?'<div class="notice warn">Human approval required before execution.</div>':'')+
+ (a.action_status!=="completed"?'<div class="agentActionForm"><label class="field"><span>실제 실행한 결과 / 증거</span><textarea id="agentActionEvidence" placeholder="수행한 작업과 확인 가능한 결과를 입력하세요. 비워두면 완료할 수 없습니다."></textarea></label><button class="btn" id="completeAgentAction">완료 기록</button></div>':
+ '<div class="notice">완료 기록: '+esc(a.completion_note||"")+'</div>')+'</section>'+
+ '<section class="card"><div class="sectionHead"><h3>Role review</h3><span class="mutedLine">한 번의 GPT 호출 · 7개 관점</span></div><div class="agentReviewGrid">'+labels.map(function(x){return '<div class="agentReview"><b>'+x[1]+'</b><p>'+esc(a.role_notes&&a.role_notes[x[0]]||"근거 없음")+'</p></div>'}).join("")+'</div></section>'+
+ ((a.missing_evidence||[]).length?'<details class="card"><summary>Missing evidence ('+a.missing_evidence.length+')</summary><div class="simpleChecklist">'+a.missing_evidence.map(function(x){return '<div>• '+esc(x)+'</div>'}).join("")+'</div></details>':'')+
+ (history.length>1?'<details class="card"><summary>Past cycles ('+(history.length-1)+')</summary><div class="noteList">'+history.slice(1).map(function(x){return '<div><strong>'+esc(new Date(x.at).toLocaleString())+'</strong><p>'+esc(x.bottleneck)+' → '+esc(x.next_action)+'</p></div>'}).join("")+'</div></details>':'')));
 }
+
 function costView(){
  var rows=(state.p.costs||[]).filter(function(x){return x[0]!=="Manual test"}),total=rows.reduce(function(s,x){return s+Number(x[3]||0)},0),feeTotal=total*.05,budget=Number(state.p.budget||0);
  return shell('<div class="pageHead"><h2>Cost Ledger</h2><span class="pageCount">'+rows.length+' entries</span></div>'+
@@ -771,7 +794,15 @@ function bind(){
 document.querySelectorAll("[data-view]").forEach(function(b){b.onclick=function(){state.view=b.dataset.view;render()}});var mm=document.getElementById("moreMobile"),ms=document.getElementById("moreSheet");if(mm&&ms)mm.onclick=function(){ms.classList.add("open")};if(ms){ms.onclick=function(e){if(e.target===ms)ms.classList.remove("open")};ms.querySelectorAll("[data-more-view]").forEach(function(b){b.onclick=function(){state.view=b.dataset.moreView;render()}})};var ss=document.getElementById("sessionSelect");if(ss)ss.onchange=function(){switchSession(ss.value)};document.querySelectorAll(".openSession").forEach(function(b){b.onclick=function(){switchSession(b.dataset.session)}});
 var n=document.getElementById("newVenture");if(n)n.onclick=function(){state.modalMode="new";state.modal=true;render()};var eb=document.getElementById("editBrief");if(eb)eb.onclick=function(){state.modalMode="edit";state.modal=true;render()};
 var cbtn=document.getElementById("closeModal");if(cbtn)cbtn.onclick=function(){state.modal=false;render()};var gm=document.getElementById("generateMvp");if(gm)gm.onclick=generateMvp;var op=document.getElementById("openPrototype");if(op)op.onclick=openPrototype;var pm=document.getElementById("publishMvp");if(pm)pm.onclick=publishMvp;var tpa=document.getElementById("testPublishAuth");if(tpa)tpa.onclick=testPublishAuth;var cu=document.getElementById("copyDeployUrl");if(cu)cu.onclick=function(){if(state.p.deployment&&navigator.clipboard){navigator.clipboard.writeText(state.p.deployment.url);toast("URL copied")}};var mo=document.getElementById("markOpened");if(mo)mo.onclick=function(){updatePhoneTest({opened:true})};var mi=document.getElementById("markInstalled");if(mi)mi.onclick=function(){updatePhoneTest({installed:true})};var sn=document.getElementById("savePhoneNotes");if(sn)sn.onclick=function(){updatePhoneTest({notes:document.getElementById("phoneNotes").value});toast("Phone feedback saved")};var si=document.getElementById("startIteration");if(si)si.onclick=function(){var notes=document.getElementById("phoneNotes")?document.getElementById("phoneNotes").value:"";state.p.phoneTest=Object.assign({},state.p.phoneTest||{},{notes:notes,updatedAt:new Date().toISOString()});state.p._phase="iterate";addSessionEvent("iteration_started","Founder started next iteration",{notes:notes});save();state.view="growth";render()};
-document.querySelectorAll("#runCycle").forEach(function(r){r.onclick=function(){run("cycle")}});
+document.querySelectorAll("#runCycle").forEach(function(r){r.onclick=function(){run("cycle")}});var doneAgent=document.getElementById("completeAgentAction");if(doneAgent)doneAgent.onclick=function(){
+ var note=document.getElementById("agentActionEvidence").value.trim();
+ if(note.length<8){toast("실제 수행 내용과 결과를 8자 이상 기록하세요");return}
+ var current=state.p.agentCycle;
+ if(!current||current.action_status!=="pending")return;
+ current.action_status="completed";current.completion_note=note.slice(0,1200);current.completed_at=new Date().toISOString();
+ addSessionEvent("agent_action_recorded","Founder recorded completed action",{response_id:current.response_id});
+ save();render();
+};
 document.querySelectorAll("#analyzeNow").forEach(function(r){r.onclick=function(){captureThesis();run("analyze")}});
 document.querySelectorAll("#loadTravel").forEach(function(r){r.onclick=loadTravelTemplate});document.querySelectorAll("#loadOcr").forEach(function(r){r.onclick=loadOcrTemplate});
 document.querySelectorAll("[data-toast]").forEach(function(b){b.onclick=function(){toast(b.dataset.toast)}});
