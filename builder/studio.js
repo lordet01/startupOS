@@ -5,6 +5,27 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 let pack,active='',info=null,globalError='',pending=new Map(),polls=new Map();
 try{pack=JSON.parse(localStorage.getItem(KEY)||'null');if(!pack||!Array.isArray(pack.sessions))throw new Error('저장된 Venture Session이 없습니다.');active=new URLSearchParams(location.search).get('sessionId')||pack.activeId;if(!pack.sessions.some(x=>x._sessionId===active))active=pack.sessions[0]&&pack.sessions[0]._sessionId||'';}catch(e){globalError=e.message;pack={sessions:[]};}
 const session=()=>pack.sessions.find(x=>x._sessionId===active),job=sid=>pending.get(sid);
+function ingestVerifyIssue(){
+ const params=new URLSearchParams(location.search),raw=params.get('verifyIssue');
+ if(!raw)return;
+ params.delete('verifyIssue');
+ history.replaceState(null,'',location.pathname+'?'+params.toString()+'#verify-stage');
+ try{
+  if(raw.length>1800)throw new Error('Report too large');
+  const issue=JSON.parse(raw),p=session();
+  if(!p||issue.source!=='user_report'||issue.sessionId!==p._sessionId||!p.functionalBuild||issue.buildId!==p.functionalBuild.bid)throw new Error('Session/Build mismatch');
+  const allowed=['skin','receipt','travel'];
+  if(!allowed.includes(issue.kind))throw new Error('Unsupported capability');
+  patch(p._sessionId,x=>{
+   const now=new Date().toISOString();
+   x.functionalRepair={status:'REPAIR_REQUIRED',source:'user_report',buildId:issue.buildId,kind:issue.kind,sourceHash:String(issue.sourceHash||'').slice(0,80),stage:String(issue.stage||'unknown').slice(0,70),code:String(issue.code||'USER_REPORT').slice(0,70),message:String(issue.message||'사용자 기능 오류 보고').slice(0,360),reportedAt:now};
+   x.functionalRepairHistory=[x.functionalRepair,...(x.functionalRepairHistory||[])].slice(0,25);
+   x.functionalDiagnostics={stage:'repair_required',label:'실사용 오류 접수',error:x.functionalRepair.message,code:x.functionalRepair.code,reportedAt:now};
+  });
+ }catch(e){globalError='Verify 오류 보고를 저장할 수 없습니다: '+e.message;}
+}
+function repairFor(p){return p.functionalRepair&&p.functionalBuild&&p.functionalRepair.buildId===p.functionalBuild.bid&&p.functionalRepair.status==='REPAIR_REQUIRED'?p.functionalRepair:null}
+
 function patch(sid,fn){const current=JSON.parse(localStorage.getItem(KEY)||'null');if(!current||!Array.isArray(current.sessions))throw new Error('세션 저장소가 사라졌습니다.');const p=current.sessions.find(x=>x._sessionId===sid);if(!p)throw new Error('원래 세션이 없습니다.');fn(p);p._updatedAt=new Date().toISOString();localStorage.setItem(KEY,JSON.stringify(current));pack=current;return p;}
 function log(sid,event,detail){patch(sid,p=>{p._events=[{at:new Date().toISOString(),type:event,message:detail},...(p._events||[])].slice(0,100);});}
 function selectKind(p){
@@ -28,7 +49,7 @@ function trace(p){const d=p.functionalDiagnostics;if(!d)return '<div class="hint
 function render(){
  const p=session();
  if(!p){root.innerHTML='<div class="pageTitle"><div><h1>Build</h1><div class="muted">Session not found</div></div></div><div class="errorbox">'+esc(globalError||'세션이 없습니다.')+'</div><a class="btn" href="/">← StartupOS</a>';return;}
- const f=p.functionalBuild,kind=selectKind(p),contract=info&&info.contracts[kind],busy=!!job(active),verified=!!(f&&f.verification&&f.verification.status==='INTEGRATION_VERIFIED'),deployment=f&&f.deployment,ready=!!(deployment&&deployment.readyState==='READY');
+ const f=p.functionalBuild,kind=selectKind(p),contract=info&&info.contracts[kind],busy=!!job(active),repair=repairFor(p),verified=!!(f&&f.verification&&f.verification.status==='INTEGRATION_VERIFIED'&&!repair),deployment=f&&f.deployment,ready=!!(verified&&deployment&&deployment.readyState==='READY');
  const stageData=[['🧩','Contract',!!contract&&p.functionalScopeApproved===kind],['🛠','Build',!!f],['✓','Verify',verified],['🚀','Deploy',ready],['📱','Phone',!!(ready&&p.functionalDeviceEvidence&&p.functionalDeviceEvidence.buildId===f.bid&&p.functionalDeviceEvidence.note)]];
  const inScope=contract?contract.acceptance:[];
  const outScope=contract?contract.exclusions:[];
@@ -38,11 +59,12 @@ function render(){
  '<div class="stages">'+stageData.map(([icon,text,pass],i)=>'<div class="stagebox '+(pass?'pass':'pending')+'"><span class="stageIcon">'+icon+'</span><div><strong>'+String(i+1)+'. '+text+'</strong><span class="stageState">'+(pass?'Done':'Pending')+'</span></div></div>').join('')+'</div>'+
  (busy?'<section class="card"><div class="sectionHead"><h2>'+esc(job(active).label)+'</h2><span id="elapsed" class="tiny"></span></div><div class="busyline"></div><div class="muted">'+esc(job(active).message)+'</div></section>':'')+
  (p.functionalDiagnostics&&p.functionalDiagnostics.error?'<div class="errorbox" role="alert"><strong>'+esc(p.functionalDiagnostics.error)+'</strong><div class="tiny">'+esc(p.functionalDiagnostics.code||'')+' · HTTP '+esc(p.functionalDiagnostics.httpStatus||'-')+'</div></div>':'')+
+ (repair?'<section class="card" id="repair-stage" style="border-color:#9c4b59!important"><div class="sectionHead"><h2>Verify failed → Repair needed</h2><span class="badge">REPAIR REQUIRED</span></div><div class="notice error"><strong>'+esc(repair.stage)+'</strong> · '+esc(repair.code)+'<p>'+esc(repair.message)+'</p></div><p class="hint">실제 사용 중 보고된 실패입니다. 코드 수정/실행 테스트 전까지 Verified/Deploy로 간주하지 않습니다. 동일 소스 재빌드는 오류를 고치지 않습니다.</p><button class="btn primary" id="backToBuild">← Build 수정 단계로</button></section>':'')+
  '<section class="card" id="scope-stage"><div class="sectionHead"><h2>Build scope</h2>'+(contract?'<span class="badge">'+esc(contract.title||kind)+'</span>':'')+'</div>'+
  (contract?'<div class="metaRow" style="margin-bottom:12px"><span class="metaChip">Session blueprint → '+esc(contract.title||kind)+'</span><span class="metaChip">Blueprint matched</span></div><div class="two"><div><h3>In scope</h3><div class="scopeList">'+inScope.map(x=>'<div class="scopeItem">✓ '+esc(x)+'</div>').join('')+'</div><div><h3>Out scope</h3><div class="scopeList">'+outScope.map(x=>'<div class="scopeItem">— '+esc(x)+'</div>').join('')+'</div></div><label class="check"><input id="scope" type="checkbox" '+(p.functionalScopeApproved===kind?'checked':'')+' '+(busy?'disabled':'')+'>이 범위로 Build</label>'+workButton('assemble',f?'New Build':'Build','build',busy||p.functionalScopeApproved!==kind)+'':'<div class="notice warn"><strong>구현 가능한 모듈이 아직 없습니다.</strong><div class="hint">Blueprint는 준비됐지만 서버에 검증 가능한 실행 모듈이 없습니다. 실행할 수 없는 앱을 자동으로 생성했다고 표시하지 않습니다.</div><button class="btn" id="requestCapability">구현 필요 상태 저장</button></div>')+
  '</section>'+
  (f?'<section class="card"><div class="sectionHead"><h2>Build artifact</h2><span class="badge">IMPLEMENTED</span></div><div class="metaRow"><span class="metaChip">'+esc(f.bid)+'</span><span class="metaChip">'+esc(f.kind)+'</span><span class="metaChip">'+esc(f.createdAt)+'</span></div><div class="toolbar" style="margin-top:12px"><a class="btn primary" href="'+esc(f.previewUrl)+'" target="_blank" rel="noopener">Open app ↗</a><button class="btn" id="preview-toggle">Preview</button></div><div id="preview-area"></div><details><summary>Artifact checks</summary>'+checks(f.checks)+'</details></section>'+
- '<section class="card"><div class="sectionHead"><h2>Verify</h2><span class="badge">'+(verified?'VERIFIED':'PENDING')+'</span></div>'+workButton('verify',verified?'Run again':'Run verification','verify',busy)+''+(f.verification?'<details '+(verified?'':'open')+'><summary>Verification evidence</summary>'+checks(f.verification.checks)+'</details>':'')+'</section>'+
+ '<section class="card" id="verify-stage"><div class="sectionHead"><h2>Verify</h2><span class="badge">'+(verified?'VERIFIED':'PENDING')+'</span></div>'+workButton('verify',verified?'Run again':'Run verification','verify',busy)+''+(f.verification?'<details '+(verified?'':'open')+'><summary>Verification evidence</summary>'+checks(f.verification.checks)+'</details>':'')+(f.verification&&f.verification.status==='FAILED'?'<div class="notice error">테스트 실패: 검증 전 Build로 돌아가 수정해야 합니다. <button class="btn" id="retryBuild">← Build 단계</button></div>':'')+'</section>'+
  '<section class="card" id="deploy-stage"><div class="sectionHead"><h2>Deploy</h2><span class="badge">'+(ready?'LIVE':deployment?esc(deployment.readyState||'DEPLOYING'):'PENDING')+'</span></div><div class="toolbar">'+workButton('publish','Deploy verified build','publish',!verified||busy)+''+(deployment?'<button class="btn" id="refresh-deploy">Refresh</button>':'')+(ready?'<a class="btn" target="_blank" rel="noopener" href="'+esc(deployment.url)+'">Open app ↗</a>':'')+'</div>'+(deployment&&deployment.url?'<div class="tiny" style="margin-top:10px">'+esc(deployment.url)+'</div>':'')+'</section>':'')+
  (ready?'<section class="card" id="phone-stage"><div class="sectionHead"><h2>Phone Test</h2><span class="badge">'+(p.functionalDeviceEvidence&&p.functionalDeviceEvidence.buildId===f.bid&&p.functionalDeviceEvidence.note?'RECORDED':'PENDING')+'</span></div><label class="field"><span>Device / result / issue</span><textarea id="device-note" placeholder="Galaxy S23 / Chrome · camera, analyze, save OK">'+esc(p.functionalDeviceNote||'')+'</textarea></label><button class="btn" id="save-device">Save</button></section>':'<section class="card" id="phone-stage"><div class="sectionHead"><h2>Phone Test</h2><span class="badge">LOCKED</span></div><div class="hint">Vercel Deployment가 READY가 된 후 실제 휴대폰에서 확인할 수 있습니다.</div></section>')+
  '<details class="card"><summary>Diagnostics</summary>'+trace(p)+'<div class="tiny">'+esc((p.functionalBuildHistory||[]).length)+' previous builds · last cost '+money(p.functionalLastCost&&p.functionalLastCost.provider_usd)+'</div></details>';
@@ -54,6 +76,7 @@ async function perform(sid,label,message,fn){if(pending.has(sid))return;const ru
 function charge(p,cost,label,id){p.functionalLastCost=cost;if(cost&&cost.provider_usd!=null){p.costs||=[];if(!p.costs.some(row=>row[4]===id))p.costs.push([label,'OpenAI / live verification','Verification',cost.provider_usd,id]);}}
 function bind(){document.getElementById('session').onchange=ev=>{active=ev.target.value;const url=new URL(location.href);url.searchParams.set('sessionId',active);history.replaceState(null,'',url);render();};const p=session(),sid=active;
  const scope=document.getElementById('scope');if(scope)scope.onchange=()=>{patch(sid,x=>{x.functionalScopeApproved=scope.checked?selectKind(x):null;});render();};
+ for(const button of ['backToBuild','retryBuild']){const el=document.getElementById(button);if(el)el.onclick=()=>document.getElementById('scope-stage')?.scrollIntoView({behavior:'smooth',block:'start'});}
  const unsupported=document.getElementById('requestCapability');
  if(unsupported)unsupported.onclick=()=>{
   const p=session();
@@ -62,7 +85,11 @@ function bind(){document.getElementById('session').onchange=ev=>{active=ev.targe
   render();
  };
 
- const assemble=document.getElementById('assemble');if(assemble)assemble.onclick=()=>perform(sid,'기능 코드 조립','서버에서 기능 계약과 실행 파일을 검증합니다.',async()=>{const current=pack.sessions.find(x=>x._sessionId===sid),result=await request('/api/build',{action:'assemble',project:{_sessionId:sid,name:current.name},kind:selectKind(current),acceptedScope:current.functionalScopeApproved===selectKind(current)});patch(sid,x=>{if(x.functionalBuild)x.functionalBuildHistory=[x.functionalBuild,...(x.functionalBuildHistory||[])].slice(0,10);x.functionalBuild=result.build;x._phase='blueprint';});log(sid,'functional_implemented','기능 구현 완료. 실제 연동 검증 대기.');});
+ const assemble=document.getElementById('assemble');if(assemble)assemble.onclick=()=>perform(sid,'기능 코드 조립','서버에서 기능 계약과 실행 파일을 검증합니다.',async()=>{const current=pack.sessions.find(x=>x._sessionId===sid);
+ const repair=repairFor(current);
+ if(repair&&repair.sourceHash===current.functionalBuild.sourceHash){const health=await request('/api/build');
+  if(health.sourceHash===repair.sourceHash)throw Object.assign(new Error('현재 서버 소스가 기존 Build와 같습니다. 먼저 기능 코드를 수정·배포한 뒤 재빌드하세요.'),{code:'SAME_SOURCE_UNREPAIRED'});}
+ const result=await request('/api/build',{action:'assemble',project:{_sessionId:sid,name:current.name},kind:selectKind(current),acceptedScope:current.functionalScopeApproved===selectKind(current)});patch(sid,x=>{if(x.functionalBuild)x.functionalBuildHistory=[x.functionalBuild,...(x.functionalBuildHistory||[])].slice(0,10);x.functionalBuild=result.build;if(x.functionalRepair&&x.functionalRepair.status==='REPAIR_REQUIRED')x.functionalRepair={...x.functionalRepair,status:'REBUILD_UNVERIFIED',rebuildId:result.build.bid,rebuildAt:new Date().toISOString()};x._phase='blueprint';});log(sid,'functional_implemented','기능 구현 완료. 실제 연동 검증 대기.');});
  const verify=document.getElementById('verify');if(verify)verify.onclick=()=>{const build=p.functionalBuild;perform(sid,'자동 기능 검증','브라우저 회귀 증거와 실제 API 응답을 확인합니다.',async()=>{const result=await request('/api/build',{action:'verify',descriptor:build.descriptor||build,sessionId:sid,liveConsent:true});patch(sid,x=>{if(x.functionalBuild.bid!==build.bid)throw new Error('새 Build가 생성되어 이전 응답을 적용하지 않았습니다.');x.functionalBuild.verification=result.verification;x._phase=result.verification.status==='INTEGRATION_VERIFIED'?'build':'blueprint';charge(x,result.cost,'Build live verification',build.bid+':'+result.verification.checkedAt);});log(sid,'functional_verified',result.verification.status);});};
  const preview=document.getElementById('preview-toggle');if(preview)preview.onclick=()=>{const area=document.getElementById('preview-area');if(area.firstChild){area.replaceChildren();return;}const frame=document.createElement('iframe');frame.className='preview-frame';frame.allow='camera';frame.title='실제 기능 앱 미리보기';frame.src=p.functionalBuild.previewUrl;area.appendChild(frame);};
  const publish=document.getElementById('publish');if(publish)publish.onclick=()=>{const build=p.functionalBuild;perform(sid,'테스트 배포 요청','서버가 현재 소스로 다시 조립하고 실제 검증을 재실행한 뒤 배포합니다.',async()=>{const result=await request('/api/publish',{sessionId:sid,approved:true,liveConsent:true,descriptor:build.descriptor||build});patch(sid,x=>{if(x.functionalBuild.bid!==build.bid)throw new Error('다른 Build로 전환되었습니다.');x.functionalBuild.verification=result.verification;x.functionalBuild.deployment=result.deployment;charge(x,result.cost,'Publish re-verification',build.bid+':publish:'+new Date().toISOString());});log(sid,'deployment_requested',result.deployment.id);pollDeployment(sid,build.bid);});};
@@ -73,6 +100,7 @@ async function pollDeployment(sid,bid){if(polls.has(sid))return;polls.set(sid,tr
 setInterval(()=>{const j=job(active),seconds=j?Math.floor((Date.now()-j.started)/1000):0;const el=document.getElementById('elapsed');if(el&&j)el.textContent=seconds+'초';document.querySelectorAll('.btnRunText').forEach(x=>{if(j)x.textContent='Working · '+seconds+'s';});},500);
 window.addEventListener('storage',ev=>{if(ev.key===KEY){try{pack=JSON.parse(ev.newValue);if(!pending.size)render();}catch{}}});
 function focusHash(){var target=document.getElementById((location.hash||"#scope-stage").slice(1))||document.getElementById("scope-stage");if(target)target.scrollIntoView({block:"start"});}
+ingestVerifyIssue();
 render();request('/api/build').then(data=>{info=data;render();if(location.hash)setTimeout(focusHash,30);}).catch(e=>{globalError=e.message;render();});
 window.addEventListener("hashchange",focusHash);
 })();
