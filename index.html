@@ -229,6 +229,20 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{ou
 .agentReview{background:#0b192b;border:1px solid #243b56;border-radius:12px;padding:11px}
 .agentReview b{font-size:12px;color:#bcd0fc}.agentReview p{color:#b0c0d3;font-size:11px;line-height:1.6;margin:7px 0 0}
 @media(max-width:720px){.agentReviewGrid{grid-template-columns:1fr}.agentSection>strong{font-size:14px}.agentMeta{font-size:10px}}
+
+/* Idea Note dictation and genuinely multiline founder fields */
+.modal.wide .longField{display:block;width:100%;height:88px;min-height:88px;max-height:300px;overflow-y:auto;resize:vertical;white-space:pre-wrap;line-height:1.55;font-size:13px}
+.noteEntry{margin:0 0 15px;padding:12px;border:1px solid #355d84;background:#0c2038;border-radius:13px}
+.noteEntry>#ideaNoteToggle{width:100%;min-height:44px;text-align:left;background:#173457;border-color:#365a80}
+#ideaNotePanel{padding:12px 0 0}
+#ideaNotePanel[hidden]{display:none!important}
+.ideaTextarea{width:100%;height:165px;min-height:135px;max-height:360px;overflow-y:auto;resize:vertical;line-height:1.65;font-size:13px;padding:12px!important}
+.noteTools{display:flex;gap:8px;flex-wrap:wrap}.noteTools .btn{min-height:43px;flex:1}
+.noteTools .recording{background:#5b2031;border-color:#cc5167;color:white}
+.noteStatus{font-size:11px;color:#a1b7d3;line-height:1.55;padding:10px 2px 0;min-height:28px}
+.noteStatus.error{color:#ff9dad}
+.noteStatus.success{color:#75e1b6}
+@media(max-width:760px){.modal.wide .longField{height:97px;min-height:90px}.ideaTextarea{height:200px!important}.noteEntry{padding:10px}.noteTools{flex-direction:column}.noteTools .btn{width:100%}}
 </style>
 </head>
 <body>
@@ -609,20 +623,23 @@ function settings(){
 function modal(){
  var edit=state.modalMode==="edit",p=edit?state.p:{};
  function val(x){return esc(x==null?"":x)}
- function opt(v,label){return '<option value="'+val(v)+'" '+((p.model||"")===v?"selected":"")+'>'+val(label||v)+'</option>'}
+ function textArea(id,label,placeholder,value,full){return '<div class="field '+(full?'full':'')+'"><label>'+label+'</label><textarea class="longField" rows="3" id="'+id+'" placeholder="'+placeholder+'">'+val(value)+'</textarea></div>'}
+ var note=!edit?'<div class="noteEntry"><button type="button" class="btn" id="ideaNoteToggle">✍ Idea Note · 말하거나 자유롭게 입력</button><div id="ideaNotePanel" hidden><div class="field"><label>아이디어 노트</label><textarea class="ideaTextarea" id="ideaNoteText" rows="7" maxlength="15000" placeholder="서비스 아이디어, 대상 고객, 사용 과정, 필요한 기능, 비용, 제약 사항을 순서 없이 편하게 말하거나 적으세요."></textarea></div><div class="noteTools"><button type="button" class="btn" id="ideaNoteMic">🎙 녹음 시작</button><button type="button" class="btn primary" id="ideaNoteStructure">AI로 항목 채우기</button></div><div id="ideaNoteStatus" class="noteStatus" aria-live="polite">녹음은 이 화면에서만 처리됩니다. 서버 전송 전에 마이크 권한을 요청합니다.</div></div></div>':'';
  return '<div class="modalWrap"><div class="modal wide"><div class="head"><h2>'+(edit?"Edit brief":"New Venture")+'</h2><button class="btn" id="closeModal" aria-label="닫기">×</button></div>'+
+ note+
  '<div class="form"><div class="field"><label>Project name</label><input id="newName" value="'+val(p.name)+'" placeholder="서비스 이름"></div>'+
  '<div class="field"><label>MVP budget (USD)</label><input id="newBudget" type="number" min="0" value="'+Number(p.budget===undefined?100:p.budget)+'"></div>'+
- '<div class="field full"><label>Idea *</label><textarea id="newIdea" placeholder="무슨 앱을 만들고 싶은가요?">'+val(p.idea)+'</textarea></div>'+
- '<div class="field"><label>Target customer *</label><input id="newCustomer" value="'+val(p.customer)+'" placeholder="누가 사용하나요?"></div>'+
- '<div class="field"><label>Expected outcome</label><input id="newOutcome" value="'+val(p.desiredOutcome)+'" placeholder="무엇이 자동화되거나 개선되나요?"></div>'+
- '<div class="field full"><label>Problem *</label><textarea id="newProblem" placeholder="현재 사용자가 겪는 문제">'+val(p.problem)+'</textarea></div>'+
- '<div class="field"><label>Revenue model</label><select id="newModel">'+opt("","AI 추천")+opt("무료 + 유료 기능")+opt("월 구독")+opt("건당 결제")+opt("광고")+opt("아직 모름")+'</select></div>'+
- '<div class="field"><label>Selling price (USD)</label><input id="newPrice" type="number" min="0" step="0.01" value="'+(p.price||"")+'"></div>'+
- '<div class="field full"><label>Constraints</label><textarea id="newConstraints" placeholder="예: 모바일 PWA, 카메라, 최저 운영비">'+val(p.constraints)+'</textarea></div></div>'+
- '<div class="modalActions">'+(edit?"":'<div class="presetRow"><button class="btn" id="loadTravel">여행 ToDo 예시</button><button class="btn" id="loadOcr">OCR 가계부 예시</button></div>')+
+ textArea("newIdea","Idea *","서비스를 어떻게 사용할지 자유롭게 서술",p.idea,true)+
+ textArea("newCustomer","Target customer *","누가 어떤 상황에서 사용하나요?",p.customer,false)+
+ textArea("newOutcome","Expected outcome","어떤 결과를 얻어야 하나요?",p.desiredOutcome,false)+
+ textArea("newProblem","Problem *","현재 사용자가 겪는 불편이나 문제",p.problem,true)+
+ textArea("newModel","Revenue model","수익모델을 자유롭게 설명하거나 AI가 추천하도록 비워 두세요",p.model,false)+
+ '<div class="field"><label>Selling price (USD)</label><input id="newPrice" type="number" min="0" step="0.01" value="'+val(p.price||"")+'"></div>'+
+ textArea("newConstraints","Constraints","필수 기술·외부 API·피해야 할 기능·예산 등을 입력",p.constraints,true)+
+ '</div><div class="modalActions">'+(edit?"":'<div class="presetRow"><button class="btn" id="loadTravel">여행 ToDo 예시</button><button class="btn" id="loadOcr">OCR 가계부 예시</button></div>')+
  '<button class="btn primary" id="createVenture">'+(edit?"Save changes":"Create & analyze")+'</button></div></div></div>';
 }
+
 function render(){var map={sessions:sessionsView,overview:overview,venture:venture,build:buildView,deploy:deployView,phone:phoneView,agents:agentView,cost:costView,growth:growth,settings:settings};document.getElementById("app").innerHTML=(map[state.view]||overview)()+(state.modal?modal():"");bind()}
 function toast(msg){var d=document.createElement("div");d.className="toast";d.textContent=msg;document.body.appendChild(d);setTimeout(function(){d.remove()},1600)}
 function compactRuntimeProject(p){
