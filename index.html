@@ -642,14 +642,15 @@ function modal(){
 
 function render(){var map={sessions:sessionsView,overview:overview,venture:venture,build:buildView,deploy:deployView,phone:phoneView,agents:agentView,cost:costView,growth:growth,settings:settings};document.getElementById("app").innerHTML=(map[state.view]||overview)()+(state.modal?modal():"");bind()}
 function toast(msg){var d=document.createElement("div");d.className="toast";d.textContent=msg;document.body.appendChild(d);setTimeout(function(){d.remove()},1600)}
-function compactRuntimeProject(p){
+function compactRuntimeProject(p,mode){
   return {
-    _sessionId:p._sessionId,name:p.name,idea:String(p.idea||"").slice(0,700),
-    customer:String(p.customer||"").slice(0,400),
-    problem:String(p.problem||"").slice(0,600),
-    desiredOutcome:String(p.desiredOutcome||"").slice(0,400),
-    constraints:String(p.constraints||"").slice(0,450),
+    _sessionId:p._sessionId,name:p.name,idea:String(p.idea||"").slice(0,mode==="cycle"?700:1800),
+    customer:String(p.customer||"").slice(0,mode==="cycle"?400:900),
+    problem:String(p.problem||"").slice(0,mode==="cycle"?600:1600),
+    desiredOutcome:String(p.desiredOutcome||"").slice(0,mode==="cycle"?400:900),
+    constraints:String(p.constraints||"").slice(0,mode==="cycle"?450:1400),
     model:p.model,price:p.price,budget:p.budget,_phase:p._phase,
+    ideaNote:mode==="cycle"?undefined:String(p._ideaNote||"").slice(0,2500),
     mvpFeatures:(p.mvpFeatures||[]).slice(0,7),
     serviceFlow:(p.serviceFlow||[]).slice(0,6).map(function(x){return {title:x.title,user_action:x.user_action,system_action:x.system_action}}),
     techStack:(p.techStack||[]).slice(0,8).map(function(x){return {area:x.area,service:x.service,monthly_cost_usd:x.monthly_cost_usd}}),
@@ -669,7 +670,7 @@ function compactRuntimeProject(p){
 }
 async function callRuntime(mode,p){
   var url=runtimeUrl();if(!url)throw new Error("Runtime endpoint가 없습니다.");
-  var payload=JSON.stringify({mode:mode,project:compactRuntimeProject(p)});
+  var payload=JSON.stringify({mode:mode,project:compactRuntimeProject(p,mode)});
   setRunStage("request","Session context 전송 · "+payload.length+" bytes");
   var responsePromise=fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:payload});
   setRunStage("waiting",mode==="cycle"?"GPT 역할별 검토·병목 판단 대기 중":"GPT Blueprint 생성 대기 중");
