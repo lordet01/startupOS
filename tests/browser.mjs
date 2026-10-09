@@ -99,6 +99,8 @@ try{
   await visible(page.getByText('사진상 표면 광택 및 일부 피부톤 차이가 관찰됩니다.'));
   await page.reload();
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('startup-os:app:v3:vs_browser_skin_a:skin')).length),1);
+  await page.locator('[data-view="history"]').click();
+  await visible(page.locator('[data-delete]'));
   page.once('dialog',d=>d.accept());
   await page.locator('[data-delete]').click();
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('startup-os:app:v3:vs_browser_skin_a:skin')).length),0);
