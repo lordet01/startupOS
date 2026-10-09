@@ -70,6 +70,7 @@ function checks(rows){return (rows||[]).map(x=>'<div class="checkrow"><span>'+(x
 function trace(p){const d=p.functionalDiagnostics;if(!d)return '<div class="hint">실행 이력이 없습니다.</div>';return '<pre class="trace">'+esc(JSON.stringify(d,null,2))+'</pre>';}
 function render(){
  const p=session();
+ if(info&&repairFor(p)&&!planFor(p)&&!repairLoading.has(active)&&!(p.functionalRepairPlan?.status==='PLAN_FAILED'&&p.functionalRepairPlan.currentSourceHash===info.sourceHash))setTimeout(()=>refreshRepairPlan(active),0);
  if(!p){root.innerHTML='<div class="pageTitle"><div><h1>Build</h1><div class="muted">Session not found</div></div></div><div class="errorbox">'+esc(globalError||'세션이 없습니다.')+'</div><a class="btn" href="/">← StartupOS</a>';return;}
  const f=p.functionalBuild,kind=selectKind(p),contract=info&&info.contracts[kind],busy=!!job(active),repair=repairFor(p),plan=planFor(p),autoVerified=!!(f&&f.verification&&f.verification.status==='INTEGRATION_VERIFIED'),smokeVerified=!!(autoVerified&&f.verification.smoke?.status==='PASSED'&&f.verification.artifactHash===f.artifactHash),verified=!!(smokeVerified&&!repair),deployment=f&&f.deployment,ready=!!(verified&&deployment&&deployment.readyState==='READY');
  const stageData=[['🧩','Contract',!!contract&&p.functionalScopeApproved===kind],['🛠','Build',!!f],['✓','Verify',verified],['🚀','Deploy',ready],['📱','Phone',!!(ready&&p.functionalDeviceEvidence&&p.functionalDeviceEvidence.buildId===f.bid&&p.functionalDeviceEvidence.note)]];
@@ -107,7 +108,7 @@ function render(){
 async function request(url,body,timeout=70000){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);try{const r=await fetch(url,{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:undefined,body:body?JSON.stringify(body):undefined,signal:controller.signal});const text=await r.text();let result;try{result=JSON.parse(text);}catch{throw Object.assign(new Error('서버가 JSON이 아닌 응답을 반환했습니다.'),{httpStatus:r.status});}if(!r.ok||!result.ok)throw Object.assign(new Error(result.error||'요청 실패'),{httpStatus:r.status,code:result.code});return result;}catch(e){if(e.name==='AbortError')throw new Error('요청 제한시간을 초과했습니다. 상태를 확인한 뒤 수동으로 재시도하세요.');throw e;}finally{clearTimeout(timer);}}
 async function perform(sid,label,message,fn){if(pending.has(sid))return;const runId=crypto.randomUUID(),started=Date.now();pending.set(sid,{runId,started,label,message});patch(sid,p=>{p.functionalDiagnostics={runId,label,stage:'running',startedAt:new Date().toISOString()};});render();try{await fn(runId);patch(sid,p=>{if(p.functionalDiagnostics.runId===runId)p.functionalDiagnostics={...p.functionalDiagnostics,stage:'finished',elapsedMs:Date.now()-started,httpStatus:200};});}catch(e){patch(sid,p=>{if(p.functionalDiagnostics.runId===runId)p.functionalDiagnostics={...p.functionalDiagnostics,stage:'failed',error:e.message,code:e.code,httpStatus:e.httpStatus||null,elapsedMs:Date.now()-started};});}finally{pending.delete(sid);render();}}
 function charge(p,cost,label,id){p.functionalLastCost=cost;if(cost&&cost.provider_usd!=null){p.costs||=[];if(!p.costs.some(row=>row[4]===id))p.costs.push([label,'OpenAI / live verification','Verification',cost.provider_usd,id]);}}
-function bind(){document.getElementById('session').onchange=ev=>{active=ev.target.value;const url=new URL(location.href);url.searchParams.set('sessionId',active);history.replaceState(null,'',url);render();};const p=session(),sid=active;
+function bind(){document.getElementById('session').onchange=ev=>{active=ev.target.value;const url=new URL(location.href);url.searchParams.set('sessionId',active);history.replaceState(null,'',url);render();if(repairFor(session()))refreshRepairPlan(active);};const p=session(),sid=active;
  const scope=document.getElementById('scope');if(scope)scope.onchange=()=>{patch(sid,x=>{x.functionalScopeApproved=scope.checked?selectKind(x):null;});render();};
  for(const button of ['backToBuild','retryBuild']){const el=document.getElementById(button);if(el)el.onclick=()=>document.getElementById('scope-stage')?.scrollIntoView({behavior:'smooth',block:'start'});}
  const unsupported=document.getElementById('requestCapability');
@@ -118,11 +119,69 @@ function bind(){document.getElementById('session').onchange=ev=>{active=ev.targe
   render();
  };
 
- const assemble=document.getElementById('assemble');if(assemble)assemble.onclick=()=>perform(sid,'기능 코드 조립','서버에서 기능 계약과 실행 파일을 검증합니다.',async()=>{const current=pack.sessions.find(x=>x._sessionId===sid);
- const repair=repairFor(current);
- if(repair){const health=await request('/api/build');
-  if(health.sourceHash===repair.sourceHash)throw Object.assign(new Error('현재 서버 소스가 기존 Build와 같습니다. 먼저 기능 코드를 수정·배포한 뒤 재빌드하세요. 외부 API만 일시적으로 실패했다면 Verify를 재시도하세요.'),{code:'SAME_SOURCE_UNREPAIRED'});}
- const result=await request('/api/build',{action:'assemble',project:{_sessionId:sid,name:current.name},kind:selectKind(current),acceptedScope:current.functionalScopeApproved===selectKind(current)});patch(sid,x=>{if(x.functionalBuild)x.functionalBuildHistory=[x.functionalBuild,...(x.functionalBuildHistory||[])].slice(0,10);x.functionalBuild=result.build;if(x.functionalRepair&&x.functionalRepair.status==='REPAIR_REQUIRED')x.functionalRepair={...x.functionalRepair,status:'REBUILD_UNVERIFIED',rebuildId:result.build.bid,rebuildAt:new Date().toISOString()};x._phase='blueprint';});log(sid,'functional_implemented','기능 구현 완료. 실제 연동 검증 대기.');});
+ async function applyVerification(sid,build){
+  setRepairProgress(sid,'smoke_verify','검증 시작: 웹 테스트 이미지, 실제 API와 앱 흐름 테스트');
+  const result=await request('/api/build',{action:'verify',descriptor:build.descriptor||build,sessionId:sid,liveConsent:true},110000);
+  const checks=result.verification?.checks||[],failed=checks.filter(x=>x.status!=='passed');
+  patch(sid,x=>{
+   if(x.functionalBuild?.bid!==build.bid)throw Error('다른 Build 결과입니다. 검증 응답을 버렸습니다.');
+   x.functionalBuild.verification=result.verification;
+   x.functionalRepairTrace=(x.functionalRepairTrace||[]).concat([
+    {step:'smoke_verify',status:failed.length?'failed':'passed',detail:checks.length+' checks · '+failed.length+' failures'},
+    {step:'live_api',status:failed.length?'failed':'passed',detail:checks.filter(z=>z.id.startsWith('live_')).map(z=>z.id+':'+z.status).join(', ')}
+   ]);
+   if(failed.length){
+    const issue={status:'REPAIR_REQUIRED',source:'automated_verification',buildId:build.bid,kind:build.kind,sourceHash:build.sourceHash,stage:'verify',code:failed[0].id,message:failed.map(z=>z.id+': '+(z.message||z.reason||z.evidence||'failed')).join('; ').slice(0,480),reportedAt:new Date().toISOString()};
+    x.functionalRepair=issue;x.functionalRepairPlan=null;
+    x.functionalRepairHistory=[issue,...(x.functionalRepairHistory||[])].slice(0,25);x._phase='blueprint';
+   }else{
+    if(x.functionalRepair)x.functionalRepair={...x.functionalRepair,status:'VERIFIED_AFTER_PATCH',resolvedAt:new Date().toISOString()};
+    x._phase='build';
+   }
+   charge(x,result.cost,'Build automatic smoke',build.bid+':'+result.verification.checkedAt);
+  });
+  log(sid,'automatic_smoke_completed',failed.length?'FAILED '+failed.map(x=>x.id).join(', '):'PASSED');
+  if(failed.length)throw Object.assign(Error('자동 스모크 테스트 실패: '+failed.map(x=>x.id).join(', ')),{code:'SMOKE_FAILED'});
+ }
+ const assemble=document.getElementById('assemble');
+ if(assemble)assemble.onclick=()=>perform(sid,'기능 코드 조립','새 기능 산출물을 생성하고 자동 검증합니다.',async()=>{
+  const current=pack.sessions.find(x=>x._sessionId===sid);
+  if(repairFor(current))throw Object.assign(Error('오류가 있는 Build입니다. 위 Fix plan → Fix & New Build를 실행하세요.'),{code:'REPAIR_PLAN_REQUIRED'});
+  setRepairProgress(sid,'assemble','기능 계약과 코드 파일 조립');
+  const result=await request('/api/build',{action:'assemble',project:{_sessionId:sid,name:current.name},kind:selectKind(current),acceptedScope:current.functionalScopeApproved===selectKind(current)});
+  setRepairProgress(sid,'syntax','서버 조립 및 JS / PWA 구문 검사 완료');
+  patch(sid,x=>{
+   if(x.functionalBuild)x.functionalBuildHistory=[x.functionalBuild,...(x.functionalBuildHistory||[])].slice(0,10);
+   x.functionalBuild=result.build;x.functionalRepairTrace=result.repairTrace;
+   x.functionalJourneyCheck=null;x._phase='blueprint';
+  });
+  log(sid,'functional_implemented','New artifact assembled');
+  await applyVerification(sid,result.build);
+ });
+ const refreshPlan=document.getElementById('refreshRepairPlan');
+ if(refreshPlan)refreshPlan.onclick=()=>{
+  patch(sid,x=>{x.functionalRepairPlan=null;});refreshRepairPlan(sid);
+ };
+ const fixBuild=document.getElementById('fixBuild');
+ if(fixBuild)fixBuild.onclick=()=>perform(sid,'기능 코드 조립','오류 수정 레시피를 적용하고 새 Build를 검증합니다.',async()=>{
+  const current=pack.sessions.find(x=>x._sessionId===sid),issue=repairFor(current),plan=planFor(current);
+  if(!issue||!plan||plan.status!=='PATCH_AVAILABLE')throw Object.assign(Error('적용 가능한 Fix plan을 먼저 확인하세요.'),{code:'REPAIR_PLAN_MISSING'});
+  if(current.functionalScopeApproved!==selectKind(current))throw Object.assign(Error('Build scope을 먼저 승인하세요.'),{code:'SCOPE_APPROVAL_REQUIRED'});
+  setRepairProgress(sid,'diagnosis','오류 '+issue.code+' → 검토된 수정 레시피 '+plan.repairId);
+  const result=await request('/api/build',{action:'repair-and-assemble',approved:true,project:{_sessionId:sid,name:current.name},priorBuild:current.functionalBuild.descriptor||current.functionalBuild,issue,kind:issue.kind,acceptedScope:true});
+  setRepairProgress(sid,'code_patch',plan.target+' · 패치 '+plan.version+' 적용');
+  patch(sid,x=>{
+   if(x.functionalBuild)x.functionalBuildHistory=[x.functionalBuild,...(x.functionalBuildHistory||[])].slice(0,10);
+   x.functionalBuild=result.build;x.functionalRepairPlan=null;
+   x.functionalJourneyCheck=null;
+   x.functionalRepairTrace=result.repairTrace;
+   if(x.functionalRepair)x.functionalRepair={...x.functionalRepair,status:'PATCHED_PENDING_VERIFY',rebuildId:result.build.bid,rebuildAt:new Date().toISOString()};
+   x._phase='blueprint';
+  });
+  setRepairProgress(sid,'artifact','새 Build '+result.build.bid+' · '+result.build.artifactHash.slice(0,12));
+  log(sid,'repair_patch_applied',plan.repairId+' → '+result.build.bid);
+  await applyVerification(sid,result.build);
+ });
  const verify=document.getElementById('verify');if(verify)verify.onclick=()=>{const build=p.functionalBuild;perform(sid,'자동 기능 검증','브라우저 회귀 증거와 실제 API 응답을 확인합니다.',async()=>{const result=await request('/api/build',{action:'verify',descriptor:build.descriptor||build,sessionId:sid,liveConsent:true});patch(sid,x=>{if(x.functionalBuild.bid!==build.bid)throw new Error('새 Build가 생성되어 이전 응답을 적용하지 않았습니다.');x.functionalBuild.verification=result.verification;x._phase=result.verification.status==='INTEGRATION_VERIFIED'?'build':'blueprint';
  if(result.verification.status==='FAILED'){
   const failed=(result.verification.checks||[]).filter(a=>a.status!=='passed');
@@ -154,6 +213,6 @@ setInterval(()=>{const j=job(active),seconds=j?Math.floor((Date.now()-j.started)
 window.addEventListener('storage',ev=>{if(ev.key===KEY){try{pack=JSON.parse(ev.newValue);if(!pending.size)render();}catch{}}});
 function focusHash(){var target=document.getElementById((location.hash||"#scope-stage").slice(1))||document.getElementById("scope-stage");if(target)target.scrollIntoView({block:"start"});}
 ingestVerifyIssue();
-render();request('/api/build').then(data=>{info=data;render();if(location.hash)setTimeout(focusHash,30);}).catch(e=>{globalError=e.message;render();});
+render();request('/api/build').then(data=>{info=data;render();if(repairFor(session()))refreshRepairPlan(active);if(location.hash)setTimeout(focusHash,30);}).catch(e=>{globalError=e.message;render();});
 window.addEventListener("hashchange",focusHash);
 })();
