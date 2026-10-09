@@ -29,7 +29,7 @@ test('cycle strips generated code, long histories, seeded metrics and tokens',()
 test('analyze payload stays small and preserves brief fields',()=>{
  const ctx=projectContext({...project(),idea:'Idea'.repeat(300)},'analyze');
  assert.ok(JSON.stringify(ctx).length<12000);
- assert.equal(ctx.idea.length,700);
+ assert.equal(ctx.idea.length,1200); // Rich Blueprint input is no longer truncated to 700 chars
 });
 test('GET runtime status does not reference nonexistent variables',async()=>{
  const old=process.env.OPENAI_API_KEY;process.env.OPENAI_API_KEY='test';
