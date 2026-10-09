@@ -1,14 +1,14 @@
 {
   "suite": "functional-build-browser-v3",
-  "sourceHash": "c9540fe61bbe1d6ac4ea412d4d81c75f12d828e35d9eb12a251a024ca2167f4d",
-  "checkedAt": "2026-10-09T12:24:50Z",
+  "sourceHash": "1ef4f0e30910afe5ca4c93cbfd9cb07d3bc118d26b1a062e14f9599a92747d1a",
+  "checkedAt": "2026-10-09T12:45:00Z",
   "browser": "153.0.8010.12",
   "viewport": {
     "width": 390,
     "height": 844
   },
-  "ocrTransport": "Browser flow mocks skin and receipt API transport; backend Verify independently calls the real provider with synthetic fixtures; real-user capture/analysis/save requires explicit manual acceptance.",
-  "camera": "Chromium synthetic camera and mocked skin API response; physical phone and real image-provider integration require separate Verify stages.",
+  "ocrTransport": "Browser tests mock OCR and skin provider responses; integration Verify performs real provider fixture request.",
+  "camera": "CI verified Chrome simulated camera and mocked server responses; physical phone validation is separate and requires a user-confirmed test in Build Studio.",
   "physicalPhone": false,
   "checks": [
     {
