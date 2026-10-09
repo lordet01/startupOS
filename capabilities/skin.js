@@ -2,7 +2,7 @@
 'use strict';
 const C=window.APP_CONFIG,root=document.getElementById('app'),key='startup-os:app:v3:'+C.sessionId+':skin';
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
-let records=[],file=null,preview='',busy=false,error='',result=null,consent=false,view='scan',status='',cameraStream=null,aborter=null;
+let records=[],file=null,preview='',busy=false,error='',result=null,consent=false,view='scan',status='',cameraStream=null,aborter=null,photoStage='waiting',lastFailure=null;
 try{records=JSON.parse(localStorage.getItem(key)||'[]');if(!Array.isArray(records))records=[]}catch{records=[]}
 function persist(){localStorage.setItem(key,JSON.stringify(records))}
 function stopCamera(){if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}}
@@ -15,9 +15,9 @@ function form(){
  '<div class="row"><button class="btn primary" id="capture">📷 카메라</button><button class="btn" id="album">앨범</button></div>'+
  '<input id="cameraInput" type="file" accept="image/jpeg,image/png,image/webp" capture="user" hidden><input id="albumInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>'+
  (cameraStream?'<video id="video" class="photo" style="background:#000" autoplay muted playsinline></video><button class="btn primary full" id="snap" style="margin-top:8px">촬영</button>':'')+
- (preview?'<img class="photo" alt="선택한 피부 사진 미리보기" src="'+preview+'" style="margin-top:12px"><label class="check"><input type="checkbox" id="consent" '+(consent?'checked':'')+'>이 사진을 OpenAI API로 전송하여 관찰하는 데 동의합니다. 사진 원본은 이 앱의 기록에 저장하지 않습니다.</label><button class="btn primary full" id="analyze" '+(busy||!consent?'disabled':'')+'>'+(busy?'분석 중…':'피부 사진 분석')+'</button>':'')+
+ (preview?'<div id="previewPhase" class="card" style="margin-top:14px;border-color:#347ca0"><div class="step">02 / 사진 확인 · 분석 실행</div><img class="photo" alt="선택한 피부 사진 미리보기" src="'+preview+'"><label class="check"><input type="checkbox" id="consent" '+(consent?'checked':'')+'>사진을 OpenAI API로 전송하는 데 동의합니다. 원본 이미지는 앱에 저장하지 않습니다.</label><button class="btn primary full" id="analyze" '+(busy||!consent?'disabled':'')+'>'+(busy?'분석 중…':'✨ 이 사진 분석하기')+'</button><p class="hint">'+(consent?'분석 버튼을 눌러주세요.':'사진 전송에 동의하면 분석 버튼이 활성화됩니다.')+'</p></div>':'')+
  (busy?'<div class="busyline"></div><div class="muted" role="status">실제 AI 이미지 요청 중… <button class="btn" id="cancel">중지</button></div>':'')+
- (error?'<div role="alert" class="errorbox">'+esc(error)+'</div>':'')+
+ (error?'<div role="alert" class="errorbox"><strong>분석 단계 오류</strong><p>'+esc(error)+'</p><button class="btn danger" id="reportIssue">⚠ Verify에 오류 보내기</button></div>':'')+
  (status?'<div class="notice">'+esc(status)+'</div>':'')+'</section>';
 }
 function findings(r){
@@ -44,6 +44,7 @@ function render(){
  document.querySelectorAll('[data-delete]').forEach(el=>el.onclick=()=>{if(!confirm('이 분석 결과를 삭제할까요?'))return;records=records.filter(x=>x.id!==el.dataset.delete);persist();render()});
  const snap=document.getElementById('snap');if(snap)snap.onclick=takePhoto;
  const cancel=document.getElementById('cancel');if(cancel)cancel.onclick=()=>aborter?.abort();
+ const report=document.getElementById('reportIssue');if(report)report.onclick=reportFailure;
  if(cameraStream){const video=document.getElementById('video');if(video){video.srcObject=cameraStream;video.play().catch(()=>{})}}
 }
 async function openCamera(){
@@ -52,14 +53,15 @@ async function openCamera(){
  catch(e){cameraStream=null;error='카메라를 열 수 없습니다. 브라우저 권한 또는 기기를 확인하고 사진 선택으로 시도하세요.';render();document.getElementById('cameraInput')?.click()}
 }
 function takePhoto(){
- const video=document.getElementById('video');if(!video||!video.videoWidth)return;
+ const video=document.getElementById('video');if(!video||!video.videoWidth){error='카메라 영상 준비가 되지 않았습니다. 다시 촬영하거나 앨범에서 사진을 선택하세요.';render();return;}
  const c=document.createElement('canvas');c.width=video.videoWidth;c.height=video.videoHeight;c.getContext('2d').drawImage(video,0,0);
- c.toBlob(b=>{if(b)selectPhoto(new File([b],'skin.jpg',{type:'image/jpeg'}))},'image/jpeg',0.88);
+ c.toBlob(b=>{if(b)selectPhoto(new File([b],'skin.jpg',{type:'image/jpeg'}));else{error='촬영 이미지를 만들지 못했습니다. 사진 선택으로 다시 시도하세요.';render()}},'image/jpeg',0.88);
 }
 function selectPhoto(next){
  if(!next)return;stopCamera();releasePhoto();result=null;status='';consent=false;error='';
  if(!/^image\/(jpeg|png|webp)$/.test(next.type)||next.size>18000000){error='JPG, PNG, WebP 사진(18MB 이하)을 선택하세요.';render();return}
- file=next;preview=URL.createObjectURL(next);render();
+ file=next;preview=URL.createObjectURL(next);photoStage='photo_ready';status='촬영 완료 · 사진 확인 후 전송 동의하고 분석 버튼을 누르세요.';render();
+ requestAnimationFrame(()=>document.getElementById('previewPhase')?.scrollIntoView({behavior:'smooth',block:'start'}));
 }
 async function preparePhoto(blob){
  const url=URL.createObjectURL(blob);
@@ -75,17 +77,24 @@ async function preparePhoto(blob){
 }
 async function analyzePhoto(){
  if(!file||!consent||busy)return;
- busy=true;error='';status='';result=null;render();aborter=new AbortController();
+ busy=true;photoStage='analyzing';error='';status='';result=null;render();aborter=new AbortController();
  const timeout=setTimeout(()=>aborter.abort(),55000);
  try{
   const image=await preparePhoto(file);
   const resp=await fetch(C.skinEndpoint||'/api/skin-analysis',{method:'POST',signal:aborter.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:C.sessionId,buildId:C.buildId,sourceHash:C.sourceHash,consent:true,image})});
   const data=await resp.json().catch(()=>({error:'서버 응답을 읽을 수 없습니다.'}));
   if(!resp.ok||!data.ok)throw Error(data.error||'분석 실패 · HTTP '+resp.status);
-  result=data.result;status='AI 분석 완료 · '+Number(data.latency_ms/1000).toFixed(1)+'초';
- }catch(e){error=e.name==='AbortError'?'분석이 중단되거나 시간 초과됐습니다.':e.message}
+  result=data.result;photoStage='done';status='AI 분석 완료 · '+Number(data.latency_ms/1000).toFixed(1)+'초';
+ }catch(e){photoStage='error';error=e.name==='AbortError'?'분석이 중단되거나 시간 초과됐습니다.':e.message;lastFailure={stage:'image_analysis',code:e.code||'RUNTIME_OR_UX_FAILURE',message:error,at:new Date().toISOString()}}
  finally{clearTimeout(timeout);busy=false;aborter=null;render()}
 }
+function reportFailure(){
+ const issue=lastFailure||{stage:photoStage,message:error||'사진 촬영→분석이 진행되지 않음',code:'PHOTO_FLOW_FAILED',at:new Date().toISOString()};
+ const report={source:'user_report',kind:'skin',sessionId:C.sessionId,buildId:C.buildId,stage:issue.stage,code:issue.code,message:issue.message,at:issue.at,sourceHash:C.sourceHash};
+ const url='https://startup-os-beige.vercel.app/builder/?sessionId='+encodeURIComponent(C.sessionId)+'&verifyIssue='+encodeURIComponent(JSON.stringify(report))+'#verify-stage';
+ window.location.assign(url);
+}
+window.addEventListener('error',event=>{if(view==='scan'&&!busy){lastFailure={stage:photoStage,code:'CLIENT_JS_ERROR',message:String(event.message||'JavaScript error').slice(0,260),at:new Date().toISOString()};}});
 window.addEventListener('pagehide',()=>{stopCamera();aborter?.abort();releasePhoto()});
 if(!C.preview&&'serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 render();
