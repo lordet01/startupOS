@@ -77,7 +77,7 @@ function bindAnnotation(sid){
  const state=local(sid),canvas=document.getElementById('refineCanvas');if(!canvas)return;
  canvas.style.touchAction='none';
  const point=e=>{const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height}};
- canvas.addEventListener('pointerdown',e=>{e.preventDefault();canvas.setPointerCapture(e.pointerId);state.activeStroke=[point(e)];redrawCanvas(sid)});
+ canvas.addEventListener('pointerdown',e=>{e.preventDefault();try{canvas.setPointerCapture(e.pointerId)}catch{}state.activeStroke=[point(e)];redrawCanvas(sid)});
  canvas.addEventListener('pointermove',e=>{if(!state.activeStroke)return;e.preventDefault();state.activeStroke.push(point(e));redrawCanvas(sid)});
  const end=e=>{if(!state.activeStroke)return;state.activeStroke.push(point(e));state.strokes.push(state.activeStroke);state.activeStroke=null;redrawCanvas(sid)};
  canvas.addEventListener('pointerup',end);canvas.addEventListener('pointercancel',end);
