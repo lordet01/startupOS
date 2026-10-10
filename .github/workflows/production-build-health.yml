@@ -1,0 +1,40 @@
+name: Production Build API health
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/production-build-health.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live-build-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Assert StartupOS production build runtime is healthy
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://startup-os-beige.vercel.app/api/build"
+          ok=false
+          for attempt in 1 2 3 4 5 6; do
+            echo "Production Build API health attempt $attempt"
+            status=$(curl -L -sS --max-time 18 -o /tmp/build-health.json -w '%{http_code}' "$URL" || true)
+            echo "HTTP $status"
+            if [[ "$status" == "200" ]] && node -e '
+              const fs=require("fs");
+              const d=JSON.parse(fs.readFileSync("/tmp/build-health.json","utf8"));
+              if(!d.ok||!d.sourceHash||!d.contracts?.skin||!d.repairRecipes?.some(x=>x.id==="vercel-function-assets-v1"))process.exit(1);
+              console.log("Build API OK:",d.version,d.mode,d.sourceHash,"repairs",d.repairRecipes.length);
+            '; then
+              ok=true
+              break
+            fi
+            head -c 500 /tmp/build-health.json || true
+            echo
+            sleep 10
+          done
+          if [[ "$ok" != true ]]; then
+            echo "::error::Production Build API is not ready or returned ENOENT/non-JSON. Refusing to mark repair complete."
+            exit 1
+          fi
