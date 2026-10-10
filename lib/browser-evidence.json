@@ -1,14 +1,14 @@
 {
   "suite": "functional-build-browser-v3",
-  "sourceHash": "d44ba85df57ba4c7340023bc38ef427bb31a6329758ea6c19e054734d6012e0b",
-  "checkedAt": "2026-10-10T06:24:14Z",
+  "sourceHash": "9bf16e9263277ccfb99f2149767e3f2cad1c19279bc053fde364a9cf79eef281",
+  "checkedAt": "2026-10-10T18:52:00Z",
   "browser": "153.0.8010.12",
   "viewport": {
     "width": 390,
     "height": 844
   },
-  "ocrTransport": "Chromium exercised complete file/consent/response/save workflows with mocked HTTP provider responses. Live Vision/OCR image fixture provider calls are executed separately at Verify time.",
-  "camera": "CI uses synthetic browser camera and pinned public CC0 fixture. Physical camera testing is separate.",
+  "ocrTransport": "Browser regression mocks provider HTTP. Live OCR/Vision fixture calls are separate Verify gates.",
+  "camera": "Simulated Chromium camera; real mobile device and Vision accuracy must be checked separately.",
   "physicalPhone": false,
   "checks": [
     {

@@ -3,6 +3,7 @@
   "functions": {
     "api/runtime.js": { "maxDuration": 60 },
     "api/idea-note.js": { "maxDuration": 60 },
+    "api/refine.js": { "maxDuration": 60 },
     "api/build.js": { "maxDuration": 60, "includeFiles": "{capabilities/**,lib/**,fixtures/**}" },
     "api/build-preview.js": { "maxDuration": 30, "includeFiles": "{capabilities/**,lib/**,fixtures/**}" },
     "api/publish.js": { "maxDuration": 60, "includeFiles": "{capabilities/**,lib/**,fixtures/**}" },
