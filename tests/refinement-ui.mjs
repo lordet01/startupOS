@@ -111,7 +111,6 @@ try{
    assert.equal(await page.locator('#refineHost .refineVersion').innerText(),'Revision 1');
  });
  await check('second_feedback_build_cycle_keeps_history_and_revision',async()=>{
-   await page.locator('[data-refine-tab="chat"]').click();
    await page.locator('#refineText').fill('성분군을 2개로 줄이고 리포트 제목도 간결하게 바꿔줘');
    await page.locator('#refineSend').click();
    await page.locator('#refineApprove').waitFor();
