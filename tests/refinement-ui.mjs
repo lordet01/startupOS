@@ -107,7 +107,6 @@ try{
    assert.equal(app.functionalBuild.refinementRevision,1);
    assert.equal(app.functionalBuild.parentBuildId,before);
    assert.equal(app.functionalBuild.verification.smoke.status,'PASSED');
-   await page.frameLocator('#refineFrame').waitForTimeout?.(100).catch?.(()=>{});
    await page.waitForFunction(()=>document.getElementById('refineFrame')?.contentWindow?.APP_CONFIG?.refinement?.result_title==='MySkin 결과 리포트');
    assert.equal(await page.locator('#refineHost .refineVersion').innerText(),'Revision 1');
  });
