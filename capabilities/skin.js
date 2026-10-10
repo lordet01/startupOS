@@ -1,6 +1,7 @@
 (function(){
 'use strict';
 const C=window.APP_CONFIG,root=document.getElementById('app'),key='startup-os:app:v3:'+C.sessionId+':skin';
+const UI=Object.assign({result_title:'피부 관찰 결과',photo_guide:'밝고 균일한 조명에서 정면 사진을 촬영하세요.',analysis_button:'사진 분석하기',analysis_focus:'balanced',detail_level:'concise',result_order:['observations','ingredients'],ingredient_limit:4,show_certainty:true,show_cautions:true},C.refinement||{});
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 let records=[],file=null,preview='',busy=false,error='',result=null,consent=false,view='scan',status='',cameraStream=null,aborter=null,photoStage='waiting',lastFailure=null;
 try{records=JSON.parse(localStorage.getItem(key)||'[]');if(!Array.isArray(records))records=[]}catch{records=[]}
@@ -11,11 +12,11 @@ function navbar(){return '<nav class="tabs"><div>'+[['scan','촬영'],['history'
 function header(){return '<header class="header"><div><div class="eyebrow">MY SKIN / '+esc(C.buildId.slice(-6))+'</div><h1>'+esc(C.name)+'</h1><div class="muted">피부 사진 관찰 · 성분군 참고</div></div><span class="badge">Photo vision</span></header>'}
 const ingredientNames={niacinamide:'나이아신아마이드',ceramides:'세라마이드',glycerin:'글리세린',hyaluronic_acid:'히알루론산',panthenol:'판테놀',salicylic_acid:'살리실산',azelaic_acid:'아젤라익산',vitamin_c:'비타민 C',sunscreen:'자외선 차단',retinoid:'레티노이드',none:'없음'};
 function form(){
- return '<section class="card"><div class="step">01 / 얼굴 사진</div><p class="hint">정면 사진을 밝고 균일한 조명에서 찍으세요. 외장 UVC 카메라 연결 가능 여부는 기기·브라우저에 따라 다르며 별도 확인이 필요합니다.</p>'+
+ return '<section class="card"><div class="step">01 / 얼굴 사진</div><p class="hint">'+esc(UI.photo_guide)+' · 외장 UVC 카메라 사용 가능 여부는 기기·브라우저마다 다릅니다.</p>'+
  '<div class="row"><button class="btn primary" id="capture">📷 카메라</button><button class="btn" id="album">앨범</button></div>'+
  '<input id="cameraInput" type="file" accept="image/jpeg,image/png,image/webp" capture="user" hidden><input id="albumInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>'+
  (cameraStream?'<video id="video" class="photo" style="background:#000" autoplay muted playsinline></video><button class="btn primary full" id="snap" style="margin-top:8px">촬영</button>':'')+
- (preview?'<div id="previewPhase" class="card" style="margin-top:14px;border-color:#347ca0"><div class="step">02 / 사진 확인 · 분석 실행</div><img class="photo" alt="선택한 피부 사진 미리보기" src="'+preview+'"><label class="check"><input type="checkbox" id="consent" '+(consent?'checked':'')+'>사진을 OpenAI API로 전송하는 데 동의합니다. 원본 이미지는 앱에 저장하지 않습니다.</label><button class="btn primary full" id="analyze" '+(busy||!consent?'disabled':'')+'>'+(busy?'분석 중…':'✨ 이 사진 분석하기')+'</button><p class="hint">'+(consent?'분석 버튼을 눌러주세요.':'사진 전송에 동의하면 분석 버튼이 활성화됩니다.')+'</p></div>':'')+
+ (preview?'<div id="previewPhase" class="card" style="margin-top:14px;border-color:#347ca0"><div class="step">02 / 사진 확인 · 분석 실행</div><img class="photo" alt="선택한 피부 사진 미리보기" src="'+preview+'"><label class="check"><input type="checkbox" id="consent" '+(consent?'checked':'')+'>사진을 OpenAI API로 전송하는 데 동의합니다. 원본 이미지는 앱에 저장하지 않습니다.</label><button class="btn primary full" id="analyze" '+(busy||!consent?'disabled':'')+'>'+(busy?'분석 중…':'✨ '+esc(UI.analysis_button))+'</button><p class="hint">'+(consent?'분석 버튼을 눌러주세요.':'사진 전송에 동의하면 분석 버튼이 활성화됩니다.')+'</p></div>':'')+
  (busy?'<div class="busyline"></div><div class="muted" role="status">실제 AI 이미지 요청 중… <button class="btn" id="cancel">중지</button></div>':'')+
  (error?'<div role="alert" class="errorbox"><strong>분석 단계 오류</strong><p>'+esc(error)+'</p><button class="btn danger" id="reportIssue">⚠ Verify에 오류 보내기</button></div>':'')+
  (status?'<div class="notice">'+esc(status)+'</div>':'')+
@@ -24,13 +25,15 @@ function form(){
 function findings(r){
  if(!r)return '';
  if(r.image_status!=='face_visible')return '<section class="card" id="analysisResult"><h2>분석 불가</h2><p>'+esc(r.summary)+'</p></section>';
- return '<section class="card" id="analysisResult"><div class="step">03 / 관찰 결과</div><h2>'+esc(r.summary)+'</h2>'+
- '<div class="featureList">'+r.observations.map(x=>'<div class="item"><b>'+esc(x.property.replaceAll('_',' '))+' · '+(x.certainty==='low'?'낮은 확신':'제한적 관찰')+'</b><p class="muted">'+esc(x.description)+'</p></div>').join('')+'</div>'+
- '<h2 style="margin-top:15px">추천 성분군</h2>'+
- r.ingredient_groups.map(x=>'<div class="item"><b>'+esc(ingredientNames[x.ingredient]||x.ingredient)+'</b><p class="muted">'+esc(x.reason)+'</p><p class="hint">'+esc(x.caution)+'</p></div>').join('')+
+ const observations='<section class="resultSection"><h3>관찰된 피부 표면 특징</h3><div class="featureList">'+r.observations.map(x=>'<div class="item"><b>'+esc(x.property.replaceAll('_',' '))+(UI.show_certainty?' · '+(x.certainty==='low'?'낮은 확신':'제한적 관찰'):'')+'</b><p class="muted">'+esc(UI.detail_level==='concise'?x.description.slice(0,135):x.description)+'</p></div>').join('')+'</div></section>';
+ const ingredients='<section class="resultSection"><h3>추천 성분군</h3>'+r.ingredient_groups.slice(0,UI.ingredient_limit).map(x=>'<div class="item"><b>'+esc(ingredientNames[x.ingredient]||x.ingredient)+'</b><p class="muted">'+esc(x.reason)+'</p><p class="hint">'+esc(x.caution)+'</p></div>').join('')+'</section>';
+ const sections={observations,ingredients};
+ const order=UI.result_order&&UI.result_order.length===2?UI.result_order:['observations','ingredients'];
+ return '<section class="card" id="analysisResult"><div class="step">03 / 관찰 결과</div><h2>'+esc(UI.result_title)+'</h2><p class="muted">'+esc(r.summary)+'</p>'+order.map(key=>sections[key]||'').join('')+
  '<div class="notice warn">'+r.limitations.map(x=>esc(x)).join('<br>')+'</div>'+
  '<button id="saveResult" class="btn primary full">결과 저장</button></section>';
 }
+
 function history(){return '<section class="card"><div class="row between"><h2>분석 기록</h2><button class="btn" id="export">JSON 내보내기</button></div>'+(records.length?records.slice().reverse().map(x=>'<div class="record"><div class="row between"><strong>'+esc(new Date(x.at).toLocaleString())+'</strong><button class="btn danger" data-delete="'+esc(x.id)+'">삭제</button></div><p class="muted">'+esc(x.result.summary)+'</p><div class="hint">'+esc(x.result.ingredient_groups.map(v=>ingredientNames[v.ingredient]||v.ingredient).join(', '))+'</div></div>').join(''):'<div class="empty">아직 저장한 분석 결과가 없습니다.</div>')+'</section>'}
 function render(){
  root.className='app';root.innerHTML=header()+(view==='scan'?form()+findings(result):history())+navbar();
@@ -83,7 +86,7 @@ async function analyzePhoto(){
  const timeout=setTimeout(()=>aborter.abort(),55000);
  try{
   const image=await preparePhoto(file);
-  const resp=await fetch(C.skinEndpoint||'/api/skin-analysis',{method:'POST',signal:aborter.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:C.sessionId,buildId:C.buildId,sourceHash:C.sourceHash,consent:true,image})});
+  const resp=await fetch(C.skinEndpoint||'/api/skin-analysis',{method:'POST',signal:aborter.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:C.sessionId,buildId:C.buildId,sourceHash:C.sourceHash,consent:true,image,analysis_focus:UI.analysis_focus,detail_level:UI.detail_level,ingredient_limit:UI.ingredient_limit})});
   const data=await resp.json().catch(()=>({error:'서버 응답을 읽을 수 없습니다.'}));
   if(!resp.ok||!data.ok)throw Error(data.error||'분석 실패 · HTTP '+resp.status);
   result=data.result;photoStage='done';status='AI 분석 완료 · '+Number(data.latency_ms/1000).toFixed(1)+'초';
