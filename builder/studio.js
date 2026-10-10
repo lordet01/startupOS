@@ -179,7 +179,7 @@ function bind(){document.getElementById('session').onchange=ev=>{active=ev.targe
   const current=pack.sessions.find(x=>x._sessionId===sid);
   if(repairFor(current))throw Object.assign(Error('오류가 있는 Build입니다. 위 Fix plan → Fix & New Build를 실행하세요.'),{code:'REPAIR_PLAN_REQUIRED'});
   setRepairProgress(sid,'assemble','기능 계약과 코드 파일 조립');
-  const result=await request('/api/build',{action:'assemble',project:{_sessionId:sid,name:current.name},kind:selectKind(current),acceptedScope:current.functionalScopeApproved===selectKind(current)});
+  const result=await request('/api/build',{action:'assemble',project:{_sessionId:sid,name:current.name,refinementConfig:current.functionalBuild?.refinement||null},kind:selectKind(current),acceptedScope:current.functionalScopeApproved===selectKind(current)});
   setRepairProgress(sid,'syntax','서버 조립 및 JS / PWA 구문 검사 완료');
   patch(sid,x=>{
    if(x.functionalBuild)x.functionalBuildHistory=[x.functionalBuild,...(x.functionalBuildHistory||[])].slice(0,10);
