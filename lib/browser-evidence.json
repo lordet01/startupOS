@@ -1,14 +1,14 @@
 {
   "suite": "functional-build-browser-v3",
-  "sourceHash": "682458b931c7132508566249251c4630f1cf5f51312d71613dd169ab27633b1f",
-  "checkedAt": "2026-10-10T18:34:15Z",
+  "sourceHash": "9bf16e9263277ccfb99f2149767e3f2cad1c19279bc053fde364a9cf79eef281",
+  "checkedAt": "2026-10-10T18:52:00Z",
   "browser": "153.0.8010.12",
   "viewport": {
     "width": 390,
     "height": 844
   },
-  "ocrTransport": "Browser smoke routes use mocked OCR/skin provider replies; real Vision/OCR checked independently on server with pinned fixtures.",
-  "camera": "Chromium virtual camera only; real phone camera and real Vision provider are separate verification gates.",
+  "ocrTransport": "Browser regression mocks provider HTTP. Live OCR/Vision fixture calls are separate Verify gates.",
+  "camera": "Simulated Chromium camera; real mobile device and Vision accuracy must be checked separately.",
   "physicalPhone": false,
   "checks": [
     {
