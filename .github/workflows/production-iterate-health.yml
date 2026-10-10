@@ -1,0 +1,49 @@
+name: Production Iterate UI health
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/production-iterate-health.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  iterate-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Inspect live startup-os UI, chat API, Build runtime and local screenshot vendor
+        shell: bash
+        run: |
+          set -euo pipefail
+          HOST="https://startup-os-beige.vercel.app"
+          for attempt in 1 2 3 4 5 6; do
+            echo "Health attempt: $attempt"
+            build_status=$(curl -LsS --max-time 20 -o /tmp/build.json -w "%{http_code}" "$HOST/api/build" || true)
+            refine_status=$(curl -LsS --max-time 20 -o /tmp/refine.json -w "%{http_code}" "$HOST/api/refine" || true)
+            ui_status=$(curl -LsS --max-time 20 -o /tmp/studio.html -w "%{http_code}" "$HOST/builder/" || true)
+            js_status=$(curl -LsS --max-time 20 -o /tmp/refine.js -w "%{http_code}" "$HOST/builder/refinement.js" || true)
+            vendor_status=$(curl -LsS --max-time 20 -o /tmp/vendor.js -w "%{http_code}" "$HOST/vendor/html2canvas.min.js" || true)
+            echo "GET /api/build $build_status; /api/refine $refine_status; /builder/ $ui_status; /builder/refinement.js $js_status; /vendor/html2canvas.min.js $vendor_status"
+            if [[ "$build_status" == 200 && "$refine_status" == 200 && "$ui_status" == 200 && "$js_status" == 200 && "$vendor_status" == 200 ]] && node - <<'JS'
+          const fs=require('fs'),assert=require('node:assert/strict');
+          const b=JSON.parse(fs.readFileSync('/tmp/build.json','utf8'));
+          const r=JSON.parse(fs.readFileSync('/tmp/refine.json','utf8'));
+          const html=fs.readFileSync('/tmp/studio.html','utf8');
+          const code=fs.readFileSync('/tmp/refine.js','utf8');
+          const vendor=fs.readFileSync('/tmp/vendor.js','utf8');
+          assert.equal(b.ok,true);assert.equal(b.version,'functional-build-3.3.0');
+          assert.ok(b.contracts.skin);
+          assert.equal(r.ok,true);assert.equal(r.feature,'session_refinement');assert.equal(r.screenshot,true);assert.ok(r.supported.includes('skin'));
+          assert.ok(html.includes('builder/refinement.js'));
+          assert.ok(code.includes('refineCapture')&&code.includes('refineApprove')&&code.includes('pointerdown'));
+          assert.ok(vendor.includes('html2canvas'));
+          console.log('LIVE PRODUCTION PASS: Build '+b.version+', screenshot GPT API, iframe chat and vendored html2canvas');
+          JS
+            then
+              exit 0
+            fi
+            head -c 250 /tmp/refine.json || true
+            sleep 8
+          done
+          echo "::error::Production Iterate endpoints or assets not ready"
+          exit 1
