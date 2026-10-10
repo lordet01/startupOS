@@ -38,3 +38,24 @@ jobs:
             echo "::error::Production Build API is not ready or returned ENOENT/non-JSON. Refusing to mark repair complete."
             exit 1
           fi
+      - name: Exercise actual Repair Plan and Fix/New Build API
+        run: |
+          node <<'JS'
+          const base='https://startup-os-beige.vercel.app/api/build';
+          const sid='vs_repair_health01';
+          const prior={sid,bid:'b_11111111-1111-4111-8111-111111111111',kind:'skin',name:'MySkin Repair Health',sourceHash:'0'.repeat(64),version:'functional-build-3.2.0'};
+          const issue={kind:'skin',code:'RUNTIME_OR_UX_FAILURE',stage:'image_analysis',message:"ENOENT: no such file or directory, open '/var/task/capabilities/data.js'",buildId:prior.bid,sourceHash:prior.sourceHash,source:'user_report'};
+          async function request(payload){
+            const r=await fetch(base,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+            const d=await r.json();
+            if(!r.ok||!d.ok)throw Error('POST /api/build HTTP '+r.status+' '+JSON.stringify(d).slice(0,500));
+            return d;
+          }
+          (async()=>{
+            const plan=await request({action:'repair-plan',priorBuild:prior,issue});
+            if(plan.plan.repairId!=='vercel-function-assets-v1'||plan.plan.status!=='PATCH_AVAILABLE')throw Error('Unexpected repair mapping '+JSON.stringify(plan.plan));
+            const build=await request({action:'repair-and-assemble',approved:true,project:{_sessionId:sid,name:'MySkin Repair Health'},priorBuild:prior,issue,kind:'skin',acceptedScope:true});
+            if(build.build.status!=='IMPLEMENTED'||build.build.repairId!=='vercel-function-assets-v1'||!build.build.artifactHash)throw Error('Invalid repaired artifact');
+            console.log('LIVE REPAIR PASSED:',plan.plan.repairId,'→',build.build.bid,'checks',build.build.checks.length);
+          })().catch(e=>{console.error(e);process.exitCode=1});
+          JS
