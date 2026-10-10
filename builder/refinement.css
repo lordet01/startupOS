@@ -63,3 +63,7 @@
  .refineSendRow>span{max-width:none}
  .refineAnnotationTools button{flex:1}
 }
+
+.refineStale{margin:12px 15px;background:#30261c;border:1px solid #8a6030;border-radius:12px;padding:12px;display:grid;gap:7px;font-size:12px;color:#ecd1a6}
+.refineStale strong{color:#ffe0a6;font-size:13px}.refineStale button{background:#374b6a;color:#fff;border:1px solid #6786b0;border-radius:10px;padding:11px;min-height:43px;font-weight:750;cursor:pointer}
+.refinePhoneStale{display:flex;justify-content:center;align-items:center;color:#394860;font-size:14px;font-weight:800}
