@@ -1,0 +1,65 @@
+.refineHost{display:block;background:#0e1c31;border:1px solid #29415f;border-radius:17px;margin:14px 0;overflow:hidden;color:#ecf4ff}
+.refineHeader{padding:16px 18px;border-bottom:1px solid #29415f;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.refineHeader h2{font-size:19px;margin:4px 0}.refineHeader p{margin:4px 0 0;font-size:12px;color:#94abc8}
+.refineEyebrow{font-weight:800;font-size:9px;letter-spacing:.13em;color:#86acff}
+.refineVersion{background:#132b4d;border:1px solid #345478;border-radius:999px;padding:6px 10px;font-size:10px;white-space:nowrap;color:#b1c8e5}
+.refineColumns{display:grid;grid-template-columns:minmax(320px,410px) minmax(0,1fr);min-height:650px}
+.refinePreviewPane{padding:15px;background:#0b1829;border-right:1px solid #29415f;min-width:0}
+.refinePreviewActions{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;color:#94abc8;font-size:11px}
+.refinePreviewActions>div{display:flex;gap:7px}
+.refineSmall{background:#18304f;color:white;border:1px solid #344b67;border-radius:9px;text-decoration:none;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;font-size:17px}
+.refinePhone{width:100%;height:650px;max-width:390px;margin:0 auto;background:#f9fafb;border:6px solid #20354f;border-radius:24px;overflow:hidden;box-shadow:0 10px 35px #010a1899}
+.refinePhone iframe{display:block;width:100%;height:100%;border:0;background:#fff}
+.refinePhotoTools{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:12px}
+.refinePrimary{background:linear-gradient(135deg,#668bff,#7665ff);border:0;color:#fff;border-radius:11px;min-height:44px;padding:10px 14px;font-weight:800;cursor:pointer;font:inherit;font-size:12px}
+.refinePrimary:disabled{opacity:.55;cursor:progress}
+.refineUpload{background:#172a43;border:1px solid #344d70;border-radius:11px;min-height:44px;padding:10px 13px;font-weight:700;cursor:pointer;color:#d7e6ff;display:flex;align-items:center;justify-content:center;font-size:12px}
+.refineMiniNote{font-size:10px;color:#809ab7;margin-top:10px;line-height:1.6}
+.refineChatPane{min-width:0;display:flex;flex-direction:column;background:#102039;padding:15px}
+.refineMessages{min-height:130px;max-height:300px;overflow:auto;padding:9px;border:1px solid #263f5a;background:#0a1729;border-radius:13px;display:flex;flex-direction:column;gap:10px}
+.refineEmpty{color:#859cba;font-size:12px;padding:30px 12px;text-align:center;line-height:1.6}
+.refineBubble{padding:10px 12px;border-radius:12px;max-width:92%;font-size:12px;line-height:1.5}
+.refineUser{align-self:flex-end;background:#263c72;border:1px solid #5473c3}
+.refineAssistant{align-self:flex-start;background:#162b44;border:1px solid #304f74}
+.refineSystem{align-self:center;background:#13352d;border:1px solid #237f60}
+.refineMsgMeta{font-size:10px;color:#9cafd0;margin-bottom:4px;font-weight:700}
+.refineMsgBody{white-space:pre-wrap;overflow-wrap:anywhere}
+.refineProposal{margin:12px 0}
+.refinePlan{border:1px solid #5476b1;border-radius:13px;background:#132744;padding:13px}
+.refinePlanHead{display:flex;justify-content:space-between;gap:12px;font-size:13px}.refinePlanHead>span{font-size:9px;color:#bdd3f3}
+.refinePlan p{font-size:12px;color:#c7d8ef;line-height:1.6;margin:9px 0}
+.refineDiff{display:grid;gap:7px;margin:11px 0}.refineDiff>div{display:grid;gap:3px;background:#0d2039;border:1px solid #304a6a;padding:9px;border-radius:9px}.refineDiff b{font-size:11px;color:#9bb9f0}.refineDiff span{font-size:11px;color:#b2c5dc}.refineDiff strong{color:#a9f5d8}
+.refinePlan details{font-size:11px}.refinePlan ul{line-height:1.8;padding-left:17px}.refinePlan button{width:100%;margin-top:9px}
+.refineError{background:#421e2a;color:#ffc3cd;padding:12px;border:1px solid #844153;border-radius:11px;font-size:12px}
+.refineHint{color:#8fa6c4;font-size:11px;line-height:1.65;padding:8px}
+.refineAnnotation{padding:7px 0}.refineAnnotationHead{display:flex;justify-content:space-between;gap:9px;align-items:center;font-size:11px;margin-bottom:9px}
+.refineAnnotationHead span{color:#92a9c8;font-size:10px}
+#refineCanvas{display:block;width:auto;max-width:100%;max-height:450px;height:auto;touch-action:none;cursor:crosshair;border:2px solid #4b73b5;border-radius:12px;background:#fff;margin:auto}
+.refineAnnotationTools{display:flex;gap:8px;justify-content:center;margin:9px 0}.refineAnnotationTools button{background:#142944;border:1px solid #37516f;border-radius:9px;color:#dce9fc;padding:8px 10px;font-size:11px;min-height:38px}
+.refineComposer{margin-top:auto;padding-top:11px;border-top:1px solid #29415f}
+.refineComposer>label{font-size:11px;font-weight:700;color:#aac2e6;display:block;margin-bottom:6px}
+.refineComposer textarea{display:block;width:100%;min-height:93px;max-height:260px;resize:vertical;overflow-y:auto;background:#081626;color:#fff;border:1px solid #365476;border-radius:10px;font-size:12px;padding:11px;line-height:1.6}
+.refineSendRow{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:9px}
+.refineSendRow>span{font-size:10px;color:#8ea5c3;max-width:250px;line-height:1.5}
+.refineTabs{display:none}
+@media(max-width:930px){.refineColumns{grid-template-columns:minmax(300px,390px) minmax(0,1fr)}}
+@media(max-width:760px){
+ .refineHost{margin:12px -1px;border-radius:14px}
+ .refineHeader{padding:13px 12px}
+ .refineHeader h2{font-size:17px}
+ .refineHeader p{font-size:11px}
+ .refineVersion{font-size:9px;padding:5px 7px}
+ .refineTabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 12px 0}
+ .refineTabs button{border:1px solid #294762;background:#0a182a;color:#93abc8;border-radius:10px;min-height:42px;font-weight:750;font-size:12px}
+ .refineTabs button.on{border-color:#6a8cf4;background:#203962;color:white}
+ .refineColumns{display:block;min-height:0}
+ .refinePreviewPane{border:0;padding:12px}
+ .refinePhone{max-width:390px;height:min(73vh,670px);border-radius:19px}
+ .refineChatPane{padding:12px;min-height:450px}
+ .refineHost:not(.showRefineChat) .refineChatPane{display:none}
+ .refineHost.showRefineChat .refinePreviewPane{display:none}
+ .refineMessages{max-height:260px}
+ .refineSendRow{flex-direction:column;align-items:stretch;gap:8px}
+ .refineSendRow>span{max-width:none}
+ .refineAnnotationTools button{flex:1}
+}
