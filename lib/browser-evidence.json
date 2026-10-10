@@ -1,14 +1,14 @@
 {
   "suite": "functional-build-browser-v3",
-  "sourceHash": "15641e816845346ee8636f8ac5e7ac60fa29765979f035aab7c50c5dee47cc56",
-  "checkedAt": "2026-10-09T13:12:00Z",
+  "sourceHash": "d44ba85df57ba4c7340023bc38ef427bb31a6329758ea6c19e054734d6012e0b",
+  "checkedAt": "2026-10-10T06:24:14Z",
   "browser": "153.0.8010.12",
   "viewport": {
     "width": 390,
     "height": 844
   },
   "ocrTransport": "Chromium exercised complete file/consent/response/save workflows with mocked HTTP provider responses. Live Vision/OCR image fixture provider calls are executed separately at Verify time.",
-  "camera": "Browser CI uses simulated camera. A cached CC0 Wikimedia face photo is uploaded through the browser file chooser and compared with a provider mock. Real phone hardware is NOT verified.",
+  "camera": "CI uses synthetic browser camera and pinned public CC0 fixture. Physical camera testing is separate.",
   "physicalPhone": false,
   "checks": [
     {
