@@ -1,5 +1,5 @@
 'use strict';
-const B=require('../lib/build-contract'),A=require('../lib/assemble'),V=require('../lib/verify'),R=require('../lib/repair'),Fixtures=require('../lib/smoke-fixtures');
+const B=require('../lib/build-contract'),A=require('../lib/assemble'),V=require('../lib/verify'),R=require('../lib/repair'),Fixtures=require('../lib/smoke-fixtures'),Refinement=require('../lib/refinement-config');
 function assembled(desc,repairPlan){
  const checks=A.validateArtifacts(desc);
  if(checks.some(x=>x.status!=='passed'))return{ok:false,code:'ASSEMBLY_FAILED',error:'생성 파일 검증 실패',checks};
@@ -32,6 +32,25 @@ module.exports=async function handler(req,res){
   if(data.action==='repair-plan'){
     const plan=R.planRepair(data.issue,data.priorBuild);
     return res.status(200).json({ok:true,plan});
+  }
+  if(data.action==='refine-and-assemble'){
+    if(data.approved!==true)throw B.failure('REFINEMENT_APPROVAL_REQUIRED','제안된 변경을 승인해야 새 Build를 만들 수 있습니다.',422);
+    if(!data.priorBuild||!data.project||data.project._sessionId!==data.priorBuild.sid)throw B.failure('SESSION_MISMATCH','개선 요청의 세션 또는 이전 Build가 일치하지 않습니다.',409);
+    const prior=B.assertCurrent({...data.priorBuild});
+    if(prior.kind!=='skin')throw B.failure('REFINEMENT_UNSUPPORTED','현재는 MySkin 기능 개선만 실제 빌드 가능합니다.',422);
+    const config=Refinement.normalize('skin',data.config);
+    const changes=Refinement.diff(prior.refinement,config);
+    if(!changes.length)throw B.failure('NO_EXECUTABLE_CHANGE','앱에 적용할 기능 변경이 없습니다. 다른 수정을 요청하세요.',422);
+    const project={...data.project,refinementConfig:config};
+    let desc=B.descriptor(project,'skin',true);
+    if(prior.repairId)desc=R.selectRepair(desc,prior.repairId);
+    desc={...desc,refinement:config,parentBuildId:prior.bid,refinementRevision:(Number(prior.refinementRevision)||0)+1};
+    const out=assembled(desc,null);
+    if(!out.ok)return res.status(422).json(out);
+    out.build.refinementChanges=changes;
+    out.repairTrace=[...out.repairTrace.slice(0,1),{step:'chat_refinement',status:'passed',detail:changes.map(x=>x.label+' → '+x.to).join('; ').slice(0,500)},...out.repairTrace.slice(1)];
+    console.log(JSON.stringify({event:'refined_build',sid:desc.sid,bid:desc.bid,from:prior.bid,changes:changes.map(x=>x.key)}));
+    return res.status(200).json(out);
   }
   if(data.action==='assemble'){
     const desc=B.descriptor(data.project,data.kind,data.acceptedScope);
