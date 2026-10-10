@@ -1,0 +1,33 @@
+name: Vendor screenshot capture engine
+on:
+  push:
+    branches: [feat/session-chat-refinement-loop]
+    paths: ['.github/workflows/vendor-screenshot.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Download pinned html2canvas library for mobile and desktop screenshots
+        run: |
+          set -euo pipefail
+          mkdir -p vendor
+          curl -fSL --retry 3 --max-time 40 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js' -o vendor/html2canvas.min.js
+          curl -fSL --retry 3 --max-time 40 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/LICENSE' -o vendor/html2canvas-LICENSE.txt
+          test "$(wc -c < vendor/html2canvas.min.js)" -gt 120000
+          grep -q 'html2canvas' vendor/html2canvas.min.js
+          sha256sum vendor/html2canvas.min.js
+      - name: Commit vendor file to feature branch
+        run: |
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add vendor/html2canvas.min.js vendor/html2canvas-LICENSE.txt
+          if ! git diff --cached --quiet; then
+            git commit -m 'vendor: pin html2canvas 1.4.1 for screenshot feedback'
+            git push origin HEAD:feat/session-chat-refinement-loop
+          fi
