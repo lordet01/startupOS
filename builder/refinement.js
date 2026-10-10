@@ -45,7 +45,7 @@ function proposalHtml(p,state){
  (proposal.changes&&proposal.changes.length?'<div class="refineDiff">'+proposal.changes.map(x=>'<div><b>'+escape(x.label)+'</b><span>'+escape(x.from)+' → <strong>'+escape(x.to)+'</strong></span></div>').join('')+'</div>':'')+
  (proposal.unsupported_requests&&proposal.unsupported_requests.length?'<div class="refineHint">별도 코드 작업: '+escape(proposal.unsupported_requests.join(' · '))+'</div>':'')+
  (proposal.manual_test?.length?'<details><summary>다음 검증 항목 ('+proposal.manual_test.length+')</summary><ul>'+proposal.manual_test.map(x=>'<li>'+escape(x)+'</li>').join('')+'</ul></details>':'')+
- (!unsupported&&!stale&&!built?'<button id="refineApprove" class="refinePrimary" type="button">✓ 적용하고 New Build</button>':stale?'<div class="refineHint">다른 Build로 전환됐습니다. 현재 화면 기준으로 다시 개선안을 요청하세요.</div>':'')+'</div>';
+ (!unsupported&&!stale&&!built?'<button id="refineApprove" class="refinePrimary" type="button">✓ 적용하고 New Build</button>':built?'<div class="refineHint">✓ 새 Build '+escape(proposal.resultBuildId?.slice(-8)||'')+'에 반영됐습니다. 위 화면에서 다시 확인하고 추가 수정을 채팅하세요.</div>':stale?'<div class="refineHint">다른 Build로 전환됐습니다. 현재 화면 기준으로 다시 개선안을 요청하세요.</div>':'')+'</div>';
 }
 function getImageBuffer(sid){
  const d=local(sid);
