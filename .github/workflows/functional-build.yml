@@ -29,6 +29,8 @@ jobs:
         run: node --test tests/vercel-assets.test.cjs
       - name: Repair plan and patch assembly unit tests
         run: node --test tests/repair.test.cjs
+      - name: Chat refinement artifact and screenshot API contracts
+        run: node --test tests/refinement.test.cjs
       - name: Agent Cycle contracts and sanitized payload
         run: node --test tests/agent-cycle.test.cjs tests/idea-note.test.cjs
       - run: npx playwright install --with-deps chromium
@@ -44,6 +46,8 @@ jobs:
         run: node tests/agent-cycle.mjs
       - name: Idea Note microphone and new Venture form
         run: node tests/idea-note-ui.mjs
+      - name: Iteration chat mobile preview screenshot and two rebuild cycles
+        run: node tests/refinement-ui.mjs
       - name: Committed evidence check on main
         if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
         run: node -e "const assert=require('node:assert/strict');const B=require('./lib/build-contract');const r=require('./lib/browser-evidence.json');assert.equal(r.sourceHash,B.sourceHash());assert.ok(r.checks.length>=18 && r.checks.every(x=>x.status==='passed'));"
