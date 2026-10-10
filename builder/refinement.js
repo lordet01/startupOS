@@ -19,7 +19,7 @@ function hostMarkup(p,stale){
  '<div class="refineColumns"><div class="refinePreviewPane">'+
  '<div class="refinePreviewActions"><span>Mobile · 390px</span><div><button id="refineReload" class="refineSmall" type="button">↻</button><a class="refineSmall" target="_blank" rel="noopener noreferrer" href="'+escape(build.previewUrl)+'" title="별도 창으로 실행">↗</a></div></div>'+
  (stale?'<div class="refinePhone refinePhoneStale"><div>New Build가 필요합니다.</div></div>':'<div class="refinePhone"><iframe id="refineFrame" title="현재 Build의 모바일 앱 화면" allow="camera" src="'+escape(build.previewUrl)+'"></iframe></div>')+
- '<div class="refinePhotoTools"><button id="refineCapture" class="refinePrimary" type="button">📸 현재 화면 캡처</button><label for="refineScreenshotFile" class="refineUpload">이미지 첨부</label><input id="refineScreenshotFile" type="file" accept="image/png,image/jpeg,image/webp" hidden></div>'+
+ (stale?'':'<div class="refinePhotoTools"><button id="refineCapture" class="refinePrimary" type="button">📸 현재 화면 캡처</button><label for="refineScreenshotFile" class="refineUpload">이미지 첨부</label><input id="refineScreenshotFile" type="file" accept="image/png,image/jpeg,image/webp" hidden></div>')+
  '<div class="refineMiniNote">직접 터치/마우스로 앱을 조작할 수 있습니다. 캡처 후 문제 영역을 표시하세요.</div></div>'+
  '<div class="refineChatPane"><div id="refineMessages" class="refineMessages"></div>'+
  '<div id="refineProposal" class="refineProposal"></div>'+
