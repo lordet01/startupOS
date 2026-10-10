@@ -11,14 +11,14 @@ function saveMessage(sid,msg){
  const bridge=Bridge();if(!bridge)return;
  bridge.patch(sid,p=>{p.functionalChat=[...(p.functionalChat||[]),{...msg,at:now()}].slice(-40)});
 }
-function hostMarkup(p){
+function hostMarkup(p,stale){
  const build=p.functionalBuild,kind=build.kind;
  const id=escape(build.bid.slice(-10));
  return '<div class="refineHeader"><div><span class="refineEyebrow">ITERATE / '+id+'</span><h2>Preview & Improve</h2><p>앱을 써보면서 캡처하고, 채팅으로 수정하세요.</p></div><span class="refineVersion">Revision '+(build.refinementRevision||0)+'</span></div>'+
- '<div class="refineTabs"><button data-refine-tab="preview" class="on">📱 미리보기</button><button data-refine-tab="chat">💬 수정 채팅</button></div>'+
+ (stale?'<div class="refineStale" role="status"><strong>이 Build는 이전 엔진 버전입니다.</strong><span>현재 소스로 New Build를 만든 후 미리보기와 채팅 수정을 진행하세요. 기존 대화·설정은 보존됩니다.</span><button id="refineRebase" type="button">↻ 현재 버전으로 New Build</button></div>':'')+'<div class="refineTabs"><button data-refine-tab="preview" class="on">📱 미리보기</button><button data-refine-tab="chat">💬 수정 채팅</button></div>'+
  '<div class="refineColumns"><div class="refinePreviewPane">'+
  '<div class="refinePreviewActions"><span>Mobile · 390px</span><div><button id="refineReload" class="refineSmall" type="button">↻</button><a class="refineSmall" target="_blank" rel="noopener noreferrer" href="'+escape(build.previewUrl)+'" title="별도 창으로 실행">↗</a></div></div>'+
- '<div class="refinePhone"><iframe id="refineFrame" title="현재 Build의 모바일 앱 화면" allow="camera" src="'+escape(build.previewUrl)+'"></iframe></div>'+
+ (stale?'<div class="refinePhone refinePhoneStale"><div>New Build가 필요합니다.</div></div>':'<div class="refinePhone"><iframe id="refineFrame" title="현재 Build의 모바일 앱 화면" allow="camera" src="'+escape(build.previewUrl)+'"></iframe></div>')+
  '<div class="refinePhotoTools"><button id="refineCapture" class="refinePrimary" type="button">📸 현재 화면 캡처</button><label for="refineScreenshotFile" class="refineUpload">이미지 첨부</label><input id="refineScreenshotFile" type="file" accept="image/png,image/jpeg,image/webp" hidden></div>'+
  '<div class="refineMiniNote">직접 터치/마우스로 앱을 조작할 수 있습니다. 캡처 후 문제 영역을 표시하세요.</div></div>'+
  '<div class="refineChatPane"><div id="refineMessages" class="refineMessages"></div>'+
@@ -95,7 +95,8 @@ function updateChat(sid){
  if(annotation){annotation.innerHTML=annotationMarkup(d);bindAnnotation(sid)}
  if(text){text.value=d.text;text.oninput=()=>{d.text=text.value}}
  const send=document.getElementById('refineSend');
- if(send){send.disabled=d.busy;send.innerText=d.busy?'⏳ GPT 검토 중…':'↗ AI에 수정 요청';send.onclick=()=>sendRequest(sid)}
+ const info=Bridge()?.getInfo(),stale=!!(info&&p.functionalBuild&&(p.functionalBuild.sourceHash!==info.sourceHash||p.functionalBuild.version!==info.version));
+ if(send){send.disabled=d.busy||stale||p.functionalBuild?.kind!=='skin';send.innerText=d.busy?'⏳ GPT 검토 중…':'↗ AI에 수정 요청';send.onclick=()=>sendRequest(sid)}
  const approve=document.getElementById('refineApprove');
  if(approve){approve.disabled=d.busy;approve.onclick=()=>approveBuild(sid)}
 }
@@ -108,13 +109,15 @@ function switchTab(sid,tab){
 function mount(){
  const b=Bridge(),p=b?.getSession(),host=document.getElementById('refineHost');if(!p||!p.functionalBuild||!host)return;
  const sid=p._sessionId,bid=p.functionalBuild.bid,d=local(sid);
- const fresh=host.dataset.sessionId!==sid||host.dataset.buildId!==bid||!host.querySelector('#refineFrame');
+ const info=b.getInfo(),stale=!!(info&&((p.functionalBuild.sourceHash!==info.sourceHash)||(p.functionalBuild.version!==info.version)));
+ const fresh=host.dataset.sessionId!==sid||host.dataset.buildId!==bid||host.dataset.stale!==String(stale)||!(host.querySelector('#refineFrame')||host.querySelector('.refinePhoneStale'));
  if(fresh){
-  host.innerHTML=hostMarkup(p);host.dataset.sessionId=sid;host.dataset.buildId=bid;
+  host.innerHTML=hostMarkup(p,stale);host.dataset.sessionId=sid;host.dataset.buildId=bid;host.dataset.stale=String(stale);
   const frame=host.querySelector('#refineFrame');
-  frame.addEventListener('load',()=>{const note=host.querySelector('.refineMiniNote');if(note)note.textContent='터치/마우스로 앱을 조작하고, 캡처 버튼으로 현재 화면을 첨부하세요.'});
+  if(frame)frame.addEventListener('load',()=>{const note=host.querySelector('.refineMiniNote');if(note)note.textContent='터치/마우스로 앱을 조작하고, 캡처 버튼으로 현재 화면을 첨부하세요.'});
   const capture=host.querySelector('#refineCapture');if(capture)capture.onclick=()=>captureScreen(sid);
-  const reload=host.querySelector('#refineReload');if(reload)reload.onclick=()=>{frame.src=p.functionalBuild.previewUrl;};
+  const reload=host.querySelector('#refineReload');if(reload)reload.onclick=()=>{if(frame)frame.src=p.functionalBuild.previewUrl;};
+  const rebase=host.querySelector('#refineRebase');if(rebase)rebase.onclick=()=>{const el=document.getElementById('assemble');if(el&&!el.disabled)el.click();else document.getElementById('scope-stage')?.scrollIntoView({behavior:'smooth'});};
   const file=host.querySelector('#refineScreenshotFile');if(file)file.onchange=()=>{const f=file.files?.[0];if(f)loadUploadedScreenshot(sid,f);file.value=''};
   host.querySelectorAll('[data-refine-tab]').forEach(button=>button.onclick=()=>switchTab(sid,button.dataset.refineTab));
  }
