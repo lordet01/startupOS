@@ -61,7 +61,14 @@ async function check(id,fn){
  await page.screenshot({path:'test-results/'+id+'.png',fullPage:true}).catch(()=>{});}
 }
 try{
- await page.goto('http://127.0.0.1:'+server.address().port+'/builder/?sessionId='+sid);
+ await page.goto('http://127.0.0.1:'+server.address().port+'/');
+ await check('overview_improve_action_routes_directly_to_session_chat',async()=>{
+   const button=page.locator('.overviewActions [data-view="iterate"]');
+   await button.waitFor();
+   await button.click();
+   await page.waitForURL('**/builder/?sessionId='+sid+'#refineHost');
+   await page.locator('#refineHost #refineFrame').waitFor();
+ });
  await check('refine_mobile_preview_is_real_interactive_iframe',async()=>{
    await page.locator('#refineFrame').waitFor();
    await page.frameLocator('#refineFrame').getByText('MySkin Chat Demo').first().waitFor();
