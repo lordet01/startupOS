@@ -25,6 +25,8 @@ jobs:
         run: npm test
       - name: MySkin Vision capability and real API contract tests
         run: node --test tests/skin.test.cjs
+      - name: Vercel bundled assets and ENOENT repair tests
+        run: node --test tests/vercel-assets.test.cjs
       - name: Repair plan and patch assembly unit tests
         run: node --test tests/repair.test.cjs
       - name: Agent Cycle contracts and sanitized payload
