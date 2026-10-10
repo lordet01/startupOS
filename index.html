@@ -208,7 +208,7 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{ou
  .overviewCard{padding:15px;border-radius:15px}
  .overviewTitle{font-size:22px}.overviewGoal{font-size:12px}
  .overviewProgress{gap:5px;margin:15px 0 12px}.overviewStep{flex-direction:column;gap:5px;font-size:10px;padding:9px 3px}
- .overviewActions,.overviewActions button{width:100%;min-height:46px}
+ .overviewActions,.overviewActions button{width:100%;min-height:46px}.overviewActions{flex-wrap:wrap}
  .overviewNumbers{gap:8px}.overviewNumbers>div{padding:11px}.overviewNumbers strong{font-size:16px}
  .briefFields{grid-template-columns:1fr 1fr}.briefFields>div:last-child{grid-column:1/-1}
  .costTotals{grid-template-columns:1fr 1fr}.costTotals>div:last-child{grid-column:1/-1}
@@ -524,7 +524,7 @@ function mobileNextAction(p){
   if(!s.build)return {view:"build",label:"Build 시작",icon:"🛠",step:1};
   if(!s.deploy)return {view:"deploy",label:"Deploy 하기",icon:"🚀",step:2};
   if(!s.phone)return {view:"phone",label:"Phone Test 하기",icon:"📱",step:3};
-  return {view:"growth",label:"다음 개선 사이클",icon:"↻",step:4};
+  return {view:"iterate",label:"채팅으로 앱 개선",icon:"💬",step:4};
 }
 function runtimeButton(id,label,mode,primary){
   var running=state.running&&state.runMode===mode;
@@ -538,7 +538,7 @@ function overview(){
  return shell('<section class="overviewCard"><div class="overviewEyebrow">SESSION '+shortSessionId(p)+'</div><div class="overviewTitle">'+esc(p.name||"Untitled venture")+'</div>'+
  '<p class="overviewGoal">'+esc(p.desiredOutcome||p.idea||"사업 목표를 입력하세요.")+'</p>'+
  '<div class="overviewProgress">'+phases.map(function(x,i){return '<div class="overviewStep '+(x[1]?"done":next.step===i?"current":"")+'"><span class="stepDot"></span>'+x[0]+'</div>'}).join("")+'</div>'+
- '<div class="overviewActions"><button class="btn primary" data-view="'+next.view+'">'+next.icon+' '+next.label+'</button></div></section>'+
+ '<div class="overviewActions"><button class="btn primary" data-view="'+next.view+'">'+next.icon+' '+next.label+'</button>'+(fb&&next.view!=="iterate"?'<button class="btn" data-view="iterate">💬 개선 채팅</button>':'')+'</div></section>'+
  '<div class="overviewNumbers"><div><span>External cost</span><strong>'+money(s)+'</strong></div><div><span>Latest build</span><strong>'+(steps.build?"Verified":fb?"Pending verification":"Not built")+'</strong></div></div>'+
  (feats.length?'<section class="card overviewFeatures"><div class="sectionTitle">Core features</div>'+feats.map(function(x){return '<div class="simpleFeature"><span class="featureDot"></span><span>'+esc(x)+'</span></div>'}).join("")+'</section>':'')+
  (state.runStage==="error"?runPanel():""));
