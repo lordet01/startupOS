@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 const C=window.APP_CONFIG,root=document.getElementById('app'),key='startup-os:app:v3:'+C.sessionId+':skin';
-const UI=Object.assign({result_title:'피부 관찰 결과',photo_guide:'밝고 균일한 조명에서 정면 사진을 촬영하세요.',analysis_button:'사진 분석하기',analysis_focus:'balanced',detail_level:'concise',result_order:['observations','ingredients'],ingredient_limit:4,show_certainty:true,show_cautions:true},C.refinement||{});
+const UI=Object.assign({result_title:'피부 관찰 결과',photo_guide:'밝고 균일한 조명에서 정면 사진을 촬영하세요.',analysis_button:'사진 분석하기',analysis_focus:'balanced',detail_level:'concise',result_order:['observations','ingredients'],ingredient_limit:4,show_certainty:true,show_cautions:true,ui_accent:'teal',ui_density:'comfortable',text_scale:'normal',result_style:'dividers'},C.refinement||{});
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 let records=[],file=null,preview='',busy=false,error='',result=null,consent=false,view='scan',status='',cameraStream=null,aborter=null,photoStage='waiting',lastFailure=null;
 try{records=JSON.parse(localStorage.getItem(key)||'[]');if(!Array.isArray(records))records=[]}catch{records=[]}
@@ -36,7 +36,8 @@ function findings(r){
 
 function history(){return '<section class="card"><div class="row between"><h2>분석 기록</h2><button class="btn" id="export">JSON 내보내기</button></div>'+(records.length?records.slice().reverse().map(x=>'<div class="record"><div class="row between"><strong>'+esc(new Date(x.at).toLocaleString())+'</strong><button class="btn danger" data-delete="'+esc(x.id)+'">삭제</button></div><p class="muted">'+esc(x.result.summary)+'</p><div class="hint">'+esc(x.result.ingredient_groups.map(v=>ingredientNames[v.ingredient]||v.ingredient).join(', '))+'</div></div>').join(''):'<div class="empty">아직 저장한 분석 결과가 없습니다.</div>')+'</section>'}
 function render(){
- root.className='app';root.innerHTML=header()+(view==='scan'?form()+findings(result):history())+navbar();
+ root.className='app skin-ui-'+UI.ui_accent+' skin-density-'+UI.ui_density+' skin-text-'+UI.text_scale+' skin-result-'+UI.result_style;
+ root.innerHTML=header()+(view==='scan'?form()+findings(result):history())+navbar();
  document.querySelectorAll('[data-view]').forEach(el=>el.onclick=()=>{stopCamera();view=el.dataset.view;error='';render()});
  const cap=document.getElementById('capture');if(cap)cap.onclick=openCamera;
  const album=document.getElementById('album');if(album)album.onclick=()=>document.getElementById('albumInput').click();
