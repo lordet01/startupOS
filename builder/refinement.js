@@ -47,7 +47,7 @@ function proposalHtml(p,state){
  (proposal.external_steps?.length?'<div class="refineHint">외부 연동에 필요한 설정: '+escape(proposal.external_steps.join(' · '))+'</div>':'')+
  (proposal.unsupported_requests?.length?'<div class="refineHint">추가 검토: '+escape(proposal.unsupported_requests.join(' · '))+'</div>':'')+
  (proposal.manual_test?.length?'<details><summary>다음 검증 항목 ('+proposal.manual_test.length+')</summary><ul>'+proposal.manual_test.map(x=>'<li>'+escape(x)+'</li>').join('')+'</ul></details>':'')+
- (!unsupported&&!stale&&!built?'<button id="refineApprove" class="refinePrimary" type="button">✓ 코드 적용 · New Build</button>':built?'<div class="refineHint">✓ 새 Build '+escape(proposal.resultBuildId?.slice(-8)||'')+'에 반영됐습니다. 위 화면에서 다시 확인하고 추가 수정을 채팅하세요.</div>':stale?'<div class="refineHint">다른 Build로 전환됐습니다. 현재 화면 기준으로 다시 개선안을 요청하세요.</div>':'')+'</div>';
+ (!unsupported&&!stale&&!built?'<button id="refineApprove" class="refinePrimary" type="button">✓ 코드 적용 · New Build</button>':built?'<div class="refineHint">✓ 새 Build '+escape(proposal.resultBuildId?.slice(-8)||'')+'에 반영됐습니다. 위 화면에서 다시 확인하고 추가 수정을 채팅하세요.</div>':stale?'<div class="refineHint">다른 Build로 전환됐습니다. 현재 화면 기준으로 다시 개선안을 요청하세요.</div>':'<button id="refineRetryAsCode" class="refinePrimary" type="button">🛠 이 요청을 코드 수정으로 다시 실행</button>')+'</div>';
 }
 function getImageBuffer(sid){
  const d=local(sid);
@@ -101,6 +101,15 @@ function updateChat(sid){
  if(send){send.disabled=d.busy||stale||p.functionalBuild?.kind!=='skin';send.innerText=d.busy?'⏳ GPT 검토 중…':'↗ AI에 수정 요청';send.onclick=()=>sendRequest(sid)}
  const approve=document.getElementById('refineApprove');
  if(approve){approve.disabled=d.busy;approve.onclick=()=>approveBuild(sid)}
+ const retry=document.getElementById('refineRetryAsCode');
+ if(retry){retry.disabled=d.busy;retry.onclick=()=>{
+   const message=[...(p.functionalChat||[])].reverse().find(x=>x.role==='user'&&(!x.buildId||x.buildId===p.functionalBuild?.bid));
+   const previous=message?.text||p.functionalProposal?.reason||'';
+   if(previous.trim().length<3){d.error='이전 수정 요청을 찾지 못했습니다. 아래 입력란에 다시 작성해 주세요.';updateChat(sid);return}
+   d.text=previous;
+   updateChat(sid);
+   sendRequest(sid);
+ };}
 }
 function switchTab(sid,tab){
  const host=document.getElementById('refineHost');if(!host)return;
