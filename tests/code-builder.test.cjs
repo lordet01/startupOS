@@ -36,6 +36,14 @@ test('unmatched and ambiguous source regions rejected',()=>{
  assert.throws(()=>Editor.apply('skin',[{file:'capabilities/skin.js',search:'XYZ_NOT_IN_SOURCE',replace:'something'}]),/현재 버전/);
  assert.throws(()=>Editor.apply('skin',[{file:'capabilities/skin.js',search:'function',replace:'somefunction'}]),/여러 곳/);
 });
+test('same code-builder operates on Travel and Receipt app screens',()=>{
+ const cssEdit={file:'capabilities/app.css',search:styleBase,replace:styleBase+'.startup-test-accent{outline:2px solid #e52b3c}'};
+ for(const kind of ['travel','receipt']){
+   const rendered=Editor.verify(kind,[cssEdit]);
+   assert.equal(rendered.smoke.status,'passed',kind);
+   assert.match(rendered.files['capabilities/app.css'],/startup-test-accent/);
+ }
+});
 test('LLM receives live source/screenshot and returns tested code patch',async()=>{
  let request;
  const image='data:image/jpeg;base64,'+Buffer.concat([Buffer.from([255,216]),Buffer.alloc(600,28)]).toString('base64');
