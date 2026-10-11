@@ -52,10 +52,11 @@ jobs:
         run: node tests/refinement-ui.mjs
       - name: Committed evidence check on main
         if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
-        run: node -e "const assert=require('node:assert/strict');const B=require('./lib/build-contract');const r=require('./lib/browser-evidence.json');assert.equal(r.sourceHash,B.sourceHash());assert.ok(r.checks.length>=18 && r.checks.every(x=>x.status==='passed'));"
+        run: node -e "const assert=require('node:assert/strict');const B=require('./lib/build-contract');const r=JSON.parse(require('node:child_process').execFileSync('git',['show','HEAD:lib/browser-evidence.json'],{encoding:'utf8'}));assert.equal(r.sourceHash,B.sourceHash());assert.ok(r.checks.length>=18 && r.checks.every(x=>x.status==='passed'));"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: functional-build-test-evidence
           path: test-results/
           retention-days: 14
+
