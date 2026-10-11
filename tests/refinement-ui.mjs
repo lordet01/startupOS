@@ -15,7 +15,7 @@ const browserReply=(name,limit)=>({ok:true,status:'config_patch',response:'요�
  config:Config.normalize('skin',{result_title:name,analysis_focus:'texture',detail_level:'detailed',ingredient_limit:limit,result_order:['ingredients','observations'],show_certainty:false}),
  changes:[{key:'result_title',label:'결과 제목',from:'피부 관찰 결과',to:name},{key:'ingredient_limit',label:'성분군 표시 개수',from:'4',to:String(limit)}],
  manual_test:['결과 카드 수정 확인','성분군 순서 확인'],unsupported_requests:[],model:'mock',response_id:'resp_mock_refine',usage:{input_tokens:100,output_tokens:100},cost:{provider_usd:0.001}});
-const checks=[],errors=[];let proposalCount=0,requests=[];
+const checks=[],errors=[];let proposalCount=0,requests=[],fullCaptureSize=null,partialSize=null;
 function send(res,status,data,contentType='application/json'){res.statusCode=status;res.setHeader('Content-Type',contentType);res.end(contentType.includes('json')?JSON.stringify(data):data)}
 function handlerResult(res){return{setHeader:(k,v)=>res.setHeader(k,v),status(n){res.statusCode=n;return this},json(d){send(res,res.statusCode||200,d);return this},send(d){send(res,res.statusCode||200,d,'text/html; charset=utf-8');return this},end(){res.end();return this}}}
 const files=new Set(['index.html','config.js','builder/index.html','builder/studio.js','builder/refinement.js','builder/refinement.css','capabilities/app.css','vendor/html2canvas.min.js']);
@@ -81,6 +81,7 @@ try{
    const meta=await page.locator('#refineCanvas').evaluate(el=>({width:el.width,height:el.height,src:el.toDataURL('image/jpeg',.72)}));
    assert.ok(meta.width>180&&meta.height>180);
    assert.ok(meta.src.startsWith('data:image/jpeg;base64,'));
+   fullCaptureSize={width:meta.width,height:meta.height};
  });
  await check('mouse_and_touch_pointer_annotations_draw_over_capture',async()=>{
    const canvas=page.locator('#refineCanvas');
@@ -117,10 +118,55 @@ try{
    await page.waitForFunction(()=>document.getElementById('refineFrame')?.contentWindow?.APP_CONFIG?.refinement?.result_title==='MySkin 결과 리포트');
    assert.equal(await page.locator('#refineHost .refineVersion').innerText(),'Revision 1');
  });
- await check('second_feedback_build_cycle_keeps_history_and_revision',async()=>{
-   await page.locator('#refineText').fill('성분군을 2개로 줄이고 리포트 제목도 간결하게 바꿔줘');
+ await check('partial_capture_is_adjacent_to_full_capture_and_has_rectangle_overlay',async()=>{
+   const full=page.locator('#refineCapture'),crop=page.locator('#refineCrop');
+   await crop.waitFor({state:'visible'});
+   const a=await full.boundingBox(),b=await crop.boundingBox();
+   assert.ok(a&&b&&Math.abs(a.y-b.y)<18&&b.x>a.x,'Crop button should be adjacent to full capture');
+   await crop.click();
+   const overlay=page.locator('#refineCropOverlay');
+   await overlay.waitFor({state:'visible',timeout:25000});
+   assert.equal(await page.locator('#refineCrop').getAttribute('aria-pressed'),'true');
+   assert.equal(await overlay.evaluate(el=>getComputedStyle(el).touchAction),'none');
+   assert.ok(await overlay.evaluate(el=>getComputedStyle(el).backgroundImage.includes('data:image/jpeg')));
+ });
+ await check('mouse_rectangle_crops_only_selected_preview_pixels',async()=>{
+   const overlay=page.locator('#refineCropOverlay');
+   await overlay.scrollIntoViewIfNeeded();
+   const rect=await overlay.boundingBox();
+   assert.ok(rect&&rect.width>200&&rect.height>300);
+   const x=rect.x+50,y=rect.y+140;
+   await page.mouse.move(x,y);
+   await page.mouse.down();
+   await page.mouse.move(x+160,y+115,{steps:8});
+   const box=page.locator('#refineCropSelection');
+   await box.waitFor({state:'visible'});
+   assert.ok((await box.boundingBox()).width>100);
+   await page.mouse.up();
+   await overlay.waitFor({state:'detached'});
+   await page.locator('#refineCanvas').waitFor({state:'visible'});
+   const meta=await page.locator('#refineCanvas').evaluate(el=>({width:el.width,height:el.height}));
+   partialSize=meta;
+   assert.ok(meta.width>110&&meta.width<fullCaptureSize.width*.8,JSON.stringify(meta));
+   assert.ok(meta.height>70&&meta.height<fullCaptureSize.height*.7,JSON.stringify(meta));
+   assert.match(await page.locator('.refineAnnotationHead').innerText(),/부분 캡처 첨부됨/);
+   assert.equal(await page.locator('#refineCrop').getAttribute('aria-pressed'),'false');
+ });
+ await check('cropped_screenshot_is_sent_with_next_chat_message_only',async()=>{
+   assert.equal(requests.length,1,'Cropped selection must not auto-send any data');
+   await page.locator('#refineText').fill('캡처한 이 영역의 결과 카드를 더 간결하게 만들고 성분군은 2개로 제한해줘');
    await page.locator('#refineSend').click();
-   await page.locator('#refineApprove').waitFor();
+   await page.locator('#refineApprove').waitFor({state:'visible'});
+   assert.equal(requests.length,2);
+   assert.ok(requests[1].screenshot.startsWith('data:image/jpeg;base64,'));
+   const imageMeta=await page.evaluate(async url=>{
+     const img=new Image();img.src=url;await img.decode();return{width:img.width,height:img.height};
+   },requests[1].screenshot);
+   assert.deepEqual(imageMeta,partialSize);
+   assert.match(requests[1].message,/이 영역/);
+ });
+ await check('second_feedback_build_cycle_keeps_history_and_revision',async()=>{
+   // The second feedback and cropped screenshot were sent together above.
    await page.locator('#refineApprove').click();
    await page.waitForFunction(KEY=>JSON.parse(localStorage.getItem(KEY)).sessions[0].functionalBuild.refinementRevision===2,KEY,{timeout:15000});
    const p=await page.evaluate(KEY=>JSON.parse(localStorage.getItem(KEY)).sessions[0],KEY);
@@ -135,6 +181,29 @@ try{
    assert.equal(await page.locator('.refineMessages .refineBubble').count(),0);
    const p=await page.evaluate(KEY=>JSON.parse(localStorage.getItem(KEY)).sessions[1],KEY);
    assert.equal(p.functionalBuild.refinementRevision||0,0);
+ });
+ await check('partial_capture_cancel_keyboard_and_touch_rectangle_work_on_mobile',async()=>{
+   await page.setViewportSize({width:390,height:844});
+   await page.locator('[data-refine-tab="preview"]').click();
+   await page.locator('#refineCrop').click();
+   let overlay=page.locator('#refineCropOverlay');
+   await overlay.waitFor();
+   await overlay.press('Escape');
+   await overlay.waitFor({state:'detached'});
+   assert.equal(await page.locator('#refineCrop').getAttribute('aria-pressed'),'false');
+   await page.locator('#refineCrop').click();
+   overlay=page.locator('#refineCropOverlay');
+   await overlay.waitFor();
+   const bounds=await overlay.boundingBox();
+   await overlay.dispatchEvent('pointerdown',{pointerId:31,pointerType:'touch',isPrimary:true,clientX:bounds.x+45,clientY:bounds.y+112});
+   await overlay.dispatchEvent('pointermove',{pointerId:31,pointerType:'touch',isPrimary:true,clientX:bounds.x+165,clientY:bounds.y+252});
+   await overlay.dispatchEvent('pointerup',{pointerId:31,pointerType:'touch',isPrimary:true,clientX:bounds.x+165,clientY:bounds.y+252});
+   await overlay.waitFor({state:'detached'});
+   await page.locator('[data-refine-tab="chat"].on').waitFor();
+   const canvas=page.locator('#refineCanvas');
+   await canvas.waitFor({state:'visible'});
+   assert.match(await page.locator('.refineAnnotationHead').innerText(),/부분 캡처/);
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);
  });
  await check('mobile_touch_view_has_preview_chat_tabs_and_no_overflow',async()=>{
    await page.setViewportSize({width:390,height:844});
