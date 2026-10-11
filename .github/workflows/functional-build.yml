@@ -31,6 +31,8 @@ jobs:
         run: node --test tests/repair.test.cjs
       - name: Chat refinement artifact and screenshot API contracts
         run: node --test tests/refinement.test.cjs
+      - name: AI code edits and real generated app smoke tests
+        run: node --test tests/code-builder.test.cjs
       - name: Agent Cycle contracts and sanitized payload
         run: node --test tests/agent-cycle.test.cjs tests/idea-note.test.cjs
       - run: npx playwright install --with-deps chromium
