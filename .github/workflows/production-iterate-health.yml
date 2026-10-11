@@ -36,8 +36,10 @@ jobs:
           assert.equal(r.ok,true);assert.equal(r.feature,'session_refinement');assert.equal(r.screenshot,true);assert.ok(r.supported.includes('skin'));
           assert.ok(html.includes('builder/refinement.js'));
           assert.ok(code.includes('refineCapture')&&code.includes('refineApprove')&&code.includes('pointerdown'));
+          assert.ok(code.includes('id="refineCrop"')&&code.includes('refineCropOverlay')&&code.includes('startPartialCapture')&&code.includes('drawImage(sourceCanvas'));
+          assert.ok(code.includes('scrollY:-win.scrollY')&&!code.includes('x:win.scrollX,y:win.scrollY'));
           assert.ok(vendor.includes('html2canvas'));
-          console.log('LIVE PRODUCTION PASS: Build '+b.version+', screenshot GPT API, iframe chat and vendored html2canvas');
+          console.log('LIVE PRODUCTION PASS: Build '+b.version+', full + partial crop, scroll-aware preview, annotated screenshot chat and vendor asset');
           JS
             then
               exit 0
