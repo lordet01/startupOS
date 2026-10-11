@@ -8,9 +8,9 @@
 .refinePreviewActions{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;color:#94abc8;font-size:11px}
 .refinePreviewActions>div{display:flex;gap:7px}
 .refineSmall{background:#18304f;color:white;border:1px solid #344b67;border-radius:9px;text-decoration:none;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;font-size:17px}
-.refinePhone{width:100%;height:650px;max-width:390px;margin:0 auto;background:#f9fafb;border:6px solid #20354f;border-radius:24px;overflow:hidden;box-shadow:0 10px 35px #010a1899}
+.refinePhone{position:relative;isolation:isolate;width:100%;height:650px;max-width:390px;margin:0 auto;background:#f9fafb;border:6px solid #20354f;border-radius:24px;overflow:hidden;box-shadow:0 10px 35px #010a1899}
 .refinePhone iframe{display:block;width:100%;height:100%;border:0;background:#fff}
-.refinePhotoTools{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:12px}
+.refinePhotoTools{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;margin-top:12px}
 .refinePrimary{background:linear-gradient(135deg,#668bff,#7665ff);border:0;color:#fff;border-radius:11px;min-height:44px;padding:10px 14px;font-weight:800;cursor:pointer;font:inherit;font-size:12px}
 .refinePrimary:disabled{opacity:.55;cursor:progress}
 .refineUpload{background:#172a43;border:1px solid #344d70;border-radius:11px;min-height:44px;padding:10px 13px;font-weight:700;cursor:pointer;color:#d7e6ff;display:flex;align-items:center;justify-content:center;font-size:12px}
@@ -67,3 +67,18 @@
 .refineStale{margin:12px 15px;background:#30261c;border:1px solid #8a6030;border-radius:12px;padding:12px;display:grid;gap:7px;font-size:12px;color:#ecd1a6}
 .refineStale strong{color:#ffe0a6;font-size:13px}.refineStale button{background:#374b6a;color:#fff;border:1px solid #6786b0;border-radius:10px;padding:11px;min-height:43px;font-weight:750;cursor:pointer}
 .refinePhoneStale{display:flex;justify-content:center;align-items:center;color:#394860;font-size:14px;font-weight:800}
+
+/* In-place partial capture: frozen iframe preview with mouse/touch rectangular crop. */
+.refineCropButton{background:#1d385c;border:1px solid #6282ad}
+.refineCropButton.active{background:#4b293c;border-color:#f98b9f}
+.refineCropOverlay{position:absolute;inset:0;z-index:8;background-repeat:no-repeat;background-size:100% 100%;background-position:center;overflow:hidden;cursor:crosshair;touch-action:none;user-select:none;-webkit-user-select:none;outline:none}
+.refineCropShade{position:absolute;inset:0;background:rgba(0,17,32,.26);pointer-events:none}
+.refineCropHint{position:absolute;top:12px;left:9px;right:40px;padding:9px 11px;z-index:3;font-size:11px;line-height:1.45;color:#fff;font-weight:700;background:#172e4ce8;border:1px solid #a5c4fe;border-radius:10px;pointer-events:none;box-shadow:0 3px 12px #061a2c77}
+.refineCropCancel{position:absolute;right:9px;top:12px;width:32px;height:32px;border-radius:9px;background:#172e4ce8;border:1px solid #a5c4fe;color:#fff;font-size:17px;display:flex;align-items:center;justify-content:center;z-index:4;touch-action:manipulation}
+.refineCropSelection{position:absolute;z-index:2;border:2px solid #76d8ff;background:rgba(177,227,255,.08);box-shadow:0 0 0 9999px rgba(0,15,37,.20);pointer-events:none;outline:1px solid #fff;outline-offset:-4px}
+.refineAnnotationHead strong{color:#dbeaff}
+@media(max-width:760px){
+ .refinePhotoTools{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:6px}
+ .refinePhotoTools>.refinePrimary{font-size:11px;padding:9px 7px;white-space:nowrap;min-width:0}
+ .refinePhotoTools>.refineUpload{font-size:10px;padding:9px 7px;min-width:0}
+}

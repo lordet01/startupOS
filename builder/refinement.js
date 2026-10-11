@@ -5,7 +5,7 @@ const Bridge=()=>window.StartupOSBuildBridge;
 const drafts=new Map(),activities=new Map();
 const escape=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const now=()=>new Date().toISOString(),limit=x=>String(x||'').slice(0,2500);
-function local(sid){if(!drafts.has(sid))drafts.set(sid,{text:'',tab:'preview',screenshot:null,strokes:[],activeStroke:null,busy:false,error:'',captureBusy:false});return drafts.get(sid)}
+function local(sid){if(!drafts.has(sid))drafts.set(sid,{text:'',tab:'preview',screenshot:null,strokes:[],activeStroke:null,busy:false,error:'',captureBusy:false,cropMode:null});return drafts.get(sid)}
 const getSession=()=>Bridge()?.getSession();
 function saveMessage(sid,msg){
  const bridge=Bridge();if(!bridge)return;
@@ -19,8 +19,8 @@ function hostMarkup(p,stale){
  '<div class="refineColumns"><div class="refinePreviewPane">'+
  '<div class="refinePreviewActions"><span>Mobile · 390px</span><div><button id="refineReload" class="refineSmall" type="button">↻</button><a class="refineSmall" target="_blank" rel="noopener noreferrer" href="'+escape(build.previewUrl)+'" title="별도 창으로 실행">↗</a></div></div>'+
  (stale?'<div class="refinePhone refinePhoneStale"><div>New Build가 필요합니다.</div></div>':'<div class="refinePhone"><iframe id="refineFrame" title="현재 Build의 모바일 앱 화면" allow="camera" src="'+escape(build.previewUrl)+'"></iframe></div>')+
- (stale?'':'<div class="refinePhotoTools"><button id="refineCapture" class="refinePrimary" type="button">📸 현재 화면 캡처</button><label for="refineScreenshotFile" class="refineUpload">이미지 첨부</label><input id="refineScreenshotFile" type="file" accept="image/png,image/jpeg,image/webp" hidden></div>')+
- '<div class="refineMiniNote">직접 터치/마우스로 앱을 조작할 수 있습니다. 캡처 후 문제 영역을 표시하세요.</div></div>'+
+ (stale?'':'<div class="refinePhotoTools"><button id="refineCapture" class="refinePrimary" type="button">📸 전체 캡처</button><button id="refineCrop" class="refinePrimary refineCropButton" type="button" aria-pressed="false">✂ 부분 캡처</button><label for="refineScreenshotFile" class="refineUpload">이미지 첨부</label><input id="refineScreenshotFile" type="file" accept="image/png,image/jpeg,image/webp" hidden></div>')+
+ '<div class="refineMiniNote">앱을 조작한 뒤 부분 캡처를 누르고 필요한 부분을 드래그하세요. 손가락·마우스 모두 지원합니다.</div></div>'+
  '<div class="refineChatPane"><div id="refineMessages" class="refineMessages"></div>'+
  '<div id="refineProposal" class="refineProposal"></div>'+
  '<div id="refineAnnotation" class="refineAnnotation"></div>'+
@@ -56,7 +56,7 @@ function getImageBuffer(sid){
 }
 function annotationMarkup(state){
  if(!state.screenshot)return '';
- return '<div class="refineAnnotationHead"><strong>📸 캡처 화면 표시</strong><span>손가락 또는 마우스로 표시</span></div>'+
+ return '<div class="refineAnnotationHead"><strong>'+(state.screenshot.captureType==='partial'?'✂ 부분 캡처 첨부됨':'📸 전체 화면 첨부됨')+'</strong><span>'+escape(state.screenshot.width+' × '+state.screenshot.height)+' · 손가락/마우스로 표시</span></div>'+
  '<canvas id="refineCanvas" aria-label="캡처된 화면 위에 자유롭게 표시" role="img"></canvas>'+
  '<div class="refineAnnotationTools"><button id="refineUndo" type="button">↶ 실행 취소</button><button id="refineClear" type="button">지우기</button><button id="refineRemoveShot" type="button">사진 제거</button></div>';
 }
@@ -112,10 +112,12 @@ function mount(){
  const info=b.getInfo(),stale=!!(info&&((p.functionalBuild.sourceHash!==info.sourceHash)||(p.functionalBuild.version!==info.version)));
  const fresh=host.dataset.sessionId!==sid||host.dataset.buildId!==bid||host.dataset.stale!==String(stale)||!(host.querySelector('#refineFrame')||host.querySelector('.refinePhoneStale'));
  if(fresh){
+  cancelPartialCapture(sid);
   host.innerHTML=hostMarkup(p,stale);host.dataset.sessionId=sid;host.dataset.buildId=bid;host.dataset.stale=String(stale);
   const frame=host.querySelector('#refineFrame');
   if(frame)frame.addEventListener('load',()=>{const note=host.querySelector('.refineMiniNote');if(note)note.textContent='터치/마우스로 앱을 조작하고, 캡처 버튼으로 현재 화면을 첨부하세요.'});
   const capture=host.querySelector('#refineCapture');if(capture)capture.onclick=()=>captureScreen(sid);
+  const crop=host.querySelector('#refineCrop');if(crop)crop.onclick=()=>{if(local(sid).cropMode)cancelPartialCapture(sid);else startPartialCapture(sid)};
   const reload=host.querySelector('#refineReload');if(reload)reload.onclick=()=>{if(frame)frame.src=p.functionalBuild.previewUrl;};
   const rebase=host.querySelector('#refineRebase');if(rebase)rebase.onclick=()=>{const el=document.getElementById('assemble');if(el&&!el.disabled)el.click();else document.getElementById('scope-stage')?.scrollIntoView({behavior:'smooth'});};
   const file=host.querySelector('#refineScreenshotFile');if(file)file.onchange=()=>{const f=file.files?.[0];if(f)loadUploadedScreenshot(sid,f);file.value=''};
@@ -123,7 +125,7 @@ function mount(){
  }
  updateChat(sid);switchTab(sid,d.tab);
 }
-async function setScreenshot(sid,dataUrl){
+async function setScreenshot(sid,dataUrl,meta={}){
  const d=local(sid),img=new Image();
  await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=dataUrl});
  const scale=Math.min(1,900/img.width);
@@ -132,7 +134,7 @@ async function setScreenshot(sid,dataUrl){
  canvas.getContext('2d').drawImage(img,0,0,width,height);
  const safeUrl=canvas.toDataURL('image/jpeg',.81);
  const safe=new Image();await new Promise((resolve,reject)=>{safe.onload=resolve;safe.onerror=reject;safe.src=safeUrl});
- d.screenshot={image:safe,dataUrl:safeUrl,width,height};d.strokes=[];d.error='';d.tab='chat';updateChat(sid);switchTab(sid,'chat');
+ d.screenshot={image:safe,dataUrl:safeUrl,width,height,captureType:meta.captureType||'full',crop:meta.crop||null};d.strokes=[];d.error='';d.tab='chat';updateChat(sid);switchTab(sid,'chat');
 }
 async function loadUploadedScreenshot(sid,file){
  const d=local(sid);if(!/^image\/(png|jpeg|webp)$/.test(file.type)||file.size>6000000){d.error='이미지는 JPG/PNG/WebP 6MB 이하만 첨부할 수 있습니다.';updateChat(sid);return}
@@ -151,22 +153,131 @@ async function ensureCaptureEngine(frame){
  });
  if(!win.html2canvas)throw Error('캡처 엔진 초기화 실패');return win.html2canvas;
 }
+async function renderPreviewCanvas(frame){
+ const engine=await ensureCaptureEngine(frame),win=frame.contentWindow;
+ if(!win||!frame.contentDocument?.body)throw Error('미리보기 앱을 불러오지 못했습니다.');
+ const width=Math.round(win.innerWidth),height=Math.round(win.innerHeight);
+ if(width<100||height<100)throw Error('캡처할 앱 화면이 아직 준비되지 않았습니다.');
+ // Capture the currently visible viewport, including its scroll offset.
+ const rendered=await engine(frame.contentDocument.body,{
+  backgroundColor:'#f3f5f9',logging:false,useCORS:true,
+  windowWidth:width,windowHeight:height,
+  scrollX:-win.scrollX,scrollY:-win.scrollY,
+  width,height,scale:1.4
+ });
+ if(!rendered||rendered.width<100||rendered.height<100)throw Error('현재 앱 화면 캡처에 실패했습니다.');
+ return rendered;
+}
+function cancelPartialCapture(sid){
+ const d=local(sid),mode=d.cropMode;
+ if(!mode)return;
+ mode.overlay?.remove();
+ d.cropMode=null;
+ const button=document.getElementById('refineCrop');
+ if(button){button.textContent='✂ 부분 캡처';button.setAttribute('aria-pressed','false');button.classList.remove('active');button.disabled=false}
+}
+function cropPoint(event,rect){
+ return{x:Math.max(0,Math.min(rect.width,event.clientX-rect.left)),
+  y:Math.max(0,Math.min(rect.height,event.clientY-rect.top))};
+}
+function beginCropSelection(sid,sourceCanvas,frame){
+ const d=local(sid),phone=frame.closest('.refinePhone');
+ if(!phone)throw Error('앱 미리보기 화면을 찾을 수 없습니다.');
+ cancelPartialCapture(sid);
+ const overlay=document.createElement('div');
+ overlay.id='refineCropOverlay';
+ overlay.className='refineCropOverlay';
+ overlay.setAttribute('role','region');
+ overlay.setAttribute('aria-label','부분 캡처 영역 선택: 손가락이나 마우스로 직사각형을 드래그하세요.');
+ overlay.tabIndex=0;
+ overlay.style.backgroundImage='url("'+sourceCanvas.toDataURL('image/jpeg',.85)+'")';
+ overlay.innerHTML='<div class="refineCropShade"></div>'+
+  '<div class="refineCropHint" id="refineCropHint">✂ 필요한 부분을 드래그해서 선택하세요</div>'+
+  '<button type="button" id="refineCropCancel" class="refineCropCancel" aria-label="부분 캡처 취소">✕</button>'+
+  '<div id="refineCropSelection" class="refineCropSelection" hidden></div>';
+ phone.appendChild(overlay);
+ const button=document.getElementById('refineCrop');
+ if(button){button.textContent='✕ 선택 취소';button.setAttribute('aria-pressed','true');button.classList.add('active')}
+ const state={overlay,sourceCanvas,pointerId:null,start:null,selection:null};
+ d.cropMode=state;
+ const selection=overlay.querySelector('#refineCropSelection'),hint=overlay.querySelector('#refineCropHint');
+ const draw=end=>{
+  const x=Math.min(state.start.x,end.x),y=Math.min(state.start.y,end.y),w=Math.abs(end.x-state.start.x),h=Math.abs(end.y-state.start.y);
+  selection.hidden=false;selection.style.left=x+'px';selection.style.top=y+'px';
+  selection.style.width=w+'px';selection.style.height=h+'px';
+  state.selection={x,y,w,h};
+ };
+ overlay.querySelector('#refineCropCancel').onclick=e=>{e.preventDefault();e.stopPropagation();cancelPartialCapture(sid)};
+ overlay.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();cancelPartialCapture(sid)}};
+ overlay.addEventListener('pointerdown',e=>{
+  if(e.target.closest('button')||state.pointerId!==null)return;
+  e.preventDefault();state.pointerId=e.pointerId;state.start=cropPoint(e,overlay.getBoundingClientRect());
+  try{overlay.setPointerCapture(e.pointerId)}catch{}
+  draw(state.start);
+ });
+ overlay.addEventListener('pointermove',e=>{
+  if(state.pointerId!==e.pointerId||!state.start)return;
+  e.preventDefault();draw(cropPoint(e,overlay.getBoundingClientRect()));
+ });
+ const finish=e=>{
+  if(state.pointerId!==e.pointerId||!state.start)return;
+  e.preventDefault();draw(cropPoint(e,overlay.getBoundingClientRect()));
+  try{overlay.releasePointerCapture(e.pointerId)}catch{}
+  state.pointerId=null;state.start=null;
+  const region=state.selection;
+  if(!region||region.w<18||region.h<18){
+   selection.hidden=true;hint.textContent='범위가 너무 작습니다. 18px 이상 드래그하세요.';return;
+  }
+  const area=overlay.getBoundingClientRect();
+  const sx=Math.max(0,Math.floor(region.x/area.width*sourceCanvas.width));
+  const sy=Math.max(0,Math.floor(region.y/area.height*sourceCanvas.height));
+  const sw=Math.max(1,Math.min(sourceCanvas.width-sx,Math.round(region.w/area.width*sourceCanvas.width)));
+  const sh=Math.max(1,Math.min(sourceCanvas.height-sy,Math.round(region.h/area.height*sourceCanvas.height)));
+  const cropped=document.createElement('canvas');cropped.width=sw;cropped.height=sh;
+  cropped.getContext('2d').drawImage(sourceCanvas,sx,sy,sw,sh,0,0,sw,sh);
+  const rectInfo={x:sx,y:sy,width:sw,height:sh};
+  cancelPartialCapture(sid);
+  setScreenshot(sid,cropped.toDataURL('image/jpeg',.86),{captureType:'partial',crop:rectInfo})
+   .catch(error=>{d.error='선택한 부분을 첨부하지 못했습니다: '+error.message;updateChat(sid)});
+ };
+ overlay.addEventListener('pointerup',finish);
+ overlay.addEventListener('pointercancel',e=>{
+  if(state.pointerId!==e.pointerId)return;
+  state.pointerId=null;state.start=null;state.selection=null;selection.hidden=true;
+  hint.textContent='다시 드래그해서 범위를 선택하세요.';
+ });
+ overlay.focus({preventScroll:true});
+}
+async function startPartialCapture(sid){
+ const d=local(sid),button=document.getElementById('refineCrop'),frame=document.getElementById('refineFrame');
+ if(d.captureBusy||!frame||d.cropMode)return;
+ d.captureBusy=true;d.error='';
+ if(button){button.disabled=true;button.textContent='⏳ 캡처 준비 중…'}
+ try{
+  const rendered=await renderPreviewCanvas(frame);
+  if(Bridge()?.getActiveId()!==sid||!frame.isConnected)return;
+  beginCropSelection(sid,rendered,frame);
+ }catch(e){
+  d.error='부분 캡처 실패: '+e.message+' · 이미지 첨부로 대체할 수 있습니다.';
+  d.tab='chat';updateChat(sid);switchTab(sid,'chat');
+ }finally{
+  d.captureBusy=false;
+  if(button&&!d.cropMode){button.disabled=false;button.textContent='✂ 부분 캡처'}
+ }
+}
 async function captureScreen(sid){
  const d=local(sid),button=document.getElementById('refineCapture'),frame=document.getElementById('refineFrame');
  if(d.captureBusy||!frame)return;
- d.captureBusy=true;d.error='';if(button){button.disabled=true;button.textContent='⏳ 화면 캡처 중…'}
+ cancelPartialCapture(sid);
+ d.captureBusy=true;d.error='';if(button){button.disabled=true;button.textContent='⏳ 전체 캡처 중…'}
  try{
-  const engine=await ensureCaptureEngine(frame),win=frame.contentWindow;
-  const rendered=await engine(frame.contentDocument.body,{
-   backgroundColor:'#f3f5f9',logging:false,useCORS:true,
-   windowWidth:win.innerWidth,windowHeight:win.innerHeight,
-   scrollY:-win.scrollY,scrollX:0,width:win.innerWidth,height:Math.min(win.innerHeight,900),scale:1.4
-  });
-  if(!rendered||rendered.width<100||rendered.height<100)throw Error('화면이 캡처되지 않았습니다.');
-  await setScreenshot(sid,rendered.toDataURL('image/jpeg',.84));
- }catch(e){d.error='자동 캡처 실패: '+e.message+' · 아래 이미지 첨부를 이용할 수 있습니다.';d.tab='chat';updateChat(sid);switchTab(sid,'chat')}
- finally{d.captureBusy=false;if(button){button.disabled=false;button.textContent='📸 현재 화면 캡처'}}
+  const rendered=await renderPreviewCanvas(frame);
+  if(Bridge()?.getActiveId()!==sid||!frame.isConnected)return;
+  await setScreenshot(sid,rendered.toDataURL('image/jpeg',.84),{captureType:'full'});
+ }catch(e){d.error='전체 캡처 실패: '+e.message+' · 이미지 첨부를 이용할 수 있습니다.';d.tab='chat';updateChat(sid);switchTab(sid,'chat')}
+ finally{d.captureBusy=false;if(button){button.disabled=false;button.textContent='📸 전체 캡처'}}
 }
+
 async function sendRequest(sid){
  const d=local(sid),b=Bridge(),p=b?.getSessionById(sid),current=p?.functionalBuild;
  if(d.busy||!p||!current)return;
