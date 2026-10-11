@@ -36,16 +36,18 @@ function messagesHtml(p){
 function proposalHtml(p,state){
  const proposal=p.functionalProposal;
  if(state.error)return '<div class="refineError" role="alert">'+escape(state.error)+'</div>'+(proposal?proposalHtml(p,{error:''}):'');
- if(!proposal)return '<div class="refineHint">지원 중인 변경: 분석 중점, 결과 순서, 성분 수, 상세 설명, 문구. 새로운 API·화면·DB 기능은 코드 작업이 필요하다고 안내합니다.</div>';
+ if(!proposal)return '<div class="refineHint">현재 앱의 실제 JS/CSS 파일을 수정합니다. 화면 캡처 또는 설명을 입력하면 AI가 코드 변경안을 만들고 새 Build에 반영합니다.</div>';
  const stale=proposal.baseBuildId!==p.functionalBuild?.bid;
- const unsupported=proposal.status!=='config_patch';
+ const supported=proposal.status==='config_patch'||proposal.status==='code_patch';
+ const unsupported=!supported;
  const built=proposal.status==='BUILT';
- return '<div class="refinePlan"><div class="refinePlanHead"><strong>'+escape(built?'적용된 변경':unsupported?'추가 구현 필요':'AI 수정 제안')+'</strong><span>'+escape(proposal.status)+'</span></div>'+
+ return '<div class="refinePlan"><div class="refinePlanHead"><strong>'+escape(built?'반영된 코드 변경':unsupported?'추가 확인 필요':proposal.status==='code_patch'?'실제 코드 수정안':'AI 설정 변경안')+'</strong><span>'+escape(proposal.status)+'</span></div>'+
  '<p>'+escape(proposal.response||proposal.reason||'')+'</p>'+
- (proposal.changes&&proposal.changes.length?'<div class="refineDiff">'+proposal.changes.map(x=>'<div><b>'+escape(x.label)+'</b><span>'+escape(x.from)+' → <strong>'+escape(x.to)+'</strong></span></div>').join('')+'</div>':'')+
- (proposal.unsupported_requests&&proposal.unsupported_requests.length?'<div class="refineHint">별도 코드 작업: '+escape(proposal.unsupported_requests.join(' · '))+'</div>':'')+
+ (proposal.changes&&proposal.changes.length?'<div class="refineDiff">'+proposal.changes.map(x=>'<div><b>'+escape(x.label)+'</b>'+(proposal.status==='code_patch'?'<details class="refineCodeDiff"><summary>변경 코드 확인</summary><div class="refineCodeCompare"><div><span>Before</span><pre>'+escape(x.from)+'</pre></div><div><span>After</span><pre>'+escape(x.to)+'</pre></div></div></details>':'<span>'+escape(x.from)+' → <strong>'+escape(x.to)+'</strong></span>')+'</div>').join('')+'</div>':'')+
+ (proposal.external_steps?.length?'<div class="refineHint">외부 연동에 필요한 설정: '+escape(proposal.external_steps.join(' · '))+'</div>':'')+
+ (proposal.unsupported_requests?.length?'<div class="refineHint">추가 검토: '+escape(proposal.unsupported_requests.join(' · '))+'</div>':'')+
  (proposal.manual_test?.length?'<details><summary>다음 검증 항목 ('+proposal.manual_test.length+')</summary><ul>'+proposal.manual_test.map(x=>'<li>'+escape(x)+'</li>').join('')+'</ul></details>':'')+
- (!unsupported&&!stale&&!built?'<button id="refineApprove" class="refinePrimary" type="button">✓ 적용하고 New Build</button>':built?'<div class="refineHint">✓ 새 Build '+escape(proposal.resultBuildId?.slice(-8)||'')+'에 반영됐습니다. 위 화면에서 다시 확인하고 추가 수정을 채팅하세요.</div>':stale?'<div class="refineHint">다른 Build로 전환됐습니다. 현재 화면 기준으로 다시 개선안을 요청하세요.</div>':'')+'</div>';
+ (!unsupported&&!stale&&!built?'<button id="refineApprove" class="refinePrimary" type="button">✓ 코드 적용 · New Build</button>':built?'<div class="refineHint">✓ 새 Build '+escape(proposal.resultBuildId?.slice(-8)||'')+'에 반영됐습니다. 위 화면에서 다시 확인하고 추가 수정을 채팅하세요.</div>':stale?'<div class="refineHint">다른 Build로 전환됐습니다. 현재 화면 기준으로 다시 개선안을 요청하세요.</div>':'')+'</div>';
 }
 function getImageBuffer(sid){
  const d=local(sid);
@@ -287,7 +289,7 @@ async function sendRequest(sid){
  saveMessage(sid,{role:'user',text,screenshotAttached:!!screenshot,buildId:before});updateChat(sid);
  try{
   const history=(p.functionalChat||[]).slice(-8).map(x=>({role:x.role==='assistant'?'assistant':'user',text:x.text}));
-  const res=await b.request('/api/refine',{kind:current.kind,sessionId:sid,buildId:before,currentConfig:current.refinement||null,message:text,history,screenshot},65000);
+  const res=await b.request('/api/refine',{action:'code',kind:current.kind,sessionId:sid,buildId:before,priorBuild:current.descriptor||current,currentConfig:current.refinement||null,message:text,history,screenshot},65000);
   b.patch(sid,x=>{
     x.functionalProposal={...res,baseBuildId:before,status:res.status,createdAt:now()};
     x.functionalChat=[...(x.functionalChat||[]),{role:'assistant',text:res.response+(res.changes?.length?' · '+res.changes.map(y=>y.label).join(', '):''),buildId:before,at:now()}].slice(-40);
@@ -299,10 +301,11 @@ async function sendRequest(sid){
 }
 async function approveBuild(sid){
  const d=local(sid),b=Bridge(),p=b?.getSessionById(sid),proposal=p?.functionalProposal;
- if(d.busy||!proposal||proposal.status!=='config_patch'||proposal.baseBuildId!==p.functionalBuild.bid)return;
+ if(d.busy||!proposal||!['config_patch','code_patch'].includes(proposal.status)||proposal.baseBuildId!==p.functionalBuild.bid)return;
  d.busy=true;d.error='';updateChat(sid);
  try{
-  const output=await b.applyRefinement(sid,proposal.config,proposal.response);
+  const changes=proposal.status==='code_patch'?{codeEdits:proposal.codeEdits,config:proposal.config}:{config:proposal.config};
+  const output=await b.applyRefinement(sid,changes,proposal.response);
   if(!output?.ok)throw Error(output?.error||'Build 또는 Verify 실패');
   d.tab='preview';
   b.refresh();
