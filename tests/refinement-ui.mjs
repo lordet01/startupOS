@@ -262,6 +262,22 @@ try{
    });
    assert.ok(color[0]>165&&color[1]<95&&color[2]<140,'Crop should contain the visually selected red target, got '+JSON.stringify(color));
  });
+ await check('old_unsupported_feedback_retries_as_actual_code_request',async()=>{
+   await page.evaluate(KEY=>{
+     const pack=JSON.parse(localStorage.getItem(KEY));
+     const other=pack.sessions.find(x=>x._sessionId==='vs_skin_chat_other');
+     const bid=other.functionalBuild.bid;
+     other.functionalProposal={status:'clarify',baseBuildId:bid,response:'지원하지 않는 기존 설정 변경'};
+     other.functionalChat=[{role:'user',text:'촬영 버튼의 카메라 아이콘을 빨간색으로 바꿔줘',buildId:bid,at:new Date().toISOString()}];
+     localStorage.setItem(KEY,JSON.stringify(pack));
+   },KEY);
+   await page.reload();
+   await page.locator('#refineRetryAsCode').waitFor({state:'visible'});
+   await page.locator('#refineRetryAsCode').click();
+   await page.locator('#refineApprove').waitFor({state:'visible'});
+   assert.equal(requests.at(-1).action,'code');
+   assert.match(requests.at(-1).message,/빨간색/);
+ });
  await check('mobile_touch_view_has_preview_chat_tabs_and_no_overflow',async()=>{
    await page.setViewportSize({width:390,height:844});
    await page.locator('[data-refine-tab="preview"]').click();
