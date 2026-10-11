@@ -30,7 +30,7 @@ test('unsafe code or wrong file is blocked',()=>{
  assert.throws(()=>Editor.apply('skin',[{file:'capabilities/skin.js',search:fragment,replace:'<script>alert(1)</script>'}]),/보안 검토/);
 });
 test('syntax breaking edits fail before preview',()=>{
- assert.throws(()=>Editor.verify('skin',[{file:'capabilities/skin.js',search:fragment,replace:'})))) INVALID JS'}]),/구문 오류/);
+ assert.throws(()=>Editor.verify('skin',[{file:'capabilities/skin.js',search:fragment,replace:"');\n((((INVALID JS"}]),/구문 오류/);
 });
 test('unmatched and ambiguous source regions rejected',()=>{
  assert.throws(()=>Editor.apply('skin',[{file:'capabilities/skin.js',search:'XYZ_NOT_IN_SOURCE',replace:'something'}]),/현재 버전/);
@@ -76,7 +76,7 @@ test('two revisions preserve earlier changes, cannot discard code history',async
  const nextEdit={file:'capabilities/skin.js',search:'camera-red-icon',replace:'camera-red-icon camera-larger'};
  const second=await API({method:'POST',body:{action:'refine-and-assemble',approved:true,project:{_sessionId:prev.sid,name:prev.name},priorBuild:prev,codeEdits:[...edits,nextEdit]}},res());
  assert.equal(second.status,200,JSON.stringify(second.body));assert.equal(second.body.build.refinementRevision,2);
- assert.match(A.html(second.body,true),/camera-red-icon camera-larger/);
+ assert.match(A.html(second.body.build,true),/camera-red-icon camera-larger/);
  assert.equal(second.body.build.codeEdits.length,3);
  const truncated=await API({method:'POST',body:{action:'refine-and-assemble',approved:true,project:{_sessionId:prev.sid,name:prev.name},priorBuild:prev,codeEdits:[nextEdit]}},res());
  assert.equal(truncated.status,409);assert.equal(truncated.body.code,'CODE_HISTORY_MISMATCH');
