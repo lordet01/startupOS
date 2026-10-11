@@ -194,7 +194,7 @@ try{
    await page.waitForFunction(KEY=>JSON.parse(localStorage.getItem(KEY)).sessions[0].functionalBuild.refinementRevision===3,KEY,{timeout:18000});
    await page.frameLocator('#refineFrame').locator('#capture svg').waitFor();
    const state=await page.frameLocator('#refineFrame').locator('#capture').evaluate(button=>({
-    stroke:button.querySelector('svg path')?.getAttribute('stroke'),
+    stroke:button.querySelector('svg')?.getAttribute('stroke'),
     clickable:typeof button.onclick==='function'
    }));
    assert.equal(state.stroke,'#e52b3c');
