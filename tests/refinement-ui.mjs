@@ -15,6 +15,14 @@ const browserReply=(name,limit)=>({ok:true,status:'config_patch',response:'요�
  config:Config.normalize('skin',{result_title:name,analysis_focus:'texture',detail_level:'detailed',ingredient_limit:limit,result_order:['ingredients','observations'],show_certainty:false}),
  changes:[{key:'result_title',label:'결과 제목',from:'피부 관찰 결과',to:name},{key:'ingredient_limit',label:'성분군 표시 개수',from:'4',to:String(limit)}],
  manual_test:['결과 카드 수정 확인','성분군 순서 확인'],unsupported_requests:[],model:'mock',response_id:'resp_mock_refine',usage:{input_tokens:100,output_tokens:100},cost:{provider_usd:0.001}});
+const realCameraSource='id="capture">📷 카메라</button>';
+const realCameraEdited='id="capture"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#e52b3c" stroke-width="2"><path d="M4 7h3l2-2h6l2 2h3v12H4z"/><circle cx="12" cy="13" r="3"/></svg> 카메라</button>';
+const codeReply=()=>({ok:true,status:'code_patch',response:'촬영 버튼에 빨간 카메라 SVG 아이콘을 추가했습니다.',reason:'이미지에서 선택한 버튼의 실제 HTML 코드를 변경합니다.',
+  codeEdits:[{file:'capabilities/skin.js',search:realCameraSource,replace:realCameraEdited}],
+  newEdits:[{file:'capabilities/skin.js',search:realCameraSource,replace:realCameraEdited}],
+  changes:[{key:'code:0',label:'capabilities/skin.js',file:'capabilities/skin.js',from:realCameraSource,to:realCameraEdited}],
+  manual_test:['버튼이 빨간 카메라 아이콘을 표시','기존 촬영 동작 유지'],external_steps:[],model:'mock',response_id:'resp_mock_code',
+  usage:{input_tokens:300,output_tokens:200},cost:{provider_usd:null}});
 const checks=[],errors=[];let proposalCount=0,requests=[],fullCaptureSize=null,partialSize=null;
 function send(res,status,data,contentType='application/json'){res.statusCode=status;res.setHeader('Content-Type',contentType);res.end(contentType.includes('json')?JSON.stringify(data):data)}
 function handlerResult(res){return{setHeader:(k,v)=>res.setHeader(k,v),status(n){res.statusCode=n;return this},json(d){send(res,res.statusCode||200,d);return this},send(d){send(res,res.statusCode||200,d,'text/html; charset=utf-8');return this},end(){res.end();return this}}}
@@ -39,7 +47,7 @@ const server=http.createServer(async(req,res)=>{
   if(url.pathname==='/api/refine'){
    let raw='';for await(const x of req)raw+=x;
    const data=JSON.parse(raw);requests.push(data);proposalCount++;
-   const response=browserReply(proposalCount===1?'MySkin 결과 리포트':'2차 간결 리포트',proposalCount===1?3:2);
+   const response=proposalCount===3?codeReply():browserReply(proposalCount===1?'MySkin 결과 리포트':'2차 간결 리포트',proposalCount===1?3:2);
    send(res,200,response);return;
   }
   if(url.pathname==='/api/skin-analysis'){send(res,200,{ok:true,result:{image_status:'not_face',summary:'촬영용 검증 응답',ingredient_groups:[],observations:[],limitations:['사진 한계']},latency_ms:10});return;}
@@ -174,6 +182,26 @@ try{
    assert.ok(p.functionalBuildHistory.length>=2);
    assert.ok(p.functionalChat.filter(x=>x.role==='assistant').length>=2);
    assert.equal(proposalCount,2);
+ });
+ await check('coder_edits_red_camera_svg_and_rebuilds_real_preview',async()=>{
+   await page.locator('#refineText').fill('촬영 버튼의 카메라 아이콘을 실제 빨간색 SVG 촬영 아이콘으로 바꿔줘');
+   await page.locator('#refineSend').click();
+   await page.locator('#refineApprove').waitFor();
+   assert.equal(requests.at(-1).action,'code');
+   assert.ok(requests.at(-1).priorBuild);
+   assert.equal(await page.locator('.refinePlanHead>strong').innerText(),'실제 코드 수정안');
+   await page.locator('#refineApprove').click();
+   await page.waitForFunction(KEY=>JSON.parse(localStorage.getItem(KEY)).sessions[0].functionalBuild.refinementRevision===3,KEY,{timeout:18000});
+   await page.frameLocator('#refineFrame').locator('#capture svg').waitFor();
+   const state=await page.frameLocator('#refineFrame').locator('#capture').evaluate(button=>({
+    stroke:button.querySelector('svg path')?.getAttribute('stroke'),
+    clickable:typeof button.onclick==='function'
+   }));
+   assert.equal(state.stroke,'#e52b3c');
+   assert.equal(state.clickable,true);
+   const p=await page.evaluate(KEY=>JSON.parse(localStorage.getItem(KEY)).sessions[0],KEY);
+   assert.equal(p.functionalBuild.codeEdits.length,1);
+   assert.equal(p.functionalBuild.verification.status,'INTEGRATION_VERIFIED');
  });
  await check('feedback_and_builds_are_isolated_per_venture_session',async()=>{
    await page.locator('#session').selectOption(otherSid);
