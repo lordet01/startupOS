@@ -144,14 +144,15 @@ function bind(){document.getElementById('session').onchange=ev=>{active=ev.targe
   log(sid,'automatic_smoke_completed',failed.length?'FAILED '+failed.map(x=>x.id).join(', '):'PASSED');
   if(failed.length)throw Object.assign(Error('자동 스모크 테스트 실패: '+failed.map(x=>x.id).join(', ')),{code:'SMOKE_FAILED'});
  }
- window.StartupOSBuildBridge.applyRefinement=async function(targetSid,config,summary){
+ window.StartupOSBuildBridge.applyRefinement=async function(targetSid,changePayload,summary){
   const outcome={ok:false,error:null,buildId:null};
   await perform(targetSid,'기능 코드 조립','채팅 승인안 적용 → 새 앱 생성 → 자동 스모크 테스트',async()=>{
     const p=pack.sessions.find(x=>x._sessionId===targetSid),before=p&&p.functionalBuild;
     if(!before)throw Object.assign(Error('이 세션에 기존 Build가 없습니다.'),{code:'NO_PREVIOUS_BUILD'});
     if(p.functionalRepair&&p.functionalRepair.status==='REPAIR_REQUIRED')throw Object.assign(Error('실패한 기능의 Repair를 먼저 완료하세요.'),{code:'REPAIR_FIRST'});
     setRepairProgress(targetSid,'chat_refinement','승인한 기능·UI 설정을 새 Build에 반영합니다.');
-    const result=await request('/api/build',{action:'refine-and-assemble',project:{_sessionId:targetSid,name:p.name},priorBuild:before.descriptor||before,config,approved:true,summary:summary||''});
+    const payload=changePayload?.codeEdits?{codeEdits:changePayload.codeEdits,config:changePayload.config}:{config:changePayload?.config||changePayload};
+    const result=await request('/api/build',{action:'refine-and-assemble',project:{_sessionId:targetSid,name:p.name},priorBuild:before.descriptor||before,...payload,approved:true,summary:summary||''});
     setRepairProgress(targetSid,'artifact','변경 항목 '+(result.build.refinementChanges||[]).map(x=>x.label).join(', ')+' → '+result.build.bid);
     patch(targetSid,x=>{
       x.functionalBuildHistory=[before,...(x.functionalBuildHistory||[])].slice(0,12);
@@ -179,7 +180,7 @@ function bind(){document.getElementById('session').onchange=ev=>{active=ev.targe
   const current=pack.sessions.find(x=>x._sessionId===sid);
   if(repairFor(current))throw Object.assign(Error('오류가 있는 Build입니다. 위 Fix plan → Fix & New Build를 실행하세요.'),{code:'REPAIR_PLAN_REQUIRED'});
   setRepairProgress(sid,'assemble','기능 계약과 코드 파일 조립');
-  const result=await request('/api/build',{action:'assemble',project:{_sessionId:sid,name:current.name,refinementConfig:current.functionalBuild?.refinement||null},kind:selectKind(current),acceptedScope:current.functionalScopeApproved===selectKind(current)});
+  const result=await request('/api/build',{action:'assemble',project:{_sessionId:sid,name:current.name,refinementConfig:current.functionalBuild?.refinement||null,codeEdits:current.functionalBuild?.codeEdits||[]},kind:selectKind(current),acceptedScope:current.functionalScopeApproved===selectKind(current)});
   setRepairProgress(sid,'syntax','서버 조립 및 JS / PWA 구문 검사 완료');
   patch(sid,x=>{
    if(x.functionalBuild)x.functionalBuildHistory=[x.functionalBuild,...(x.functionalBuildHistory||[])].slice(0,10);
