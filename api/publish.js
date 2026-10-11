@@ -27,18 +27,21 @@ module.exports=async function handler(req,res){
     const body=B.body(req);if(!body.descriptor)throw B.failure('INVALID_BUILD','Build descriptor가 필요합니다.',400);const desc=B.assertCurrent({...body.descriptor});
     if(body.sessionId!==desc.sid)throw B.failure('SESSION_MISMATCH','다른 세션의 Build를 배포할 수 없습니다.',409);
     if(body.approved!==true)throw B.failure('APPROVAL_REQUIRED','테스트 배포를 승인하세요.',422);
+    const branding=require('../lib/branding').normalize(desc.kind,body.branding,desc.name);
     const verification=await V.verify(desc,{liveConsent:body.liveConsent===true});
     if(verification.status!=='INTEGRATION_VERIFIED'){
       return res.status(422).json({ok:false,code:'BUILD_NOT_VERIFIED',error:'Publish 직전 재검증에 실패했습니다.',verification,cost:verification.cost});
     }
-    const checks=A.validateArtifacts(desc);
+    const packaged={...desc,branding};
+    const checks=A.validateArtifacts(packaged);
     if(checks.some(x=>x.status!=='passed'))throw B.failure('ARTIFACT_INVALID','배포 직전 파일 검증이 실패했습니다.',422);
-    const files=A.pack(desc),c=credentials();
+    const files=A.pack(packaged),c=credentials();
     const data=await vercel('/v13/deployments','POST',{name:'startup-os',project:c.project,files,meta:{startupOsSessionId:desc.sid,startupOsBuildId:desc.bid,startupOsArtifactHash:B.artifactHash(desc),startupOsGeneratedApp:'true',startupOsKind:desc.kind,startupOsKeylessBuild:'true'}});
     return res.status(200).json({
       ok:true,verification,cost:verification.cost,
-      deployment:{id:data.id,sessionId:desc.sid,buildId:desc.bid,artifactHash:B.artifactHash(desc),url:data.url?'https://'+data.url:null,readyState:data.readyState||data.state||'QUEUED',mode:'preview',deviceStatus:'PENDING_PHYSICAL_PHONE'},
+      deployment:{id:data.id,sessionId:desc.sid,buildId:desc.bid,artifactHash:B.artifactHash(desc),branding,url:data.url?'https://'+data.url:null,readyState:data.readyState||data.state||'QUEUED',mode:'preview',deviceStatus:'PENDING_PHYSICAL_PHONE'},
       message:'Publish 직전 서버 재검증을 통과했고 배포 요청이 접수되었습니다. READY 확인 전 완료로 표시하지 않습니다.'
     });
   }catch(error){return B.sendError(res,error);}
 };
+
