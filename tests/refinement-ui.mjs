@@ -205,6 +205,35 @@ try{
    assert.match(await page.locator('.refineAnnotationHead').innerText(),/부분 캡처/);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);
  });
+ await check('scrolled_preview_crop_matches_visible_app_region',async()=>{
+   await page.locator('[data-refine-tab="preview"]').click();
+   const region=await page.locator('#refineFrame').evaluate(frame=>{
+     const win=frame.contentWindow,doc=frame.contentDocument;
+     const marker=doc.createElement('div');
+     marker.id='scroll-crop-visual-fixture';
+     marker.style.cssText='width:175px;height:155px;display:block;background:rgb(231, 24, 71);margin:20px auto 140px;';
+     doc.querySelector('#app').appendChild(marker);
+     marker.scrollIntoView({block:'center',behavior:'instant'});
+     const rect=marker.getBoundingClientRect();
+     return{left:rect.left,top:rect.top,width:rect.width,height:rect.height,scrollY:win.scrollY};
+   });
+   assert.ok(region.scrollY>100,'The iframe must actually be scrolled for this regression.');
+   await page.locator('#refineCrop').click();
+   const overlay=page.locator('#refineCropOverlay');
+   await overlay.waitFor();
+   const o=await overlay.boundingBox();
+   const x=o.x+region.left+25,y=o.y+region.top+25;
+   assert.ok(region.top>=0 && region.top+region.height<=o.height,'Marker must be within the current app viewport');
+   await overlay.dispatchEvent('pointerdown',{pointerId:41,pointerType:'touch',isPrimary:true,clientX:x,clientY:y});
+   await overlay.dispatchEvent('pointermove',{pointerId:41,pointerType:'touch',isPrimary:true,clientX:x+95,clientY:y+90});
+   await overlay.dispatchEvent('pointerup',{pointerId:41,pointerType:'touch',isPrimary:true,clientX:x+95,clientY:y+90});
+   await overlay.waitFor({state:'detached'});
+   const color=await page.locator('#refineCanvas').evaluate(canvas=>{
+     const pixels=canvas.getContext('2d').getImageData(Math.floor(canvas.width/2),Math.floor(canvas.height/2),1,1).data;
+     return Array.from(pixels.slice(0,3));
+   });
+   assert.ok(color[0]>165&&color[1]<95&&color[2]<140,'Crop should contain the visually selected red target, got '+JSON.stringify(color));
+ });
  await check('mobile_touch_view_has_preview_chat_tabs_and_no_overflow',async()=>{
    await page.setViewportSize({width:390,height:844});
    await page.locator('[data-refine-tab="preview"]').click();
