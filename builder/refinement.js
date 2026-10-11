@@ -163,7 +163,7 @@ async function renderPreviewCanvas(frame){
   backgroundColor:'#f3f5f9',logging:false,useCORS:true,
   windowWidth:width,windowHeight:height,
   scrollX:-win.scrollX,scrollY:-win.scrollY,
-  x:win.scrollX,y:win.scrollY,width,height,scale:1.4
+  width,height,scale:1.4
  });
  if(!rendered||rendered.width<100||rendered.height<100)throw Error('현재 앱 화면 캡처에 실패했습니다.');
  return rendered;
