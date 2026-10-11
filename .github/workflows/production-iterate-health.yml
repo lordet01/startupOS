@@ -49,3 +49,34 @@ jobs:
           done
           echo "::error::Production Iterate endpoints or assets not ready"
           exit 1
+
+      - name: Live coder generates an executable red-camera Build preview (no AI cost)
+        shell: bash
+        run: |
+          node <<'JS'
+          const assert=require('node:assert/strict');
+          (async()=>{
+            const host='https://startup-os-beige.vercel.app';
+            const health=await (await fetch(host+'/api/build')).json();
+            const refine=await (await fetch(host+'/api/refine')).json();
+            assert.equal(refine.codeEdits,true);
+            assert.ok(refine.supported.includes('skin')&&refine.supported.includes('receipt')&&refine.supported.includes('travel'));
+            const prior={version:health.version,sid:'vs_code_live_smoke',bid:'b_11111111-1111-4111-8111-111111111111',kind:'skin',name:'Smoke Skin',sourceHash:health.sourceHash,createdAt:new Date().toISOString()};
+            const search='id="capture">📷 카메라</button>';
+            const replacement='id="capture"><svg class="camera-live-smoke" stroke="#e52b3c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/></svg> 카메라</button>';
+            const request={action:'refine-and-assemble',approved:true,project:{_sessionId:prior.sid,name:prior.name},priorBuild:prior,codeEdits:[{file:'capabilities/skin.js',search,replace:replacement}]};
+            const response=await fetch(host+'/api/build',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)});
+            const payload=await response.json();
+            assert.equal(response.status,200,JSON.stringify(payload).slice(0,450));
+            assert.equal(payload.ok,true);
+            assert.equal(payload.build.parentBuildId,prior.bid);
+            assert.equal(payload.build.codeEdits.length,1);
+            assert.ok(payload.build.checks.some(x=>x.id==='generated_code_boot'&&x.status==='passed'));
+            const preview=await fetch(host+payload.build.previewUrl);
+            assert.equal(preview.status,200);
+            const html=await preview.text();
+            assert.ok(html.includes('camera-live-smoke'));
+            assert.ok(html.includes('#e52b3c'));
+            console.log('LIVE CODE BUILDER PASS:',payload.build.bid,'source',health.sourceHash,'preview HTML contains real red SVG camera icon');
+          })().catch(e=>{console.error(e);process.exitCode=1});
+          JS
