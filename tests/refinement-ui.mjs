@@ -272,6 +272,7 @@ try{
      localStorage.setItem(KEY,JSON.stringify(pack));
    },KEY);
    await page.reload();
+   await page.locator('[data-refine-tab="chat"]').click();
    await page.locator('#refineRetryAsCode').waitFor({state:'visible'});
    await page.locator('#refineRetryAsCode').click();
    await page.locator('#refineApprove').waitFor({state:'visible'});
