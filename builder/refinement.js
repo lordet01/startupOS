@@ -35,6 +35,7 @@ function messagesHtml(p){
 }
 function proposalHtml(p,state){
  const proposal=p.functionalProposal;
+ if(state.busy)return '<div class="refineHint" role="status">'+(state.phase==='build'?'수정 코드를 새 Build에 반영하고 자동 검증 중입니다.':'요청한 기능을 구현 중입니다. 코드 생성과 검증을 수행하며 실패한 코드는 자동 재작성합니다.')+'</div>';
  if(state.error)return '<div class="refineError" role="alert">'+escape(state.error)+'</div><div class="refineHint">요청은 입력창에 보존됩니다. 다시 실행하면 현재 앱 코드 기준으로 구현을 이어갑니다.</div>';
  if(!proposal)return '<div class="refineHint">현재 앱의 실제 JS/CSS 파일을 수정합니다. 화면 캡처 또는 설명을 입력하면 AI가 코드 변경안을 만들고 새 Build에 반영합니다.</div>';
  const stale=proposal.baseBuildId!==p.functionalBuild?.bid;
@@ -98,7 +99,7 @@ function updateChat(sid){
  if(text){text.value=d.text;text.oninput=()=>{d.text=text.value}}
  const send=document.getElementById('refineSend');
  const info=Bridge()?.getInfo(),stale=!!(info&&p.functionalBuild&&(p.functionalBuild.sourceHash!==info.sourceHash||p.functionalBuild.version!==info.version));
- if(send){send.disabled=d.busy||stale||p.functionalBuild?.kind!=='skin';send.innerText=d.busy?'⏳ GPT 검토 중…':'↗ AI에 수정 요청';send.onclick=()=>sendRequest(sid)}
+ if(send){send.disabled=d.busy||stale||!['skin','receipt','travel'].includes(p.functionalBuild?.kind);send.innerText=d.busy?(d.phase==='build'?'⏳ Build · 검증 중…':'⏳ 코드 구현 중…'):'↗ AI에 수정 요청';send.onclick=()=>sendRequest(sid)}
  const approve=document.getElementById('refineApprove');
  if(approve){approve.disabled=d.busy;approve.onclick=()=>approveBuild(sid)}
  const retry=document.getElementById('refineRetryAsCode');
@@ -294,7 +295,7 @@ async function sendRequest(sid){
  if(d.busy||!p||!current)return;
  const text=limit(d.text.trim()),screenshot=getImageBuffer(sid);
  if(text.length<3){d.error='어떤 부분을 바꾸고 싶은지 3자 이상 설명해 주세요.';updateChat(sid);return}
- d.busy=true;d.error='';d.text='';let autoApply=false;const before=current.bid;
+ d.busy=true;d.phase='code';d.error='';d.text='';let autoApply=false;const before=current.bid;
  saveMessage(sid,{role:'user',text,screenshotAttached:!!screenshot,buildId:before});updateChat(sid);
  try{
   const history=(p.functionalChat||[]).slice(-8).map(x=>({role:x.role==='assistant'?'assistant':'user',text:x.text}));
@@ -308,12 +309,12 @@ async function sendRequest(sid){
   d.screenshot=null;d.strokes=[];
  }catch(e){d.error=e.message||'AI 개선 요청 실패';d.text=text}
  finally{d.busy=false;updateChat(sid)}
- if(autoApply)await approveBuild(sid);
+ if(autoApply){await approveBuild(sid);if(d.error){d.text=text;updateChat(sid);}}
 }
 async function approveBuild(sid){
  const d=local(sid),b=Bridge(),p=b?.getSessionById(sid),proposal=p?.functionalProposal;
  if(d.busy||!proposal||!['config_patch','code_patch'].includes(proposal.status)||proposal.baseBuildId!==p.functionalBuild.bid)return;
- d.busy=true;d.error='';updateChat(sid);
+ d.busy=true;d.phase='build';d.error='';updateChat(sid);
  try{
   const changes=proposal.status==='code_patch'?{codeEdits:proposal.codeEdits,config:proposal.config}:{config:proposal.config};
   const output=await b.applyRefinement(sid,changes,proposal.response);
