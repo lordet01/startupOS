@@ -186,11 +186,10 @@ try{
  await check('coder_edits_red_camera_svg_and_rebuilds_real_preview',async()=>{
    await page.locator('#refineText').fill('촬영 버튼의 카메라 아이콘을 실제 빨간색 SVG 촬영 아이콘으로 바꿔줘');
    await page.locator('#refineSend').click();
-   await page.locator('#refineApprove').waitFor();
+   await page.waitForFunction(KEY=>JSON.parse(localStorage.getItem(KEY)).sessions[0].functionalBuild.refinementRevision===3,KEY,{timeout:18000});
    assert.equal(requests.at(-1).action,'code');
    assert.ok(requests.at(-1).priorBuild);
-   assert.equal(await page.locator('.refinePlanHead>strong').innerText(),'실제 코드 수정안');
-   await page.locator('#refineApprove').click();
+   assert.equal(await page.locator('.refinePlanHead>strong').innerText(),'반영된 코드 변경');
    await page.waitForFunction(KEY=>JSON.parse(localStorage.getItem(KEY)).sessions[0].functionalBuild.refinementRevision===3,KEY,{timeout:18000});
    await page.frameLocator('#refineFrame').locator('#capture svg').waitFor();
    const state=await page.frameLocator('#refineFrame').locator('#capture').evaluate(button=>({

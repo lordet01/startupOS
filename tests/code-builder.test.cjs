@@ -94,3 +94,18 @@ test('without approval source cannot be changed',async()=>{
  const no=await API({method:'POST',body:{action:'refine-and-assemble',approved:false,project:{_sessionId:build.sid},priorBuild:build,codeEdits:edits}},res());
  assert.equal(no.status,422);
 });
+test('standard inline SVG namespace is allowed while remote links remain blocked',()=>{
+ const svg='id="capture"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" stroke="#e52b3c"><circle cx="12" cy="12" r="4"/></svg> 카메라</button>';
+ assert.equal(Editor.verify('skin',[{file:'capabilities/skin.js',search:fragment,replace:svg}]).smoke.status,'passed');
+ assert.throws(()=>Editor.verify('skin',[{file:'capabilities/skin.js',search:fragment,replace:svg.replace('<circle','<image href="https://outside.example/icon.svg"/><circle')}]),/보안 검토/);
+});
+test('invalid generated code is rewritten automatically for the same request',async()=>{
+ let calls=0;const d=original();
+ const result=await Agent.proposeCode({kind:'skin',sessionId:d.sid,buildId:d.bid,priorBuild:d,message:'촬영 버튼을 빨간 아이콘으로 변경',fetchImpl:async(url,options)=>{
+  calls++;const request=JSON.parse(options.body);const response=mockResponse();
+  if(calls<3){const out=JSON.parse(response.output[0].content[0].text);out.edits[0].replace='<script>bad()</script>';response.output[0].content[0].text=JSON.stringify(out);}
+  else assert.match(request.input[0].content,/CODE_REVIEW_REQUIRED/);
+  return {ok:true,json:async()=>response};
+ }});
+ assert.equal(calls,3);assert.equal(result.attempts,3);assert.equal(result.validation_attempts.length,2);assert.equal(result.status,'code_patch');
+});

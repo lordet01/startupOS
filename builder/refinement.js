@@ -35,7 +35,7 @@ function messagesHtml(p){
 }
 function proposalHtml(p,state){
  const proposal=p.functionalProposal;
- if(state.error)return '<div class="refineError" role="alert">'+escape(state.error)+'</div>'+(proposal?proposalHtml(p,{error:''}):'');
+ if(state.error)return '<div class="refineError" role="alert">'+escape(state.error)+'</div><div class="refineHint">요청은 입력창에 보존됩니다. 다시 실행하면 현재 앱 코드 기준으로 구현을 이어갑니다.</div>';
  if(!proposal)return '<div class="refineHint">현재 앱의 실제 JS/CSS 파일을 수정합니다. 화면 캡처 또는 설명을 입력하면 AI가 코드 변경안을 만들고 새 Build에 반영합니다.</div>';
  const stale=proposal.baseBuildId!==p.functionalBuild?.bid;
  const supported=proposal.status==='config_patch'||proposal.status==='code_patch';
@@ -294,7 +294,7 @@ async function sendRequest(sid){
  if(d.busy||!p||!current)return;
  const text=limit(d.text.trim()),screenshot=getImageBuffer(sid);
  if(text.length<3){d.error='어떤 부분을 바꾸고 싶은지 3자 이상 설명해 주세요.';updateChat(sid);return}
- d.busy=true;d.error='';d.text='';const before=current.bid;
+ d.busy=true;d.error='';d.text='';let autoApply=false;const before=current.bid;
  saveMessage(sid,{role:'user',text,screenshotAttached:!!screenshot,buildId:before});updateChat(sid);
  try{
   const history=(p.functionalChat||[]).slice(-8).map(x=>({role:x.role==='assistant'?'assistant':'user',text:x.text}));
@@ -304,9 +304,11 @@ async function sendRequest(sid){
     x.functionalChat=[...(x.functionalChat||[]),{role:'assistant',text:res.response+(res.changes?.length?' · '+res.changes.map(y=>y.label).join(', '):''),buildId:before,at:now()}].slice(-40);
     x.costs=x.costs||[];if(typeof res.cost?.provider_usd==='number')x.costs.push(['Chat refinement','OpenAI / '+res.model,'AI proposal',res.cost.provider_usd,res.response_id]);
   });
+  autoApply=res.status==='code_patch'&&b.getSessionById(sid)?.functionalBuild?.bid===before;
   d.screenshot=null;d.strokes=[];
  }catch(e){d.error=e.message||'AI 개선 요청 실패';d.text=text}
  finally{d.busy=false;updateChat(sid)}
+ if(autoApply)await approveBuild(sid);
 }
 async function approveBuild(sid){
  const d=local(sid),b=Bridge(),p=b?.getSessionById(sid),proposal=p?.functionalProposal;
