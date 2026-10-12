@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/ventures/{sessionId} {
+      function owner() {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      function valid() {
+        return request.resource.data.keys().hasOnly(['ownerUid', 'name', 'updatedAt', 'payload'])
+          && request.resource.data.ownerUid == userId
+          && request.resource.data.payload is map
+          && request.resource.data.payload._sessionId == sessionId
+          && request.resource.data.payload.name is string
+          && request.resource.data.name is string
+          && request.resource.data.updatedAt is string;
+      }
+      allow get, list: if owner();
+      allow create, update: if owner() && valid();
+      allow delete: if owner();
+    }
+  }
+}
