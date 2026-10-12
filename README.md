@@ -1,4 +1,14 @@
-# StartupOS — Functional Build v3
+# StartupOS — Functional Build v3 + Account Sync v4
+
+## Account Sync v4 (requires Firebase activation)
+
+The main dashboard and Build Studio now include an account dialog with Google/email authentication, per-user Firestore venture documents, **My Apps**, session continuity, opt-in migration of old browser-local projects, and local JSON backup/restore. Existing venture IDs, builds, refinements and deployment metadata are preserved by migrating the entire session object. A Mac Chrome skin-analysis project is **not** automatically present on Android until the Mac's original browser profile explicitly imports it.
+
+Firebase Authentication, Firestore, Firestore security rules and public web-app configuration must be activated in the Vercel project before cloud sign-in is operational. When this is missing, the UI shows **설정 필요**, not a pretend login. See [Account Sync v4](docs/ACCOUNT_SYNC_V4.md) and [Firestore security rules](firebase/firestore.rules).
+
+Run npm test for backend and account-sync contract tests. Browser and physical-device acceptance are separate from code syntax checks.
+
+---
 
 Mobile-web venture pilot: `Brief → Blueprint → Capability Build → Verification → Preview Deploy → Physical Phone Test`.
 
