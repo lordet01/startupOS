@@ -199,14 +199,13 @@ document.addEventListener('click',async ev=>{
  if(cmd==='close'){modal=false;renderUI();return}
  if(busy)return;
  try{
-  busy=true;
+  busy=true;error='';
   if(cmd==='google')await loginGoogle();
   if(cmd==='signin'||cmd==='signup')await emailLogin(cmd);
   if(cmd==='reset')await resetPassword();
   if(cmd==='signout')await auth.signOut();
   if(cmd==='import')await importLocal();
   if(cmd==='export')exportLocal();
-  error='';
  }catch(e){notify(e.message||'작업에 실패했습니다.',true)}
  finally{busy=false;renderUI()}
 });
