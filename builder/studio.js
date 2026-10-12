@@ -48,7 +48,7 @@ async function refreshRepairPlan(sid){
  }finally{repairLoading.delete(sid);render();}
 }
 
-function patch(sid,fn){const current=JSON.parse(localStorage.getItem(KEY)||'null');if(!current||!Array.isArray(current.sessions))throw new Error('세션 저장소가 사라졌습니다.');const p=current.sessions.find(x=>x._sessionId===sid);if(!p)throw new Error('원래 세션이 없습니다.');fn(p);p._updatedAt=new Date().toISOString();localStorage.setItem(KEY,JSON.stringify(current));pack=current;return p;}
+function patch(sid,fn){const current=JSON.parse(localStorage.getItem(KEY)||'null');if(!current||!Array.isArray(current.sessions))throw new Error('세션 저장소가 사라졌습니다.');const p=current.sessions.find(x=>x._sessionId===sid);if(!p)throw new Error('원래 세션이 없습니다.');fn(p);p._updatedAt=new Date().toISOString();localStorage.setItem(KEY,JSON.stringify(current));pack=current;if(window.StartupOSCloud)window.StartupOSCloud.localSaved(current);return p;}
 function log(sid,event,detail){patch(sid,p=>{p._events=[{at:new Date().toISOString(),type:event,message:detail},...(p._events||[])].slice(0,100);});}
 function selectKind(p){
   var tech=(p.techStack||[]).map(x=>typeof x==="string"?x:[x.area,x.service,x.reason].filter(Boolean).join(" "));
@@ -252,7 +252,17 @@ window.StartupOSBuildBridge={
  getActiveId:()=>active, patch, refresh:render, request, log, getInfo:()=>info
 };
 ingestVerifyIssue();
-render();request('/api/build').then(data=>{info=data;render();if(repairFor(session()))refreshRepairPlan(active);if(location.hash)setTimeout(focusHash,30);}).catch(e=>{globalError=e.message;render();});
+render();
+if(window.StartupOSCloud)window.StartupOSCloud.connect({
+ getPack:()=>pack,
+ applyRemote:items=>{
+  const fresh=JSON.parse(localStorage.getItem(KEY)||"null")||{sessions:[],activeId:""};
+  if(!Array.isArray(fresh.sessions))fresh.sessions=[];
+  let changed=false;
+  items.forEach(p=>{if(!p||!p._sessionId||!p._sessionId.startsWith("vs_"))return;const idx=fresh.sessions.findIndex(x=>x._sessionId===p._sessionId);const value=JSON.parse(JSON.stringify(p));if(idx<0){fresh.sessions.unshift(value);changed=true}else if(JSON.stringify(fresh.sessions[idx])!==JSON.stringify(value)){fresh.sessions[idx]=value;changed=true}});
+  if(changed){localStorage.setItem(KEY,JSON.stringify(fresh));pack=fresh;if(!session()&&pack.sessions.length)active=pack.sessions[0]._sessionId;if(!pending.size)render()}
+ }
+});request('/api/build').then(data=>{info=data;render();if(repairFor(session()))refreshRepairPlan(active);if(location.hash)setTimeout(focusHash,30);}).catch(e=>{globalError=e.message;render();});
 window.addEventListener("hashchange",focusHash);
 })();
 
