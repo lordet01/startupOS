@@ -248,6 +248,7 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{ou
 <body>
 <div id="app"></div>
 <script src="config.js"></script>
+<script src="/cloud-sync.js"></script>
 <script>
 (function(){
 if(location.hostname==="lordet01.github.io"){location.replace("https://startup-os-beige.vercel.app"+location.pathname.replace("/startupOS","")+location.search+location.hash);return;}
@@ -419,7 +420,7 @@ function normalizeSession(p,source){
   p=clone(p||{});
   p._sessionId=p._sessionId||sessionId();
   p._createdAt=p._createdAt||new Date().toISOString();
-  p._updatedAt=new Date().toISOString();
+  p._updatedAt=p._updatedAt||p._createdAt;
   p._phase=p._phase||((p.serviceFlow&&p.serviceFlow.length)?"blueprint":"brief");
   p._source=p._source||source||"manual";
   p._events=p._events||[];
@@ -444,7 +445,7 @@ function loadSessionPack(){
 var sessionPack=loadSessionPack();
 function activeSession(){return sessionPack.sessions.find(function(x){return x._sessionId===sessionPack.activeId})||sessionPack.sessions[0]}
 var state={view:"overview",p:activeSession(),running:false,modal:false,modalMode:"new",runtimeStatus:"unknown",runStage:"idle",runStartedAt:0,runMessage:"",runError:"",runTimer:null,runMode:"",builderRunning:false,builderMessage:"",builderError:"",publishRunning:false,publishMessage:"",publishError:"",publishHttpStatus:null,publishStage:"idle",publishStrategy:"",publishHint:"",publishAuth:null,builderStartedAt:0,builderTimer:null,builderHttpStatus:null,builderStage:"idle"};
-function persistSessions(){localStorage.setItem(SESSION_KEY,JSON.stringify(sessionPack));localStorage.removeItem("startupOS.project")}
+function persistSessions(){localStorage.setItem(SESSION_KEY,JSON.stringify(sessionPack));localStorage.removeItem("startupOS.project");if(window.StartupOSCloud)window.StartupOSCloud.localSaved(sessionPack)}
 function save(){
   state.p._updatedAt=new Date().toISOString();
   var i=sessionPack.sessions.findIndex(function(x){return x._sessionId===state.p._sessionId});
@@ -496,7 +497,7 @@ function sessionStageStatus(p){
   return {venture:blueprint,build:build,deploy:deploy,phone:phone};
 }
 function nav(){
-  var a=[["sessions","Sessions","▦"],["overview","Overview","⌂"],["venture","Venture","✦"],["build","Build","🛠"],["deploy","Deploy","🚀"],["phone","Phone","📱"],["agents","Agents","◎"],["cost","Cost","$"],["growth","Growth","↗"],["settings","Settings","⚙"]];
+  var a=[["sessions","My Apps","▦"],["overview","Overview","⌂"],["venture","Venture","✦"],["build","Build","🛠"],["deploy","Deploy","🚀"],["phone","Phone","📱"],["agents","Agents","◎"],["cost","Cost","$"],["growth","Growth","↗"],["settings","Settings","⚙"]];
   var stages=sessionStageStatus(state.p);
   var tracked={venture:true,build:true,deploy:true,phone:true};
   return '<aside class="side"><div class="brand"><i>S</i>Startup OS</div><div class="nav">'+a.map(function(x){
@@ -504,14 +505,14 @@ function nav(){
     return '<button data-view="'+x[0]+'" class="'+(state.view===x[0]?"on ":"")+(tracked[x[0]]?"stageNav":"")+'">'+dot+'<span class="navIcon" aria-hidden="true">'+x[2]+'</span><span class="navText">'+x[1]+'</span></button>';
   }).join("")+'</div><div class="small">StartupOS<br>Functional Build</div></aside>'
 }
-function shell(body){var live=state.runtimeStatus==="live";var badge=state.running?"GPT running…":(live?"Live GPT Runtime":(runtimeUrl()?"Runtime ready":"Runtime not linked"));var opts=sessionPack.sessions.map(function(s){return '<option value="'+esc(s._sessionId)+'" '+(s._sessionId===state.p._sessionId?"selected":"")+'>'+esc(s.name||"Untitled")+' · '+shortSessionId(s)+'</option>'}).join("");var more='<div class="moreSheet" id="moreSheet"><div class="morePanel"><div class="moreHandle"></div><div class="moreGrid">'+[["sessions","▦","Sessions"],["agents","◎","Agents"],["cost","$","Cost"],["growth","↗","Growth"],["settings","⚙","Settings"]].map(function(x){return '<button data-more-view="'+x[0]+'"><span class="navIcon">'+x[1]+'</span><span>'+x[2]+'</span></button>'}).join("")+'</div></div></div>';return '<div class="shell">'+nav()+'<main class="main"><header class="top"><div class="row"><select id="sessionSelect" class="btn" style="max-width:280px">'+opts+'</select><span class="small">Session '+shortSessionId(state.p)+' · '+esc(state.p._phase||state.p.stage||"brief")+'</span></div><div class="row"><span class="tag '+(live?"ok":"")+'">'+badge+'</span><button class="btn moreMobileBtn mobileOnly" id="moreMobile">⋯</button><button class="btn" id="newVenture">+ New venture</button></div></header><div class="content">'+body+'</div></main>'+more+'</div>'}
+function shell(body){var live=state.runtimeStatus==="live";var badge=state.running?"GPT running…":(live?"Live GPT Runtime":(runtimeUrl()?"Runtime ready":"Runtime not linked"));var opts=sessionPack.sessions.map(function(s){return '<option value="'+esc(s._sessionId)+'" '+(s._sessionId===state.p._sessionId?"selected":"")+'>'+esc(s.name||"Untitled")+' · '+shortSessionId(s)+'</option>'}).join("");var more='<div class="moreSheet" id="moreSheet"><div class="morePanel"><div class="moreHandle"></div><div class="moreGrid">'+[["sessions","▦","My Apps"],["agents","◎","Agents"],["cost","$","Cost"],["growth","↗","Growth"],["settings","⚙","Settings"]].map(function(x){return '<button data-more-view="'+x[0]+'"><span class="navIcon">'+x[1]+'</span><span>'+x[2]+'</span></button>'}).join("")+'</div></div></div>';return '<div class="shell">'+nav()+'<main class="main"><header class="top"><div class="row"><select id="sessionSelect" class="btn" style="max-width:280px">'+opts+'</select><span class="small">Session '+shortSessionId(state.p)+' · '+esc(state.p._phase||state.p.stage||"brief")+'</span></div><div class="row"><span class="tag '+(live?"ok":"")+'">'+badge+'</span><button class="btn moreMobileBtn mobileOnly" id="moreMobile">⋯</button><button class="btn" id="newVenture">+ New venture</button></div></header><div class="content">'+body+'</div></main>'+more+'</div>'}
 function metric(t,v,n,c){return '<div class="card metric"><span>'+t+'</span><b class="'+(c||"")+'">'+v+'</b><span>'+n+'</span></div>'}
 function agents(){var notes=state.p.agentNotes||{};var a=[["CEO","ceo","Goal / priority / gate"],["Market","market","Customer / competition"],["Product","product","MVP / UX / conversion"],["Finance","finance","Cost / pricing / margin"],["Tech","tech","Architecture / APIs"],["Builder","tech","Implementation / deploy"],["Legal","legal","Privacy / IP / policy"],["Growth","growth","Acquisition / experiments"]];return '<div class="agents">'+a.map(function(x,i){var note=notes[x[1]]||x[2];return '<div class="agent"><div class="head"><b>'+x[0]+' Agent</b><span class="tag '+(state.runtimeStatus==="live"?"ok":"")+'">'+(state.running&&i<4?"Running":state.runtimeStatus==="live"?"Synced":"Ready")+'</span></div><p>'+esc(note)+'</p></div>'}).join("")+'</div>'}
 
 function gates(){return '<div class="gate"><div class="pass">✓<br><b>Problem</b></div><div class="pass">✓<br><b>Customer</b></div><div class="pass">✓<br><b>MVP</b></div><div>!<br><b>Payment</b></div><div>!<br><b>Legal</b></div></div>'}
 function sessionsView(){
  var rows=sessionPack.sessions;
- return shell('<div class="pageHead"><div><h2>Sessions</h2><span class="pageCount">'+rows.length+' projects</span></div></div>'+
+ return shell('<div class="pageHead"><div><h2>My Apps</h2><span class="pageCount">'+rows.length+' projects</span></div></div>'+
  '<div class="sessionGrid">'+rows.map(function(s){
  var d=s.functionalBuild&&s.functionalBuild.deployment;
  var status=d&&d.readyState==="READY"?"Deployed":s.functionalBuild?"Built":(s.serviceFlow&&s.serviceFlow.length?"Blueprint":"Draft");
@@ -618,7 +619,8 @@ function settings(){
  return shell('<div class="pageHead"><h2>Settings</h2></div>'+
  '<section class="card"><div class="sectionHead"><h3>Runtime</h3><span class="tag '+(state.runtimeStatus==="live"?"ok":"")+'">'+(state.runtimeStatus==="live"?"Connected":"Not checked")+'</span></div><div class="settingRow"><span>Endpoint</span><code>'+esc(ru)+'</code></div><button class="btn" id="testRuntime">Test connection</button>'+
  '<details><summary>Advanced: change endpoint</summary><div class="field"><label>Runtime URL</label><input id="runtimeEndpoint" value="'+esc(ru)+'"></div><button class="btn" id="saveRuntime">Save endpoint</button></details></section>'+
- '<section class="card"><h3>Local sessions</h3><p class="mutedLine">'+count+' sessions · stored in this browser</p><details><summary>Clear local data</summary><p class="mutedLine">이 브라우저에 저장된 Venture 세션 데이터가 삭제됩니다.</p><button class="btn danger" id="reset">Delete local sessions</button></details></section>');
+ '<section class="card"><h3>Account · Cloud sync</h3><p class="mutedLine">Google 또는 이메일 계정으로 프로젝트를 기기 간 동기화합니다. Mac에 저장된 기존 프로젝트는 Mac에서 로그인 후 가져오세요.</p><button class="btn" type="button" data-cloud-button>☁ 계정 / My Apps 동기화</button></section>'+ 
+  '<section class="card"><h3>Local sessions</h3><p class="mutedLine">'+count+' sessions · stored in this browser</p><details><summary>Clear local data</summary><p class="mutedLine">이 브라우저에 저장된 Venture 세션 데이터가 삭제됩니다.</p><button class="btn danger" id="reset">Delete local sessions</button></details></section>');
 }
 function modal(){
  var edit=state.modalMode==="edit",p=edit?state.p:{};
@@ -940,6 +942,25 @@ var create=document.getElementById("createVenture");if(create)create.onclick=fun
 };
 }
 render();
+if(window.StartupOSCloud)window.StartupOSCloud.connect({
+ getPack:function(){return sessionPack},
+ applyRemote:function(items){
+  if(!Array.isArray(items))return;
+  var dirty=false;
+  items.forEach(function(item){
+   if(!item||typeof item._sessionId!=="string"||!item._sessionId.startsWith("vs_"))return;
+   var index=sessionPack.sessions.findIndex(function(x){return x._sessionId===item._sessionId});
+   var stored=JSON.parse(JSON.stringify(item));
+   if(index<0){sessionPack.sessions.unshift(stored);dirty=true}
+   else if(JSON.stringify(sessionPack.sessions[index])!==JSON.stringify(stored)){sessionPack.sessions[index]=stored;dirty=true}
+  });
+  if(dirty){
+   localStorage.setItem(SESSION_KEY,JSON.stringify(sessionPack));
+   if(!sessionPack.sessions.some(function(x){return x._sessionId===sessionPack.activeId}))sessionPack.activeId=sessionPack.sessions[0]._sessionId;
+   if(!state.running&&!state.builderRunning&&!state.publishRunning){state.p=activeSession();render();}
+  }
+ }
+});
 })();
 </script>
 </body>
