@@ -46,7 +46,7 @@ async function boot(){
        if(currentLocal&&JSON.stringify(currentLocal)!==JSON.stringify(v)){
          // Do not silently replace changes that have never been uploaded from this browser.
          if(!previous&&String(currentLocal._updatedAt||'')>String(v._updatedAt||'')){blocked.add(v._sessionId);conflicts.push(v.name);return}
-         if(previous&&JSON.stringify(currentLocal)!==JSON.stringify(previous.payload)&&JSON.stringify(previous.payload)!==JSON.stringify(v)){blocked.add(v._sessionId);conflicts.push(v.name);return}
+         if(previous&&JSON.stringify(currentLocal)!==JSON.stringify(previous.payload)){if(JSON.stringify(previous.payload)!==JSON.stringify(v)){blocked.add(v._sessionId);conflicts.push(v.name)}return}
        }
        blocked.delete(v._sessionId);
        accepted.push(v);
@@ -62,7 +62,7 @@ async function boot(){
    },e=>{phase='error';notify('클라우드 읽기 실패: '+e.message,true)});
    notify('계정에 연결했습니다. Mac의 기존 프로젝트는 해당 Mac에서 가져와야 합니다.');
   });
-  if(location.hash.includes('access_token'))auth.getRedirectResult().catch(()=>{});
+  auth.getRedirectResult().catch(e=>notify('Google 로그인 리디렉션 확인 실패: '+e.message,true));
  }catch(e){phase='error';notify(e.message||'클라우드 초기화 실패',true)}
 }
 async function loginGoogle(){
