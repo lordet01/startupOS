@@ -11,5 +11,8 @@ module.exports=(req,res)=>{
   appId:process.env.FIREBASE_APP_ID||''
  };
  const enabled=Object.values(firebase).every(Boolean);
- return res.status(200).json({enabled,firebase:enabled?firebase:undefined,provider:'firebase',configured:enabled});
+ const authRequired=require('../lib/account-auth').required();
+ return res.status(200).json({enabled,firebase:enabled?firebase:undefined,provider:'firebase',configured:enabled,authRequired,
+  missing:Object.entries(firebase).filter(([,value])=>!value).map(([key])=>({apiKey:'FIREBASE_API_KEY',authDomain:'FIREBASE_AUTH_DOMAIN',projectId:'FIREBASE_PROJECT_ID',appId:'FIREBASE_APP_ID'})[key]),
+  accessMode:authRequired?'account':'internal_pilot',sessionMaxDays:30});
 };

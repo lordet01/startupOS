@@ -15,7 +15,7 @@ const server=http.createServer(async(req,res)=>{
   res.status=n=>{res.statusCode=n;return res;};res.json=value=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(value));return res;};await handler(req,res);return;
  }
  let file=url.pathname==='/'?'index.html':url.pathname==='/builder/'?'builder/index.html':url.pathname.slice(1);
- if(!['index.html','config.js','builder/index.html','builder/studio.js','capabilities/app.css'].includes(file)){res.writeHead(404);res.end();return;}
+ if(!['workspace-core.js','workspace-store.js','workspace-ui.js','workspace.css','cloud-sync.js','index.html','config.js','builder/index.html','builder/studio.js','capabilities/app.css'].includes(file)){res.writeHead(404);res.end();return;}
  res.setHeader('Content-Type',file.endsWith('.js')?'application/javascript':file.endsWith('.css')?'text/css':'text/html; charset=utf-8');res.end(fs.readFileSync(file));
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+server.address().port;

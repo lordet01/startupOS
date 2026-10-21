@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
-const allowed=new Set(['index.html','config.js']);
+const allowed=new Set(['workspace-core.js','workspace-store.js','workspace-ui.js','workspace.css','cloud-sync.js','index.html','config.js']);
 const server=http.createServer((req,res)=>{
  const path=new URL(req.url,'http://localhost').pathname.replace(/^\//,'')||'index.html';
  if(!allowed.has(path)){res.writeHead(404);res.end('not found');return;}

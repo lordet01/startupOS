@@ -1,12 +1,12 @@
-# StartupOS — Functional Build v3 + Account Sync v4
+# StartupOS — Workspace v5
 
-## Account Sync v4 (requires Firebase activation)
+Google/email account flows, account-isolated browser workspaces, durable sync retries/conflict recovery, revision restore, My Apps management, budget/approval records and Growth experiments are implemented. Existing Brief → Blueprint → Build → Deploy → Phone Test → Iterate remains session-scoped.
 
-The main dashboard and Build Studio now include an account dialog with Google/email authentication, per-user Firestore venture documents, **My Apps**, session continuity, opt-in migration of old browser-local projects, and local JSON backup/restore. Existing venture IDs, builds, refinements and deployment metadata are preserved by migrating the entire session object. A Mac Chrome skin-analysis project is **not** automatically present on Android until the Mac's original browser profile explicitly imports it.
+**Real login still requires Firebase activation.** The current production endpoint reports no Firebase web-app configuration. Vercel configuration access for the existing team returned 403 during this work, so provider setup and real-user login have not been activated or verified. See [Workspace v5 behavior, setup and verification](docs/ACCOUNT_SYNC_V5.md).
 
-Firebase Authentication, Firestore, Firestore security rules and public web-app configuration must be activated in the Vercel project before cloud sign-in is operational. When this is missing, the UI shows **설정 필요**, not a pretend login. See [Account Sync v4](docs/ACCOUNT_SYNC_V4.md) and [Firestore security rules](firebase/firestore.rules).
+The proposed hierarchical AutoBuild execution model is documented in [AutoBuild design](docs/AUTOBUILD_DESIGN.md); its orchestrator is not implemented yet.
 
-Run npm test for backend and account-sync contract tests. Browser and physical-device acceptance are separate from code syntax checks.
+Run npm test and npm run test:workspace:browser. The latter uses two browser contexts with mocked Firebase transport, and must not be confused with live provider acceptance.
 
 ---
 
@@ -63,10 +63,10 @@ Browser OCR responses are explicitly mocked to test interaction paths; the camer
 
 ## Storage and safety limits
 
-Sessions and app data are local to each browser/origin, not synchronized between devices. Old generic artifacts are preserved separately from new functional builds. A new preview URL does not automatically inherit old app data; export before retiring an old deployment.
+Workspace sessions synchronize per account after Firebase activation; signed-out projects stay in the original browser until explicitly imported. Generated apps' runtime records remain local to their own browser/origin. Old generic artifacts are preserved separately from new functional builds. A new preview URL does not automatically inherit old app data; export before retiring an old deployment.
 
 OCR images are processed on demand and are not persisted by this app. Provider requests use `store:false`; this is not a claim of provider-wide zero retention. Logs omit receipt images and raw receipt contents. Token-derived cost values are labeled estimates, not reconciled invoices.
 
-This remains an **internal pilot**, not a public multi-tenant release. Operator authentication, durable server-side usage/session storage and globally enforced quotas remain prerequisites for public exposure. The per-process OCR test limit is not a global spending cap.
+This remains an **internal pilot**, not a public multi-tenant release. Configured Firebase protects operator APIs and stores account ventures/revisions. Durable server-side usage accounting and globally enforced quotas remain prerequisites for public exposure. The per-process OCR test limit is not a global spending cap.
 
 See `docs/FUNCTIONAL_BUILD_V3.md` for contracts, endpoints, acceptance tests and limitations.

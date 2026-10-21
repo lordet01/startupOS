@@ -6,17 +6,29 @@ service cloud.firestore {
         return request.auth != null && request.auth.uid == userId;
       }
       function valid() {
-        return request.resource.data.keys().hasOnly(['ownerUid', 'name', 'updatedAt', 'payload'])
+        return request.resource.data.keys().hasOnly(['ownerUid', 'name', 'updatedAt', 'payload', 'revision'])
           && request.resource.data.ownerUid == userId
           && request.resource.data.payload is map
           && request.resource.data.payload._sessionId == sessionId
           && request.resource.data.payload.name is string
           && request.resource.data.name is string
-          && request.resource.data.updatedAt is string;
+          && request.resource.data.updatedAt is string
+          && request.resource.data.revision is int
+          && request.resource.data.revision > 0;
       }
       allow get, list: if owner();
-      allow create, update: if owner() && valid();
+      allow create: if owner() && valid() && request.resource.data.revision == 1;
+      allow update: if owner() && valid()
+        && request.resource.data.revision == (resource.data.get('revision', 0) + 1);
       allow delete: if owner();
+      match /versions/{versionId} {
+        allow get, list: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.keys().hasOnly(['ownerUid', 'name', 'updatedAt', 'payload', 'revision'])
+          && request.resource.data.ownerUid == userId
+          && request.resource.data.payload._sessionId == sessionId
+          && request.resource.data == getAfter(/databases/$(database)/documents/users/$(userId)/ventures/$(sessionId)).data;
+      }
     }
   }
 }

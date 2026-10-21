@@ -42,6 +42,7 @@ module.exports=async function handler(req,res){
  try{
   if(req.method==='GET')return res.status(200).json({ok:true,service:'Idea Note',voice:true,structure:true});
   if(req.method!=='POST')return res.status(405).json({ok:false,error:'POST only'});
+  await require('../lib/account-auth').requireAccount(req);
   if(!process.env.OPENAI_API_KEY)return res.status(503).json({ok:false,error:'OPENAI_API_KEY is not configured'});
   const b=jsonBody(req);const start=Date.now(),action=String(b.action||'');
   if(action==='structure'){

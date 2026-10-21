@@ -18,12 +18,15 @@ module.exports=async function handler(req,res){
   try{
     if(req.method==='GET'){
       if(!req.query||!req.query.id)return res.status(200).json({ok:true,configured:!!process.env.VERCEL_PUBLISH_TOKEN,gate:'server re-verifies before every publish',signingKeyRequired:false});
+      const identity=await require('../lib/account-auth').requireAccount(req);
       const id=String(req.query.id||'');
       if(!/^dpl_[A-Za-z0-9]{10,80}$/.test(id))throw B.failure('DEPLOYMENT_ID_INVALID','배포 ID 형식 오류',400);
       const data=await vercel('/v13/deployments/'+encodeURIComponent(id));
+      if(identity&&data.meta?.startupOsOwnerUid!==identity.uid)throw B.failure('DEPLOYMENT_FORBIDDEN','이 계정의 배포가 아닙니다.',403);
       return res.status(200).json({ok:true,deployment:{id,readyState:data.readyState||data.state||'UNKNOWN',url:data.url?'https://'+data.url:null,mode:'preview',deviceStatus:'PENDING_PHYSICAL_PHONE',error:data.errorMessage||null}});
     }
     if(req.method!=='POST')return res.status(405).json({ok:false,error:'POST only'});
+    const identity=await require('../lib/account-auth').requireAccount(req);
     const body=B.body(req);if(!body.descriptor)throw B.failure('INVALID_BUILD','Build descriptor가 필요합니다.',400);const desc=B.assertCurrent({...body.descriptor});
     if(body.sessionId!==desc.sid)throw B.failure('SESSION_MISMATCH','다른 세션의 Build를 배포할 수 없습니다.',409);
     if(body.approved!==true)throw B.failure('APPROVAL_REQUIRED','테스트 배포를 승인하세요.',422);
@@ -36,7 +39,7 @@ module.exports=async function handler(req,res){
     const checks=A.validateArtifacts(packaged);
     if(checks.some(x=>x.status!=='passed'))throw B.failure('ARTIFACT_INVALID','배포 직전 파일 검증이 실패했습니다.',422);
     const files=A.pack(packaged),c=credentials();
-    const data=await vercel('/v13/deployments','POST',{name:'startup-os',project:c.project,files,meta:{startupOsSessionId:desc.sid,startupOsBuildId:desc.bid,startupOsArtifactHash:B.artifactHash(desc),startupOsGeneratedApp:'true',startupOsKind:desc.kind,startupOsKeylessBuild:'true'}});
+    const data=await vercel('/v13/deployments','POST',{name:'startup-os',project:c.project,files,meta:{...(identity?{startupOsOwnerUid:identity.uid}:{}),startupOsSessionId:desc.sid,startupOsBuildId:desc.bid,startupOsArtifactHash:B.artifactHash(desc),startupOsGeneratedApp:'true',startupOsKind:desc.kind,startupOsKeylessBuild:'true'}});
     return res.status(200).json({
       ok:true,verification,cost:verification.cost,
       deployment:{id:data.id,sessionId:desc.sid,buildId:desc.bid,artifactHash:B.artifactHash(desc),branding,url:data.url?'https://'+data.url:null,readyState:data.readyState||data.state||'QUEUED',mode:'preview',deviceStatus:'PENDING_PHYSICAL_PHONE'},

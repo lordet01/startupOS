@@ -40,6 +40,8 @@ jobs:
         run: npm run test:browser
       - name: Generated browser report matches current capability source
         run: node -e "const assert=require('node:assert/strict');const B=require('./lib/build-contract');const r=require('./test-results/browser-report.json');assert.equal(r.sourceHash,B.sourceHash());assert.ok(r.checks.length>=28 && r.checks.every(x=>x.status==='passed'));"
+      - name: Account isolation, offline sync recovery and Growth workflows (mocked Firebase)
+        run: npm run test:workspace:browser
       - name: Session continuity and keyless operator setup
         run: node tests/studio.mjs && node tests/setup.mjs
       - name: All-page UI and responsive action audit

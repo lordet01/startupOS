@@ -1,17 +1,22 @@
 {
   "name": "startup-os",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "private": true,
   "description": "StartupOS functional build harness",
   "scripts": {
     "test": "node --test tests/*.test.cjs",
     "test:browser": "node tests/browser.mjs",
-    "test:all": "npm test && npm run test:browser"
+    "test:all": "npm test && npm run test:browser && npm run test:workspace:browser",
+    "test:workspace:browser": "node tests/workspace-browser.mjs",
+    "test:rules": "node tests/firestore-rules.mjs"
   },
   "devDependencies": {
     "playwright": "1.63.0"
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "jose": "^6.2.3"
   }
 }

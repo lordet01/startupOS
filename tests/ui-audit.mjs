@@ -19,7 +19,7 @@ const sample={
   costBreakdown:[],buildPlan:[],risks:[],agentNotes:{}
 };
 const pack={activeId:sample._sessionId,sessions:[sample]};
-const allowed=new Set(['index.html','config.js','builder/index.html','builder/studio.js','capabilities/app.css']);
+const allowed=new Set(['workspace-core.js','workspace-store.js','workspace-ui.js','workspace.css','cloud-sync.js','index.html','config.js','builder/index.html','builder/studio.js','capabilities/app.css']);
 const server=http.createServer(async(req,res)=>{
  const url=new URL(req.url,'http://127.0.0.1');
  if(url.pathname==='/api/build'){
@@ -60,14 +60,14 @@ try{
  await check('sessions_new_venture_unique_and_clickable',async()=>{
    await page.locator('.side button[data-view=sessions]').click();
    assert.equal(await page.locator('#newVenture').count(),1);
-   assert.equal(await page.locator('.sessionGrid .openSession').count(),1);
+   assert.equal(await page.locator('.sessionGrid [data-work=resume]').count(),1);
    await page.locator('#newVenture').click();
    await page.locator('#newIdea').waitFor();
    assert.equal(await page.locator('#createVenture').count(),1);
    await page.locator('#closeModal').click();
  });
  await check('session_card_opens_selected_project',async()=>{
-   await page.locator('.sessionCard .openSession').click();
+   await page.locator('.sessionCard [data-work=resume]').click();
    assert.equal(await page.locator('#sessionSelect').inputValue(),'vs_ui_audit_2026');
    assert.equal(await page.locator('.overviewCard').count(),0);
  });

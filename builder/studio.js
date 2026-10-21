@@ -1,9 +1,11 @@
 (function(){
 'use strict';
+const fetch=(url,options)=>window.StartupOSCloud.fetch(url,options);
+const store=window.StartupOSStore;let studioOwner=store.owner();
 const KEY='startupOS.sessions.v1',root=document.getElementById('studio');
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let pack,active='',info=null,globalError='',pending=new Map(),polls=new Map();
-try{pack=JSON.parse(localStorage.getItem(KEY)||'null');if(!pack||!Array.isArray(pack.sessions))throw new Error('저장된 Venture Session이 없습니다.');active=new URLSearchParams(location.search).get('sessionId')||pack.activeId;if(!pack.sessions.some(x=>x._sessionId===active))active=pack.sessions[0]&&pack.sessions[0]._sessionId||'';}catch(e){globalError=e.message;pack={sessions:[]};}
+try{pack=store.read();if(!pack||!Array.isArray(pack.sessions))throw new Error('저장된 Venture Session이 없습니다.');active=new URLSearchParams(location.search).get('sessionId')||pack.activeId;if(!pack.sessions.some(x=>x._sessionId===active))active=pack.sessions[0]&&pack.sessions[0]._sessionId||'';}catch(e){globalError=e.message;pack={sessions:[]};}
 const session=()=>pack.sessions.find(x=>x._sessionId===active),job=sid=>pending.get(sid);
 function ingestVerifyIssue(){
  const params=new URLSearchParams(location.search),raw=params.get('verifyIssue');
@@ -24,7 +26,7 @@ function ingestVerifyIssue(){
   });
  }catch(e){globalError='Verify 오류 보고를 저장할 수 없습니다: '+e.message;}
 }
-function repairFor(p){return p.functionalRepair&&p.functionalBuild&&p.functionalRepair.buildId===p.functionalBuild.bid&&p.functionalRepair.status==='REPAIR_REQUIRED'?p.functionalRepair:null}
+function repairFor(p){return p&&p.functionalRepair&&p.functionalBuild&&p.functionalRepair.buildId===p.functionalBuild.bid&&p.functionalRepair.status==='REPAIR_REQUIRED'?p.functionalRepair:null}
 const repairLoading=new Set();
 function planFor(p){const issue=repairFor(p),plan=p.functionalRepairPlan;return issue&&plan&&plan.issue?.buildId===issue.buildId&&plan.issue?.code===issue.code&&plan.issue?.stage===issue.stage&&plan.issue?.source===issue.source&&plan.issue?.message===issue.message&&plan.currentSourceHash===info?.sourceHash?plan:null;}
 function repairTimeline(p){
@@ -48,7 +50,7 @@ async function refreshRepairPlan(sid){
  }finally{repairLoading.delete(sid);render();}
 }
 
-function patch(sid,fn){const current=JSON.parse(localStorage.getItem(KEY)||'null');if(!current||!Array.isArray(current.sessions))throw new Error('세션 저장소가 사라졌습니다.');const p=current.sessions.find(x=>x._sessionId===sid);if(!p)throw new Error('원래 세션이 없습니다.');fn(p);p._updatedAt=new Date().toISOString();localStorage.setItem(KEY,JSON.stringify(current));pack=current;if(window.StartupOSCloud)window.StartupOSCloud.localSaved(current);return p;}
+function patch(sid,fn){const current=store.read();if(!current||!Array.isArray(current.sessions))throw new Error('세션 저장소가 사라졌습니다.');const p=current.sessions.find(x=>x._sessionId===sid);if(!p)throw new Error('원래 세션이 없습니다.');fn(p);p._updatedAt=new Date().toISOString();store.write(current);pack=current;if(window.StartupOSCloud)window.StartupOSCloud.localSaved(current);return p;}
 function log(sid,event,detail){patch(sid,p=>{p._events=[{at:new Date().toISOString(),type:event,message:detail},...(p._events||[])].slice(0,100);});}
 function selectKind(p){
   var tech=(p.techStack||[]).map(x=>typeof x==="string"?x:[x.area,x.service,x.reason].filter(Boolean).join(" "));
@@ -73,14 +75,15 @@ function brandingPanel(p,kind){const opts=brandOptions[kind]||brandOptions.trave
 function render(){
  const p=session();
  if(info&&repairFor(p)&&!planFor(p)&&!repairLoading.has(active)&&planFor(p)?.status!=='PLAN_FAILED')setTimeout(()=>refreshRepairPlan(active),0);
- if(!p){root.innerHTML='<div class="pageTitle"><div><h1>Build</h1><div class="muted">Session not found</div></div></div><div class="errorbox">'+esc(globalError||'세션이 없습니다.')+'</div><a class="btn" href="/">← StartupOS</a>';return;}
- const f=p.functionalBuild,kind=selectKind(p),contract=info&&info.contracts[kind],busy=!!job(active),repair=repairFor(p),plan=planFor(p),autoVerified=!!(f&&f.verification&&f.verification.status==='INTEGRATION_VERIFIED'),smokeVerified=!!(autoVerified&&f.verification.smoke?.status==='PASSED'&&f.verification.artifactHash===f.artifactHash),verified=!!(smokeVerified&&!repair),deployment=f&&f.deployment,ready=!!(verified&&deployment&&deployment.readyState==='READY');
+ if(!p){root.innerHTML='<div class="studio-head"><a class="toplink" href="/">← My Apps</a><button class="cloud-account-btn" data-cloud-button>☁ 로그인</button></div><div class="pageTitle"><div><h1>Build</h1><div class="muted">Session not found</div></div></div><div class="errorbox">'+esc(globalError||'세션이 없습니다.')+'</div><a class="btn" href="/">← StartupOS</a>';return;}
+ const f=p.functionalBuild,kind=selectKind(p),contract=info&&info.contracts[kind],busy=!!job(active),repair=repairFor(p),plan=planFor(p),autoVerified=!!(f&&f.sid===p._sessionId&&f.verification&&f.verification.status==='INTEGRATION_VERIFIED'),smokeVerified=!!(autoVerified&&f.verification.smoke?.status==='PASSED'&&f.verification.artifactHash===f.artifactHash),verified=!!(smokeVerified&&!repair),deployment=f&&f.deployment,ready=!!(verified&&deployment&&deployment.readyState==='READY');
  const stageData=[['🧩','Contract',!!contract&&p.functionalScopeApproved===kind],['🛠','Build',!!f],['✓','Verify',verified],['🚀','Deploy',ready],['📱','Phone',!!(ready&&p.functionalDeviceEvidence&&p.functionalDeviceEvidence.buildId===f.bid&&p.functionalDeviceEvidence.note)]];
  const inScope=contract?contract.acceptance:[];
  const outScope=contract?contract.exclusions:[];
  root.innerHTML=
  '<div class="studio-head"><a class="toplink" href="/">← StartupOS</a><select id="session">'+pack.sessions.map(s=>'<option value="'+esc(s._sessionId)+'" '+(s._sessionId===active?'selected':'')+'>'+esc(s.name)+' · '+esc(s._sessionId.slice(-7))+'</option>').join('')+'</select></div>'+
  '<div class="pageTitle"><div><h1>Build</h1><div class="muted">'+esc(p.name)+'</div></div><div class="metaRow"><span class="metaChip">'+esc(kind||'New capability needed')+'</span><span class="metaChip">'+esc(p._sessionId.slice(-8))+'</span><span class="metaChip">'+esc(stateText(f))+'</span></div></div>'+
+ (f&&f.sid!==p._sessionId?'<div class="notice warn">복구한 원본의 Build와 대화 기록입니다. 이 프로젝트에서 New Build를 실행하면 이어서 수정할 수 있습니다.</div>':'')+
  '<div class="stages">'+stageData.map(([icon,text,pass],i)=>'<div class="stagebox '+(pass?'pass':'pending')+'"><span class="stageIcon">'+icon+'</span><div><strong>'+String(i+1)+'. '+text+'</strong><span class="stageState">'+(pass?'Done':'Pending')+'</span></div></div>').join('')+'</div>'+
  (busy?'<section class="card"><div class="sectionHead"><h2>'+esc(job(active).label)+'</h2><span id="elapsed" class="tiny"></span></div><div class="busyline"></div><div class="muted">'+esc(job(active).message)+'</div>'+repairTimeline(p)+'</section>':'')+
  (p.functionalDiagnostics&&p.functionalDiagnostics.error?'<div class="errorbox" role="alert"><strong>'+esc(p.functionalDiagnostics.error)+'</strong><div class="tiny">'+esc(p.functionalDiagnostics.code||'')+' · HTTP '+esc(p.functionalDiagnostics.httpStatus||'-')+'</div></div>':'')+
@@ -109,9 +112,9 @@ function render(){
 }
 
 async function request(url,body,timeout=70000){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);try{const r=await fetch(url,{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:undefined,body:body?JSON.stringify(body):undefined,signal:controller.signal});const text=await r.text();let result;try{result=JSON.parse(text);}catch{throw Object.assign(new Error('서버가 JSON이 아닌 응답을 반환했습니다.'),{httpStatus:r.status});}if(!r.ok||!result.ok)throw Object.assign(new Error(result.error||'요청 실패'),{httpStatus:r.status,code:result.code});return result;}catch(e){if(e.name==='AbortError')throw new Error('요청 제한시간을 초과했습니다. 상태를 확인한 뒤 수동으로 재시도하세요.');throw e;}finally{clearTimeout(timer);}}
-async function perform(sid,label,message,fn){if(pending.has(sid))return;const runId=crypto.randomUUID(),started=Date.now();pending.set(sid,{runId,started,label,message});patch(sid,p=>{p.functionalDiagnostics={runId,label,stage:'running',startedAt:new Date().toISOString()};});render();try{await fn(runId);patch(sid,p=>{if(p.functionalDiagnostics.runId===runId)p.functionalDiagnostics={...p.functionalDiagnostics,stage:'finished',elapsedMs:Date.now()-started,httpStatus:200};});}catch(e){patch(sid,p=>{if(p.functionalDiagnostics.runId===runId)p.functionalDiagnostics={...p.functionalDiagnostics,stage:'failed',error:e.message,code:e.code,httpStatus:e.httpStatus||null,elapsedMs:Date.now()-started};});}finally{pending.delete(sid);render();}}
+async function perform(sid,label,message,fn){if(pending.has(sid))return;const owner=store.owner();const runId=crypto.randomUUID(),started=Date.now();pending.set(sid,{runId,started,label,message});patch(sid,p=>{p.functionalDiagnostics={runId,label,stage:'running',startedAt:new Date().toISOString()};});render();try{await fn(runId);if(owner!==store.owner())return;patch(sid,p=>{if(p.functionalDiagnostics.runId===runId)p.functionalDiagnostics={...p.functionalDiagnostics,stage:'finished',elapsedMs:Date.now()-started,httpStatus:200};});}catch(e){if(owner!==store.owner())return;patch(sid,p=>{if(p.functionalDiagnostics.runId===runId)p.functionalDiagnostics={...p.functionalDiagnostics,stage:'failed',error:e.message,code:e.code,httpStatus:e.httpStatus||null,elapsedMs:Date.now()-started};});}finally{pending.delete(sid);render();}}
 function charge(p,cost,label,id){p.functionalLastCost=cost;if(cost&&cost.provider_usd!=null){p.costs||=[];if(!p.costs.some(row=>row[4]===id))p.costs.push([label,'OpenAI / live verification','Verification',cost.provider_usd,id]);}}
-function bind(){document.getElementById('session').onchange=ev=>{active=ev.target.value;const url=new URL(location.href);url.searchParams.set('sessionId',active);history.replaceState(null,'',url);render();if(repairFor(session()))refreshRepairPlan(active);};const p=session(),sid=active;
+function bind(){document.getElementById('session').onchange=ev=>{active=ev.target.value;const url=new URL(location.href);url.searchParams.set('sessionId',active);history.replaceState(null,'',url);pack.activeId=active;store.write(pack);render();if(repairFor(session()))refreshRepairPlan(active);};const p=session(),sid=active;
  const scope=document.getElementById('scope');if(scope)scope.onchange=()=>{patch(sid,x=>{x.functionalScopeApproved=scope.checked?selectKind(x):null;});render();};
  for(const button of ['backToBuild','retryBuild']){const el=document.getElementById(button);if(el)el.onclick=()=>document.getElementById('scope-stage')?.scrollIntoView({behavior:'smooth',block:'start'});}
  const unsupported=document.getElementById('requestCapability');
@@ -243,9 +246,9 @@ function bind(){document.getElementById('session').onchange=ev=>{active=ev.targe
  const refresh=document.getElementById('refresh-deploy');if(refresh)refresh.onclick=()=>pollDeployment(sid,p.functionalBuild.bid);
  const save=document.getElementById('save-device');if(save)save.onclick=()=>{const note=document.getElementById('device-note').value;patch(sid,x=>{x.functionalDeviceNote=note;x.functionalDeviceEvidence={source:'user_report',at:new Date().toISOString(),note,buildId:x.functionalBuild&&x.functionalBuild.bid};});log(sid,'phone_user_report','실기기 사용자 확인 기록 저장');render();};
 }
-async function pollDeployment(sid,bid){if(polls.has(sid))return;polls.set(sid,true);try{for(let i=0;i<20;i++){const p=pack.sessions.find(x=>x._sessionId===sid),d=p&&p.functionalBuild&&p.functionalBuild.bid===bid&&p.functionalBuild.deployment;if(!d||!d.id)break;const result=await request('/api/publish?id='+encodeURIComponent(d.id));patch(sid,x=>{if(x.functionalBuild.bid!==bid)return;x.functionalBuild.deployment={...d,...result.deployment};if(result.deployment.readyState==='READY')x._phase='deploy';});render();if(['READY','ERROR','CANCELED'].includes(result.deployment.readyState))break;await new Promise(r=>setTimeout(r,3000));}}catch(e){patch(sid,x=>{x.functionalDiagnostics={label:'Deployment status',error:e.message,code:e.code,httpStatus:e.httpStatus,stage:'failed'};});render();}finally{polls.delete(sid);}}
+async function pollDeployment(sid,bid){if(polls.has(sid))return;const owner=store.owner();polls.set(sid,true);try{for(let i=0;i<20;i++){if(owner!==store.owner())break;const p=pack.sessions.find(x=>x._sessionId===sid),d=p&&p.functionalBuild&&p.functionalBuild.bid===bid&&p.functionalBuild.deployment;if(!d||!d.id)break;const result=await request('/api/publish?id='+encodeURIComponent(d.id));patch(sid,x=>{if(x.functionalBuild.bid!==bid)return;x.functionalBuild.deployment={...d,...result.deployment};if(result.deployment.readyState==='READY')x._phase='deploy';});render();if(['READY','ERROR','CANCELED'].includes(result.deployment.readyState))break;await new Promise(r=>setTimeout(r,3000));}}catch(e){if(owner!==store.owner())return;patch(sid,x=>{x.functionalDiagnostics={label:'Deployment status',error:e.message,code:e.code,httpStatus:e.httpStatus,stage:'failed'};});render();}finally{polls.delete(sid);}}
 setInterval(()=>{const j=job(active),seconds=j?Math.floor((Date.now()-j.started)/1000):0;const el=document.getElementById('elapsed');if(el&&j)el.textContent=seconds+'초';document.querySelectorAll('.btnRunText').forEach(x=>{if(j)x.textContent='Working · '+seconds+'s';});},500);
-window.addEventListener('storage',ev=>{if(ev.key===KEY){try{pack=JSON.parse(ev.newValue);if(!pending.size)render();}catch{}}});
+window.addEventListener('storage',ev=>{if(ev.key===store.key()){try{pack=store.read();if(!pending.size)render();}catch{}}});
 function focusHash(){var target=document.getElementById((location.hash||"#scope-stage").slice(1))||document.getElementById("scope-stage");if(target)target.scrollIntoView({block:"start"});}
 window.StartupOSBuildBridge={
  getSession:()=>session(), getSessionById:(sid)=>pack.sessions.find(x=>x._sessionId===sid),
@@ -255,12 +258,14 @@ ingestVerifyIssue();
 render();
 if(window.StartupOSCloud)window.StartupOSCloud.connect({
  getPack:()=>pack,
+ isBusy:sid=>pending.has(sid),
+ replacePack:value=>{const switched=studioOwner!==store.owner();studioOwner=store.owner();if(switched){pending.clear();polls.clear();}pack=value;active=pack.sessions.some(x=>x._sessionId===active)?active:pack.activeId||pack.sessions[0]?._sessionId||"";globalError="";if(switched||!pending.size)render();if(switched)window.dispatchEvent(new CustomEvent("startupos:studio-account-changed"));},
  applyRemote:items=>{
-  const fresh=JSON.parse(localStorage.getItem(KEY)||"null")||{sessions:[],activeId:""};
+  const fresh=store.read()||{sessions:[],activeId:""};
   if(!Array.isArray(fresh.sessions))fresh.sessions=[];
   let changed=false;
   items.forEach(p=>{if(!p||!p._sessionId||!p._sessionId.startsWith("vs_"))return;const idx=fresh.sessions.findIndex(x=>x._sessionId===p._sessionId);const value=JSON.parse(JSON.stringify(p));if(idx<0){fresh.sessions.unshift(value);changed=true}else if(JSON.stringify(fresh.sessions[idx])!==JSON.stringify(value)){fresh.sessions[idx]=value;changed=true}});
-  if(changed){localStorage.setItem(KEY,JSON.stringify(fresh));pack=fresh;if(!session()&&pack.sessions.length)active=pack.sessions[0]._sessionId;if(!pending.size)render()}
+  if(changed){store.write(fresh);pack=fresh;if(!session()&&pack.sessions.length)active=pack.sessions[0]._sessionId;if(!pending.size)render()}
  }
 });request('/api/build').then(data=>{info=data;render();if(repairFor(session()))refreshRepairPlan(active);if(location.hash)setTimeout(focusHash,30);}).catch(e=>{globalError=e.message;render();});
 window.addEventListener("hashchange",focusHash);

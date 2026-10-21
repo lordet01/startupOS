@@ -24,7 +24,7 @@ const cycle={bottleneck:'OCR 실기기 검증 없음',evidence:'폰 테스트 �
  success_threshold:'5장 중 5장 저장',estimated_external_cost_usd:0.1,
  human_approval_required:false,missing_evidence:['실기기 결과'],
  role_notes:{ceo:'검증 우선',market:'테스터 모집',product:'수정 UX 확인',tech:'Vision API 성공 확인',finance:'OCR 장당 비용 측정',legal:'이미지 전송 동의 검토',growth:'첫 가치 측정'}};
-const allowed=new Set(['index.html','config.js']);
+const allowed=new Set(['workspace-core.js','workspace-store.js','workspace-ui.js','workspace.css','cloud-sync.js','index.html','config.js']);
 const server=http.createServer((req,res)=>{
  const url=new URL(req.url,'http://localhost'),file=url.pathname==='/'?'index.html':url.pathname.slice(1);
  if(!allowed.has(file)){res.writeHead(404);res.end();return;}

@@ -65,6 +65,7 @@ module.exports=async function handler(req,res){
  try{
   if(req.method==='GET')return res.status(200).json({ok:true,feature:'session_refinement',mode:'real_source_code_builder',supported:['skin','receipt','travel'],screenshot:true,codeEdits:true});
   if(req.method!=='POST')return res.status(405).json({ok:false,error:'POST only'});
+  await require('../lib/account-auth').requireAccount(req);
   const header=req.headers||{};
   if(header['sec-fetch-site']&&header['sec-fetch-site']!=='same-origin')throw fail('다른 사이트에서 개선 요청을 보낼 수 없습니다.',403,'ORIGIN_NOT_ALLOWED');
   const ip=String(header['x-forwarded-for']||'unknown').split(',')[0].slice(0,90),now=Date.now(),record=throttle.get(ip)||{count:0,reset:now+3600000};

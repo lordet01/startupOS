@@ -6,13 +6,14 @@ const OUTPUT_USD_PER_M = Number(process.env.OPENAI_OUTPUT_USD_PER_M || "0.50");
 const MAX_OUTPUT = Number(process.env.OPENAI_MAX_OUTPUT_TOKENS || "3400");
 
 function setCors(req, res) {
-  const origin = req.headers.origin || "";
+  const origin = req.headers?.origin || "";
   const allow = (process.env.ALLOWED_ORIGIN || "https://lordet01.github.io").split(",").map(s => s.trim());
-  if (!origin || allow.includes(origin) || /https:\/\/[^/]+\.vercel\.app$/.test(origin) || /^http:\/\/localhost(:\d+)?$/.test(origin)) {
+  const ownHost=String(req.headers?.host||'');
+  if (!origin || allow.includes(origin) || (ownHost&&origin==='https://'+ownHost) || /^http:\/\/localhost(:\d+)?$/.test(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin || "*");
   }
   res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
 }
 
@@ -63,7 +64,7 @@ function cyclePrompt(){
 This is a *single LLM committee pass* considering CEO, Market, Product, Tech, Finance, Legal and Growth perspectives. Do not pretend seven independent agents, web research, code changes, deployment or experiments were performed.
 Given only the current session context:
 1. Identify the single biggest verified obstacle to the NEXT useful release or test.
-2. Distinguish observed facts from hypotheses and missing information. If metrics.source=not_connected, do not claim real traffic, conversion, users, sales or measured outcomes.
+2. Distinguish observed facts from hypotheses and missing information. If metrics.source=not_connected, do not claim real traffic, conversion, users, sales or measured outcomes. If metrics.source=manual, label numbers as founder-entered measurements, evaluate their period and evidence, and never call them independently verified.
 3. Propose ONE low-cost concrete experiment, the next practical action, measurable success metric and threshold. Never treat model-generated scores as evidence.
 4. Each role note must be concise, actionable and context-specific. The CEO selects the final decision; Tech references the existing PWA, integrations and functional verification when relevant; Finance states an estimated EXTERNAL cost (not a charge already incurred); Legal notes real privacy/consent risks only if relevant.
 5. Do not overwrite Blueprint, change code, call services, charge payment, deploy or buy ads. The next action must explicitly remain pending for the founder to perform/approve.
@@ -85,6 +86,7 @@ module.exports=async function handler(req,res){
  if(req.method==='OPTIONS')return res.status(204).end();
  if(req.method==='GET')return res.status(200).json({ok:true,service:'Startup OS Runtime',model:BLUEPRINT_MODEL,cycle_model:CYCLE_MODEL,blueprint_version:'compact-v2'});
  if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
+ try{await require('../lib/account-auth').requireAccount(req);}catch(e){return require('../lib/account-auth').reject(res,e);}
  if(!process.env.OPENAI_API_KEY)return res.status(503).json({error:'OPENAI_API_KEY is not configured'});
  let body=req.body;
  if(typeof body==='string'){try{body=JSON.parse(body);}catch{return res.status(400).json({error:'Invalid JSON body'});}}

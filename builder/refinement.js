@@ -3,6 +3,7 @@
 // Session-scoped feedback. Screenshots stay in memory until the founder explicitly sends them.
 const Bridge=()=>window.StartupOSBuildBridge;
 const drafts=new Map(),activities=new Map();
+window.addEventListener('startupos:studio-account-changed',()=>{drafts.clear();activities.clear();});
 const escape=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const now=()=>new Date().toISOString(),limit=x=>String(x||'').slice(0,2500);
 function local(sid){if(!drafts.has(sid))drafts.set(sid,{text:'',tab:'preview',screenshot:null,strokes:[],activeStroke:null,busy:false,error:'',captureBusy:false,cropMode:null});return drafts.get(sid)}
@@ -98,7 +99,7 @@ function updateChat(sid){
  if(annotation){annotation.innerHTML=annotationMarkup(d);bindAnnotation(sid)}
  if(text){text.value=d.text;text.oninput=()=>{d.text=text.value}}
  const send=document.getElementById('refineSend');
- const info=Bridge()?.getInfo(),stale=!!(info&&p.functionalBuild&&(p.functionalBuild.sourceHash!==info.sourceHash||p.functionalBuild.version!==info.version));
+ const info=Bridge()?.getInfo(),stale=!!(info&&p.functionalBuild&&(p.functionalBuild.sid!==p._sessionId||p.functionalBuild.sourceHash!==info.sourceHash||p.functionalBuild.version!==info.version));
  if(send){send.disabled=d.busy||stale||!['skin','receipt','travel'].includes(p.functionalBuild?.kind);send.innerText=d.busy?(d.phase==='build'?'⏳ Build · 검증 중…':'⏳ 코드 구현 중…'):'↗ AI에 수정 요청';send.onclick=()=>sendRequest(sid)}
  const approve=document.getElementById('refineApprove');
  if(approve){approve.disabled=d.busy;approve.onclick=()=>approveBuild(sid)}
@@ -121,7 +122,7 @@ function switchTab(sid,tab){
 function mount(){
  const b=Bridge(),p=b?.getSession(),host=document.getElementById('refineHost');if(!p||!p.functionalBuild||!host)return;
  const sid=p._sessionId,bid=p.functionalBuild.bid,d=local(sid);
- const info=b.getInfo(),stale=!!(info&&((p.functionalBuild.sourceHash!==info.sourceHash)||(p.functionalBuild.version!==info.version)));
+ const info=b.getInfo(),stale=!!(info&&((p.functionalBuild.sid!==p._sessionId||p.functionalBuild.sourceHash!==info.sourceHash)||(p.functionalBuild.version!==info.version)));
  const fresh=host.dataset.sessionId!==sid||host.dataset.buildId!==bid||host.dataset.stale!==String(stale)||!(host.querySelector('#refineFrame')||host.querySelector('.refinePhoneStale'));
  if(fresh){
   cancelPartialCapture(sid);

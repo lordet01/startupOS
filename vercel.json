@@ -1,17 +1,85 @@
 {
   "fluid": true,
   "functions": {
-    "api/runtime.js": { "maxDuration": 60 },
-    "api/idea-note.js": { "maxDuration": 60 },
-    "api/refine.js": { "maxDuration": 60, "includeFiles": "{capabilities/**,lib/**,fixtures/**}" },
-    "api/build.js": { "maxDuration": 60, "includeFiles": "{capabilities/**,lib/**,fixtures/**}" },
-    "api/build-preview.js": { "maxDuration": 30, "includeFiles": "{capabilities/**,lib/**,fixtures/**}" },
-    "api/publish.js": { "maxDuration": 60, "includeFiles": "{capabilities/**,lib/**,fixtures/**}" },
-    "api/receipt-ocr.js": { "maxDuration": 60 }
+    "api/runtime.js": {
+      "maxDuration": 60
+    },
+    "api/idea-note.js": {
+      "maxDuration": 60
+    },
+    "api/refine.js": {
+      "maxDuration": 60,
+      "includeFiles": "{capabilities/**,lib/**,fixtures/**}"
+    },
+    "api/build.js": {
+      "maxDuration": 60,
+      "includeFiles": "{capabilities/**,lib/**,fixtures/**}"
+    },
+    "api/build-preview.js": {
+      "maxDuration": 30,
+      "includeFiles": "{capabilities/**,lib/**,fixtures/**}"
+    },
+    "api/publish.js": {
+      "maxDuration": 60,
+      "includeFiles": "{capabilities/**,lib/**,fixtures/**}"
+    },
+    "api/receipt-ocr.js": {
+      "maxDuration": 60
+    }
   },
   "headers": [
-    { "source": "/api/(.*)", "headers": [ { "key": "Cache-Control", "value": "no-store" }, { "key": "X-Content-Type-Options", "value": "nosniff" } ] },
-    { "source": "/builder/(.*)", "headers": [ { "key": "Cache-Control", "value": "no-cache" }, { "key": "Referrer-Policy", "value": "no-referrer" } ] },
-    { "source": "/config.js", "headers": [ { "key": "Cache-Control", "value": "no-cache" } ] }
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    },
+    {
+      "source": "/builder/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        }
+      ]
+    },
+    {
+      "source": "/config.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    },
+    {
+      "source": "/workspace(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    },
+    {
+      "source": "/cloud-sync.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    }
   ]
 }

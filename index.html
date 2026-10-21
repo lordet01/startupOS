@@ -247,10 +247,15 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{ou
 </head>
 <body>
 <div id="app"></div>
+<link rel="stylesheet" href="/workspace.css">
+<script src="/workspace-core.js"></script><script src="/workspace-store.js"></script>
 <script src="config.js"></script>
 <script src="/cloud-sync.js"></script>
 <script>
 (function(){
+var workspaceViews={};
+var dashboardOwner=window.StartupOSStore.owner();
+var fetch=function(url,options){return window.StartupOSCloud.fetch(url,options)};
 if(location.hostname==="lordet01.github.io"){location.replace("https://startup-os-beige.vercel.app"+location.pathname.replace("/startupOS","")+location.search+location.hash);return;}
 var TRAVEL_TEMPLATE={
   name:"TripTodo Travel Planner",
@@ -430,7 +435,7 @@ function normalizeSession(p,source){
 }
 function loadSessionPack(){
   try{
-    var raw=JSON.parse(localStorage.getItem(SESSION_KEY)||"null");
+    var raw=window.StartupOSStore.read();
     if(raw&&Array.isArray(raw.sessions)&&raw.sessions.length){
       raw.sessions=raw.sessions.map(function(x){return normalizeSession(x,x._source)});
       if(!raw.activeId||!raw.sessions.some(function(x){return x._sessionId===raw.activeId}))raw.activeId=raw.sessions[0]._sessionId;
@@ -443,10 +448,13 @@ function loadSessionPack(){
   return {activeId:first._sessionId,sessions:[first]};
 }
 var sessionPack=loadSessionPack();
-function activeSession(){return sessionPack.sessions.find(function(x){return x._sessionId===sessionPack.activeId})||sessionPack.sessions[0]}
-var state={view:"overview",p:activeSession(),running:false,modal:false,modalMode:"new",runtimeStatus:"unknown",runStage:"idle",runStartedAt:0,runMessage:"",runError:"",runTimer:null,runMode:"",builderRunning:false,builderMessage:"",builderError:"",publishRunning:false,publishMessage:"",publishError:"",publishHttpStatus:null,publishStage:"idle",publishStrategy:"",publishHint:"",publishAuth:null,builderStartedAt:0,builderTimer:null,builderHttpStatus:null,builderStage:"idle"};
-function persistSessions(){localStorage.setItem(SESSION_KEY,JSON.stringify(sessionPack));localStorage.removeItem("startupOS.project");if(window.StartupOSCloud)window.StartupOSCloud.localSaved(sessionPack)}
+var requestedSession=new URLSearchParams(location.search).get("sessionId");if(sessionPack.sessions.some(function(p){return p._sessionId===requestedSession}))sessionPack.activeId=requestedSession;
+function activeSession(){return sessionPack.sessions.find(function(x){return x._sessionId===sessionPack.activeId})||sessionPack.sessions[0]||normalizeSession({name:"새 프로젝트",idea:"",customer:"",problem:"",budget:100})}
+var restoredNavigation=window.StartupOSStore.meta("navigation")||{};
+var state={view:(["sessions","overview","venture","agents","cost","growth","settings"].includes(location.hash.slice(1))?location.hash.slice(1):(restoredNavigation.sid===sessionPack.activeId?restoredNavigation.view:"overview"))||"overview",p:activeSession(),running:false,modal:false,modalMode:"new",runtimeStatus:"unknown",runStage:"idle",runStartedAt:0,runMessage:"",runError:"",runTimer:null,runMode:"",builderRunning:false,builderMessage:"",builderError:"",publishRunning:false,publishMessage:"",publishError:"",publishHttpStatus:null,publishStage:"idle",publishStrategy:"",publishHint:"",publishAuth:null,builderStartedAt:0,builderTimer:null,builderHttpStatus:null,builderStage:"idle"};
+function persistSessions(){window.StartupOSStore.write(sessionPack);localStorage.removeItem("startupOS.project");if(window.StartupOSCloud)window.StartupOSCloud.localSaved(sessionPack)}
 function save(){
+  sessionPack=window.StartupOSStore.read();
   state.p._updatedAt=new Date().toISOString();
   var i=sessionPack.sessions.findIndex(function(x){return x._sessionId===state.p._sessionId});
   if(i<0)sessionPack.sessions.unshift(state.p);else sessionPack.sessions[i]=state.p;
@@ -454,6 +462,7 @@ function save(){
   persistSessions();
 }
 function saveSessionWithoutSwitch(p){
+  sessionPack=window.StartupOSStore.read();
   p._updatedAt=new Date().toISOString();
   var index=sessionPack.sessions.findIndex(function(x){return x._sessionId===p._sessionId});
   if(index<0)throw new Error("Venture session no longer exists");
@@ -471,6 +480,7 @@ function addSessionEvent(type,message,meta){
   if(state.p._events.length>100)state.p._events=state.p._events.slice(0,100);
 }
 function createSession(project,source){
+  sessionPack=window.StartupOSStore.read();
   var p=normalizeSession(project,source||"manual");
   p._phase="brief";p._events=[];
   sessionPack.sessions.unshift(p);sessionPack.activeId=p._sessionId;state.p=p;
@@ -484,7 +494,7 @@ function switchSession(id){
 }
 function shortSessionId(p){return (p&&p._sessionId?p._sessionId:"").replace("vs_","").slice(0,8).toUpperCase()}
 function money(n){return "$"+Number(n).toFixed(n<10?2:0)}
-function spend(){return (state.p.costs||[]).filter(function(x){return x[0]!=="Manual test"}).reduce(function(s,x){return s+Number(x[3]||0)},0)}
+function spend(){return window.StartupOSWorkspace.totals(state.p).external}
 function fee(){return spend()*.05}
 function runtimeUrl(){var saved=localStorage.getItem("startupOS.runtimeUrl");if(saved)return saved;if(window.STARTUP_OS_CONFIG&&window.STARTUP_OS_CONFIG.runtimeUrl)return window.STARTUP_OS_CONFIG.runtimeUrl;if(location.hostname.endsWith(".vercel.app")||location.hostname==="localhost")return "/api/runtime";return ""}
 function stackServices(){var t=state.p.techStack;if(t&&t.length)return t.map(function(x){return typeof x==="string"?x:(x.service||x.area)});return ["OpenAI GPT","Firebase","Vercel","GitHub","Stripe","PostHog","Resend"]}
@@ -493,7 +503,7 @@ function sessionStageStatus(p){
   var blueprint=!!(p&&!p._briefStale&&Array.isArray(p.serviceFlow)&&p.serviceFlow.length&&Array.isArray(p.mvpFeatures)&&p.mvpFeatures.length);
   var build=!!(p&&p.functionalBuild&&p.functionalBuild.verification&&p.functionalBuild.verification.status==="INTEGRATION_VERIFIED");
   var deploy=!!(p&&p.functionalBuild&&p.functionalBuild.deployment&&p.functionalBuild.deployment.readyState==="READY");
-  var phone=!!(p&&(p.functionalDeviceEvidence&&p.functionalDeviceEvidence.note||p.functionalDeviceNote));
+  var phone=!!(deploy&&p.functionalDeviceEvidence&&p.functionalDeviceEvidence.buildId===p.functionalBuild.bid&&p.functionalDeviceEvidence.note);
   return {venture:blueprint,build:build,deploy:deploy,phone:phone};
 }
 function nav(){
@@ -505,7 +515,7 @@ function nav(){
     return '<button data-view="'+x[0]+'" class="'+(state.view===x[0]?"on ":"")+(tracked[x[0]]?"stageNav":"")+'">'+dot+'<span class="navIcon" aria-hidden="true">'+x[2]+'</span><span class="navText">'+x[1]+'</span></button>';
   }).join("")+'</div><div class="small">StartupOS<br>Functional Build</div></aside>'
 }
-function shell(body){var live=state.runtimeStatus==="live";var badge=state.running?"GPT running…":(live?"Live GPT Runtime":(runtimeUrl()?"Runtime ready":"Runtime not linked"));var opts=sessionPack.sessions.map(function(s){return '<option value="'+esc(s._sessionId)+'" '+(s._sessionId===state.p._sessionId?"selected":"")+'>'+esc(s.name||"Untitled")+' · '+shortSessionId(s)+'</option>'}).join("");var more='<div class="moreSheet" id="moreSheet"><div class="morePanel"><div class="moreHandle"></div><div class="moreGrid">'+[["sessions","▦","My Apps"],["agents","◎","Agents"],["cost","$","Cost"],["growth","↗","Growth"],["settings","⚙","Settings"]].map(function(x){return '<button data-more-view="'+x[0]+'"><span class="navIcon">'+x[1]+'</span><span>'+x[2]+'</span></button>'}).join("")+'</div></div></div>';return '<div class="shell">'+nav()+'<main class="main"><header class="top"><div class="row"><select id="sessionSelect" class="btn" style="max-width:280px">'+opts+'</select><span class="small">Session '+shortSessionId(state.p)+' · '+esc(state.p._phase||state.p.stage||"brief")+'</span></div><div class="row"><span class="tag '+(live?"ok":"")+'">'+badge+'</span><button class="btn moreMobileBtn mobileOnly" id="moreMobile">⋯</button><button class="btn" id="newVenture">+ New venture</button></div></header><div class="content">'+body+'</div></main>'+more+'</div>'}
+function shell(body){var live=state.runtimeStatus==="live";var badge=state.running?"GPT running…":(live?"Live GPT Runtime":(runtimeUrl()?"Runtime ready":"Runtime not linked"));var opts=sessionPack.sessions.filter(function(p){return !p._deletedAt&&!p._archivedAt}).map(function(s){return '<option value="'+esc(s._sessionId)+'" '+(s._sessionId===state.p._sessionId?"selected":"")+'>'+esc(s.name||"Untitled")+' · '+shortSessionId(s)+'</option>'}).join("");var more='<div class="moreSheet" id="moreSheet"><div class="morePanel"><div class="moreHandle"></div><div class="moreGrid">'+[["sessions","▦","My Apps"],["agents","◎","Agents"],["cost","$","Cost"],["growth","↗","Growth"],["settings","⚙","Settings"]].map(function(x){return '<button data-more-view="'+x[0]+'"><span class="navIcon">'+x[1]+'</span><span>'+x[2]+'</span></button>'}).join("")+'</div></div></div>';return '<div class="shell">'+nav()+'<main class="main"><header class="top"><div class="row"><select id="sessionSelect" class="btn" style="max-width:280px">'+opts+'</select><span class="small">Session '+shortSessionId(state.p)+' · '+esc(state.p._phase||state.p.stage||"brief")+'</span></div><div class="row"><span class="tag '+(live?"ok":"")+'">'+badge+'</span><button class="btn moreMobileBtn mobileOnly" id="moreMobile">⋯</button><button class="btn" id="newVenture">+ New venture</button></div></header><div class="content">'+body+'</div></main>'+more+'</div>'}
 function metric(t,v,n,c){return '<div class="card metric"><span>'+t+'</span><b class="'+(c||"")+'">'+v+'</b><span>'+n+'</span></div>'}
 function agents(){var notes=state.p.agentNotes||{};var a=[["CEO","ceo","Goal / priority / gate"],["Market","market","Customer / competition"],["Product","product","MVP / UX / conversion"],["Finance","finance","Cost / pricing / margin"],["Tech","tech","Architecture / APIs"],["Builder","tech","Implementation / deploy"],["Legal","legal","Privacy / IP / policy"],["Growth","growth","Acquisition / experiments"]];return '<div class="agents">'+a.map(function(x,i){var note=notes[x[1]]||x[2];return '<div class="agent"><div class="head"><b>'+x[0]+' Agent</b><span class="tag '+(state.runtimeStatus==="live"?"ok":"")+'">'+(state.running&&i<4?"Running":state.runtimeStatus==="live"?"Synced":"Ready")+'</span></div><p>'+esc(note)+'</p></div>'}).join("")+'</div>'}
 
@@ -642,7 +652,7 @@ function modal(){
  '<button class="btn primary" id="createVenture">'+(edit?"Save changes":"Create & analyze")+'</button></div></div></div>';
 }
 
-function render(){var map={sessions:sessionsView,overview:overview,venture:venture,build:buildView,deploy:deployView,phone:phoneView,agents:agentView,cost:costView,growth:growth,settings:settings};document.getElementById("app").innerHTML=(map[state.view]||overview)()+(state.modal?modal():"");bind()}
+function render(){var formValues={};if(state.modal)document.querySelectorAll("#app .modalWrap input,#app .modalWrap textarea,#app .modalWrap select").forEach(function(el){if(el.id)formValues[el.id]=el.value});var map={sessions:sessionsView,overview:overview,venture:venture,build:buildView,deploy:deployView,phone:phoneView,agents:agentView,cost:costView,growth:growth,settings:settings};Object.assign(map,workspaceViews);document.getElementById("app").innerHTML=(map[state.view]||overview)()+(state.modal?modal():"");bind();if(state.modal)Object.keys(formValues).forEach(function(id){var el=document.getElementById(id);if(el)el.value=formValues[id]});window.dispatchEvent(new CustomEvent("startupos:dashboard-rendered"))}
 function toast(msg){var d=document.createElement("div");d.className="toast";d.textContent=msg;document.body.appendChild(d);setTimeout(function(){d.remove()},1600)}
 function compactRuntimeProject(p,mode){
   return {
@@ -657,7 +667,9 @@ function compactRuntimeProject(p,mode){
     serviceFlow:(p.serviceFlow||[]).slice(0,6).map(function(x){return {title:x.title,user_action:x.user_action,system_action:x.system_action}}),
     techStack:(p.techStack||[]).slice(0,8).map(function(x){return {area:x.area,service:x.service,monthly_cost_usd:x.monthly_cost_usd}}),
     metricsSource:p.metricsSource||"not_connected",
-    metrics:p.metricsSource==="connected"?p.metrics:undefined,
+    metrics:["connected","manual"].includes(p.metricsSource)?p.metrics:undefined,
+    metricsEvidence:String(p.metricsEvidence||"").slice(0,350),metricsPeriod:String(p.metricsPeriod||"").slice(0,100),
+    experiments:(p.experiments||[]).filter(function(e){return e.status==="completed"}).slice(0,3).map(function(e){return {title:e.title,metric:e.metric,threshold:e.threshold,result:e.result,met:e.met,evidence:String(e.evidence||"").slice(0,250)}}),
     functionalBuild:p.functionalBuild?{
       bid:p.functionalBuild.bid,
       verification:p.functionalBuild.verification?{status:p.functionalBuild.verification.status}:null,
@@ -718,6 +730,7 @@ function applyCycle(data,p){
     actual_api_cost_usd:Number(data.cost&&data.cost.provider_usd||0)
   };
   p.agentCycle=cycle;
+  if(cycle.human_approval_required){var approval=window.StartupOSWorkspace.approval(p,{title:String(cycle.next_action||"Agent action").slice(0,200),estimatedUsd:Number(cycle.estimated_external_cost_usd)||0,type:"other"});cycle.approvalId=approval.id;}
   p.agentCycleHistory=[cycle].concat(p.agentCycleHistory||[]).slice(0,12);
   p.nextExperiment=a.experiment;
   p.decisions.unshift("Cycle decision: "+a.next_action);
@@ -727,13 +740,14 @@ function applyCycle(data,p){
 async function run(mode){
   if(state.running)return;
   mode=mode==="cycle"?"cycle":"analyze";
-  var p=state.p,sessionId=p._sessionId;
+  var p=state.p,sessionId=p._sessionId,owner=window.StartupOSStore.owner(),nonce=crypto.randomUUID();state.runNonce=nonce;state.runSid=sessionId;
   state.running=true;state.runMode=mode;state.runStage="prepare";
   state.runStartedAt=Date.now();
   state.runMessage=mode==="cycle"?"세션 컨텍스트 준비":"Founder brief 확인";
   state.runError="";render();startRunClock();
   try{
     var data=await callRuntime(mode,p);
+    if(window.StartupOSStore.owner()!==owner||state.runNonce!==nonce)return;
     if(p._sessionId!==sessionId)throw new Error("Run session mismatch");
     if(mode==="cycle")applyCycle(data,p);else applyAnalysis(data,p);
     p.costs=p.costs||[];
@@ -743,9 +757,10 @@ async function run(mode){
     state.runStage="done";state.runMessage=mode==="cycle"?"역할별 의사결정 저장 완료 · 다음 액션 실행 대기":"Blueprint 저장 완료";
     state.runtimeStatus="live";toast("GPT "+(mode==="cycle"?"cycle":"analysis")+" complete");
   }catch(e){
+    if(window.StartupOSStore.owner()!==owner||state.runNonce!==nonce)return;
     state.runtimeStatus="error";state.runStage="error";state.runError=e.message;state.runMessage=e.message;toast(e.message);
   }finally{
-    state.running=false;state.runMode="";stopRunClock();render();
+    if(state.runNonce===nonce){state.running=false;state.runSid=null;state.runMode="";stopRunClock();render();}
   }
 }
 async function generateMvp(){
@@ -851,7 +866,7 @@ async function ideaNoteStructure(){
  finally{button.disabled=false;button.textContent="AI로 항목 채우기"}
 }
 async function ideaNoteMic(){
- var button=document.getElementById("ideaNoteMic");
+ var button=document.getElementById("ideaNoteMic"),recordingOwner=window.StartupOSStore.owner();
  if(!button)return;
  if(ideaRecorder&&ideaRecorder.state==="recording"){ideaRecorderStop();return}
  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||typeof MediaRecorder==="undefined"){
@@ -859,7 +874,7 @@ async function ideaNoteMic(){
  }
  try{
   ideaStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
-  if(!document.getElementById("ideaNoteText")){ideaStopMedia();return}
+  if(recordingOwner!==window.StartupOSStore.owner()||!document.getElementById("ideaNoteText")){ideaStopMedia();return}
   var types=["audio/mp4","audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus"];
   var chosen=types.find(function(x){return MediaRecorder.isTypeSupported(x)});
   if(!chosen){ideaStopMedia();ideaNoteStatus("지원 가능한 음성 녹음 형식이 없습니다.","error");return}
@@ -868,13 +883,14 @@ async function ideaNoteMic(){
   ideaRecorder.onstop=async function(){
    var blob=new Blob(ideaChunks,{type:chosen});ideaChunks=[];ideaStopMedia();
    var currentButton=document.getElementById("ideaNoteMic");
-   if(!currentButton)return;
+   if(recordingOwner!==window.StartupOSStore.owner()||!currentButton)return;
    currentButton.classList.remove("recording");currentButton.textContent="🎙 녹음 시작";
    if(blob.size<100){ideaNoteStatus("녹음이 너무 짧습니다. 다시 시도하세요.","error");return}
    if(blob.size>1800000){ideaNoteStatus("녹음이 너무 큽니다. 더 짧게 나눠 말해주세요.","error");return}
    currentButton.disabled=true;ideaNoteStatus("녹음한 음성을 텍스트로 변환 중입니다.");
    try{
     var encoded=await new Promise(function(resolve,reject){var reader=new FileReader();reader.onload=function(){resolve(reader.result)};reader.onerror=reject;reader.readAsDataURL(blob)});
+    if(recordingOwner!==window.StartupOSStore.owner())return;
     var data=await ideaNoteRequest({action:"transcribe",audio:encoded},50);
     var note=document.getElementById("ideaNoteText");
     if(note){note.value+=(note.value.trim()?"\n\n":"")+data.text;note.scrollTop=note.scrollHeight}
@@ -902,6 +918,7 @@ document.querySelectorAll("#runCycle").forEach(function(r){r.onclick=function(){
  if(note.length<8){toast("실제 수행 내용과 결과를 8자 이상 기록하세요");return}
  var current=state.p.agentCycle;
  if(!current||current.action_status!=="pending")return;
+ if(current.approvalId){var approval=(state.p.approvals||[]).find(function(x){return x.id===current.approvalId});if(!approval||approval.status!=="approved"){state.view="cost";render();toast("Cost Ledger에서 해당 실행 계획을 승인한 후 결과를 기록하세요.");return}window.StartupOSWorkspace.transition(state.p,approval.id,"completed",note);}
  current.action_status="completed";current.completion_note=note.slice(0,1200);current.completed_at=new Date().toISOString();
  addSessionEvent("agent_action_recorded","Founder recorded completed action",{response_id:current.response_id});
  save();render();
@@ -910,7 +927,7 @@ document.querySelectorAll("#analyzeNow").forEach(function(r){r.onclick=function(
 document.querySelectorAll("#loadTravel").forEach(function(r){r.onclick=loadTravelTemplate});document.querySelectorAll("#loadOcr").forEach(function(r){r.onclick=loadOcrTemplate});
 document.querySelectorAll("[data-toast]").forEach(function(b){b.onclick=function(){toast(b.dataset.toast)}});
 var s=document.getElementById("saveThesis");if(s)s.onclick=function(){captureThesis();toast("Venture thesis saved")};
-var reset=document.getElementById("reset");if(reset)reset.onclick=function(){if(!confirm("이 브라우저의 모든 Venture 세션 데이터를 삭제할까요?"))return;localStorage.removeItem(SESSION_KEY);localStorage.removeItem("startupOS.project");sessionPack=loadSessionPack();state.p=activeSession();render();toast("Local sessions cleared")};
+var reset=document.getElementById("reset");if(reset)reset.onclick=function(){if(!confirm("이 브라우저의 모든 Venture 세션 데이터를 삭제할까요?"))return;window.StartupOSStore.reset();localStorage.removeItem("startupOS.project");sessionPack=loadSessionPack();state.p=activeSession();render();toast("Local sessions cleared")};
 var saveRt=document.getElementById("saveRuntime");if(saveRt)saveRt.onclick=function(){var v=document.getElementById("runtimeEndpoint").value.trim();if(v&&v.endsWith("/"))v=v.slice(0,-1);localStorage.setItem("startupOS.runtimeUrl",v);state.runtimeStatus="unknown";render();toast("Runtime endpoint saved")};
 var testRt=document.getElementById("testRuntime");if(testRt)testRt.onclick=testRuntime;
 var create=document.getElementById("createVenture");if(create)create.onclick=function(){
@@ -944,6 +961,8 @@ var create=document.getElementById("createVenture");if(create)create.onclick=fun
 render();
 if(window.StartupOSCloud)window.StartupOSCloud.connect({
  getPack:function(){return sessionPack},
+ isBusy:function(sid){return state.running&&state.runSid===sid||state.modal&&state.modalMode==="edit"&&state.p._sessionId===sid},
+ replacePack:function(value){var switched=dashboardOwner!==window.StartupOSStore.owner();dashboardOwner=window.StartupOSStore.owner();sessionPack=value;state.p=activeSession();if(switched){state.view="sessions";state.modal=false;state.runStage="idle";state.running=false;state.runNonce=null;ideaRecorderStop();ideaStopMedia();stopRunClock();}render();},
  applyRemote:function(items){
   if(!Array.isArray(items))return;
   var dirty=false;
@@ -955,13 +974,29 @@ if(window.StartupOSCloud)window.StartupOSCloud.connect({
    else if(JSON.stringify(sessionPack.sessions[index])!==JSON.stringify(stored)){sessionPack.sessions[index]=stored;dirty=true}
   });
   if(dirty){
-   localStorage.setItem(SESSION_KEY,JSON.stringify(sessionPack));
+   window.StartupOSStore.write(sessionPack);
    if(!sessionPack.sessions.some(function(x){return x._sessionId===sessionPack.activeId}))sessionPack.activeId=sessionPack.sessions[0]._sessionId;
    if(!state.running&&!state.builderRunning&&!state.publishRunning){state.p=activeSession();render();}
   }
  }
 });
+window.StartupOSDashboard={
+ getPack:function(){return sessionPack},getSession:function(){return state.p},getView:function(){return state.view},
+ shell:shell,escape:esc,money:money,toast:toast,render:render,baseViews:{settings:settings},
+ registerViews:function(views){Object.assign(workspaceViews,views);render()},
+ mutate:function(sid,fn){var current=window.StartupOSStore.read(),p=current.sessions.find(function(x){return x._sessionId===sid});if(!p)throw Error("프로젝트를 찾지 못했습니다.");fn(p);p._updatedAt=new Date().toISOString();sessionPack=current;window.StartupOSStore.write(current);window.StartupOSCloud.localSaved(current);if(state.p._sessionId===sid)state.p=p;render();return p},
+ add:function(p){sessionPack=window.StartupOSStore.read();sessionPack.sessions.unshift(p);state.p=p;sessionPack.activeId=p._sessionId;persistSessions();render()},
+ open:function(sid,view){switchSession(sid);state.view=view||"overview";render()},
+ show:function(view){state.view=view;render()}
+};
+window.addEventListener('startupos:dashboard-rendered',function(){
+ if(!["sessions","overview","venture","agents","cost","growth","settings"].includes(state.view))return;
+ window.StartupOSStore.meta("navigation",{sid:state.p._sessionId,view:state.view});
+ var current=new URL(location.href);current.hash=state.view;current.searchParams.set("sessionId",state.p._sessionId);history.replaceState(null,"",current);
+});
+window.addEventListener('startupos:workspace-storage',function(){if(!state.running&&!state.builderRunning&&!state.publishRunning){sessionPack=window.StartupOSStore.read();state.p=activeSession();render()}});
 })();
 </script>
+<script src="/workspace-ui.js"></script>
 </body>
 </html>

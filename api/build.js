@@ -28,6 +28,7 @@ module.exports=async function handler(req,res){
     configured:{ocr:!!process.env.OPENAI_API_KEY,publisher:!!process.env.VERCEL_PUBLISH_TOKEN}
   });
   if(req.method!=='POST')return res.status(405).json({ok:false,error:'POST only'});
+  await require('../lib/account-auth').requireAccount(req);
   const data=B.body(req);
   if(data.action==='repair-plan'){
     const plan=R.planRepair(data.issue,data.priorBuild);

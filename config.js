@@ -7,8 +7,9 @@ window.STARTUP_OS_CONFIG = {
   function destination(stage){
     var id="";
     try {
-      var pack=JSON.parse(localStorage.getItem("startupOS.sessions.v1")||"null");
-      if(pack&&pack.activeId)id="?sessionId="+encodeURIComponent(pack.activeId);
+      var pack=window.StartupOSStore.read();
+      var selected=window.StartupOSDashboard?.getSession()?._sessionId||pack?.activeId;
+      if(selected)id="?sessionId="+encodeURIComponent(selected);
     } catch(e){}
     var section=stage==="iterate"?"#refineHost":stage==="deploy"?"#deploy-stage":stage==="phone"?"#phone-stage":"#scope-stage";
     return "/builder/"+id+section;
