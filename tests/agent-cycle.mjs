@@ -51,12 +51,12 @@ try{
  await test('template_notes_do_not_masquerade_as_executed_cycle',async()=>{
   await page.locator('#moreMobile').click();
   await page.locator('[data-more-view=agents]').click();
-  await page.getByText('아직 실행된 Agent cycle이 없습니다.').waitFor();
+  await page.getByText('아직 검토 결과가 없습니다.').waitFor();
   assert.equal(await page.getByText('SEED_ONLY_DO_NOT_SHOW').count(),0);
  });
  await test('running_cycle_uses_small_session_payload',async()=>{
   await page.locator('#runCycle').click();
-  await page.getByText('Latest decision').waitFor();
+  await page.getByText('최근 검토 결과').waitFor();
   assert.equal(callCount,1);
   assert.equal(seenPayload.mode,'cycle');
   assert.equal(JSON.stringify(seenPayload).includes('SENSITIVE_GENERATED_HTML'),false);
@@ -89,7 +89,7 @@ try{
   await page.locator('#sessionSelect').selectOption('vs_trip_agent_2026');
   await page.locator('#moreMobile').click();
   await page.locator('[data-more-view=agents]').click();
-  await page.getByText('아직 실행된 Agent cycle이 없습니다.').waitFor();
+  await page.getByText('아직 검토 결과가 없습니다.').waitFor();
   const data=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),KEY);
   assert.equal(data.sessions[1].agentCycle,undefined);
  });
