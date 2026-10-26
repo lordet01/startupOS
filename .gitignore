@@ -12,3 +12,5 @@ firebase-debug.log*
 
 # Temporary GitHub OIDC credentials
 gha-creds-*.json
+
+.firebase-ui-build/

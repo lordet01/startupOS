@@ -5,7 +5,7 @@
 - Firebase 운영 프로젝트: `startupos-6b8d4`, 운영 URL: https://startupos-6b8d4.web.app/.
 - 기존 Firebase 초기 배포는 운영자가 완료함. 운영자 접근 제한과 데이터 구조는 유지함.
 - GitHub Workload Identity 연결은 운영자가 완료함. `startupos-github` 풀과 `startup-os` 제공자, `startupos-github-deploy` 전용 계정을 사용함.
-- GitHub `main`의 UI 변경은 `.github/workflows/firebase-ui.yml`에서 테스트 후 `startupWeb`·Hosting만 배포함. 성공 여부는 해당 커밋의 Actions 결과와 운영 URL로 확인함.
+- GitHub `main`의 UI 변경은 `.github/workflows/firebase-ui.yml`에서 테스트 후 `firebase.ui.json`과 `web-index.cjs`를 사용해 `startupWeb`·Hosting만 배포함. API는 기존 함수로 연결하고 UI 배포에 API 비밀값·작업 트리거 권한을 요구하지 않음. 성공 여부는 해당 커밋의 Actions 결과와 운영 URL로 확인함.
 - 런타임 OpenAI 키는 기존 Secret Manager 구성을 유지함. 배포 소스·워크플로·로그에 비밀키를 포함하지 않음.
 - 로컬/Cloud Shell의 수동 UI 갱신은 `bash firebase/deploy-ui.sh`. 초기 설치 스크립트는 신규 설치용이며 UI 갱신 시 실행할 필요가 없음.
 

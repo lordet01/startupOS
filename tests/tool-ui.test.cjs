@@ -31,3 +31,21 @@ test('Firebase serves the same shared design system behind the existing authenti
  assert.equal(fs.existsSync('.firebase-build/public/index.html'),false);
  assert.match(fs.readFileSync('firebase/runtime/web.cjs','utf8'),/await access.authenticate\(req\)/);
 });
+
+test('Verification failures show their recovery action in the verification tab',()=>{
+ const {elements}=workspace('#verify-stage');
+ assert.equal(elements.get('verify-stage').hidden,false);
+ assert.equal(elements.get('repair-stage').hidden,false);
+});
+test('UI deployment discovers only the web function and leaves the API unpinned',()=>{
+ require('node:child_process').execFileSync(process.execPath,['firebase/build-ui.cjs']);
+ const config=JSON.parse(fs.readFileSync('firebase.ui.json','utf8'));
+ const entry=fs.readFileSync('.firebase-ui-build/functions/index.cjs','utf8');
+ assert.deepEqual([...entry.matchAll(/exports\.(\w+)=/g)].map(m=>m[1]),['startupWeb']);
+ assert.doesNotMatch(entry,/onDocumentCreated|OPENAI_API_KEY/);
+ assert.equal(config.firestore,undefined);
+ assert.equal(config.hosting.rewrites.find(r=>r.source==='/api/**').function.pinTag,undefined);
+ assert.equal(config.hosting.rewrites.find(r=>r.source==='**').function.pinTag,true);
+ assert.equal(fs.existsSync('.firebase-ui-build/public/index.html'),false);
+ assert.equal(fs.readFileSync('.firebase-ui-build/functions/web/tool-ui.css','utf8'),fs.readFileSync('tool-ui.css','utf8'));
+});

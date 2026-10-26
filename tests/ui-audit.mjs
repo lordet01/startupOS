@@ -19,7 +19,7 @@ const sample={
   costBreakdown:[],buildPlan:[],risks:[],agentNotes:{}
 };
 const pack={activeId:sample._sessionId,sessions:[sample]};
-const allowed=new Set(['workspace-core.js','workspace-store.js','workspace-ui.js','workspace.css','cloud-sync.js','index.html','config.js','builder/index.html','builder/studio.js','capabilities/app.css']);
+const allowed=new Set(['workspace-core.js','workspace-store.js','workspace-ui.js','workspace.css','tool-ui.css','cloud-sync.js','index.html','config.js','builder/index.html','builder/studio.js','capabilities/app.css']);
 const server=http.createServer(async(req,res)=>{
  const url=new URL(req.url,'http://127.0.0.1');
  if(url.pathname==='/api/build'){

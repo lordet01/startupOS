@@ -11,7 +11,7 @@ const server=http.createServer((req,res)=>{
     return;
   }
   const name=req.url==='/'?'builder/index.html':req.url.slice(1);
-  if(!['workspace-core.js','workspace-store.js','workspace-ui.js','workspace.css','cloud-sync.js','builder/index.html','builder/studio.js','capabilities/app.css'].includes(name)){res.writeHead(404);res.end();return;}
+  if(!['workspace-core.js','workspace-store.js','workspace-ui.js','workspace.css','tool-ui.css','cloud-sync.js','builder/index.html','builder/studio.js','capabilities/app.css'].includes(name)){res.writeHead(404);res.end();return;}
   res.setHeader('Content-Type',name.endsWith('.js')?'application/javascript':name.endsWith('.css')?'text/css':'text/html');res.end(fs.readFileSync(name));
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -23,7 +23,7 @@ async function check(id,fn){try{await fn();checks.push({id,status:'passed'});con
 try{
   await page.goto('http://127.0.0.1:'+server.address().port+'/');
   await check('no_custom_signing_setup_required',async()=>{
-    await page.getByRole('heading',{name:'Build',exact:true}).waitFor();
+    await page.getByRole('heading',{name:'빌드 · 검증',exact:true}).waitFor();
     assert.equal(await page.locator('#operator-setup').count(),0);
     assert.equal(await page.getByText('STARTUP_OS_BUILD_KEY',{exact:false}).count(),0);
   });

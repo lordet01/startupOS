@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
-const allowed=new Set(['workspace-core.js','workspace-store.js','workspace-ui.js','workspace.css','cloud-sync.js','index.html','config.js']);
+const allowed=new Set(['workspace-core.js','workspace-store.js','workspace-ui.js','workspace.css','tool-ui.css','cloud-sync.js','index.html','config.js']);
 const server=http.createServer((req,res)=>{
  const path=new URL(req.url,'http://localhost').pathname.replace(/^\//,'')||'index.html';
  if(!allowed.has(path)){res.writeHead(404);res.end('not found');return;}
@@ -41,6 +41,7 @@ try{
   assert.equal(await page.locator('#ideaNotePanel').isVisible(),true);
  });
  await check('all_descriptive_fields_show_multiple_lines_and_scroll',async()=>{
+  await page.locator('.briefMore summary').click();
   for(const id of ['newIdea','newCustomer','newProblem','newOutcome','newModel','newConstraints']){
    const t=page.locator('#'+id);
    assert.equal(await t.evaluate(el=>el.tagName),'TEXTAREA');

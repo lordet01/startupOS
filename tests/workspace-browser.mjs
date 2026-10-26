@@ -31,7 +31,7 @@ const server=http.createServer(async(req,res)=>{
  if(url.pathname==='/api/build')return json(200,{ok:true,configured:{ocr:false,publisher:false},contracts:{}});
  if(url.pathname==='/api/runtime'){if(req.method==='POST'&&runtimeDelayMs)await new Promise(r=>setTimeout(r,runtimeDelayMs));return json(200,{ok:true,model:'test',analysis:{executive_summary:'진행 중 생성한 분석 결과'}});}
  const file=url.pathname==='/'?'index.html':url.pathname==='/builder/'?'builder/index.html':url.pathname.slice(1);
- if(!/^(index.html|config.js|cloud-sync.js|workspace[-a-z.]+|builder\/(?:index.html|studio.js|refinement.js|refinement.css))$/.test(file)||!fs.existsSync(file)){res.writeHead(404);return res.end();}
+ if(!/^(index.html|config.js|cloud-sync.js|tool-ui.css|workspace[-a-z.]+|builder\/(?:index.html|studio.js|refinement.js|refinement.css))$/.test(file)||!fs.existsSync(file)){res.writeHead(404);return res.end();}
  res.setHeader('Content-Type',file.endsWith('.js')?'application/javascript':file.endsWith('.css')?'text/css':'text/html;charset=utf-8');res.end(fs.readFileSync(file));
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+server.address().port;
@@ -49,7 +49,8 @@ async function login(page,name){
  await page.waitForFunction(()=>!['starting','loading'].includes(window.StartupOSCloud.status().phase));
 }
 async function closeAccount(page){const el=page.locator('[data-cloud-command=close]');if(await el.count())await el.click();}
-async function rename(page,name){page.once('dialog',d=>d.accept(name));await page.locator('.sessionCard [data-work=rename]').first().click();}
+async function appAction(page,action){const card=page.locator('.sessionCard').first();const menu=card.locator('.appMenu');if(!await menu.evaluate(el=>el.open))await menu.locator('summary').click();await card.locator('[data-work='+action+']').click();}
+async function rename(page,name){page.once('dialog',d=>d.accept(name));await appAction(page,'rename');}
 async function synced(page){await page.waitForFunction(()=>window.StartupOSCloud.status().phase==='synced');}
 async function check(id,fn){try{await fn();checks.push({id,status:'passed'});console.log('PASS',id);}catch(e){checks.push({id,status:'failed',message:e.message});console.error('FAIL',id,e.message);throw e;}}
 try{
@@ -101,12 +102,12 @@ try{
  });
  await check('project_search_archive_trash_restore_and_history_are_reversible',async()=>{
   const page=b.page;await synced(page);const originalCount=await page.locator('.sessionCard').count();
-  await page.locator('[data-work=archive]').first().click();assert.equal(await page.locator('.sessionCard').count(),originalCount-1);
+  await appAction(page,'archive');assert.equal(await page.locator('.sessionCard').count(),originalCount-1);
   await page.locator('#appsFilter').selectOption('archived');assert.equal(await page.locator('.sessionCard').count(),1);
-  await page.locator('[data-work=archive]').click();await page.locator('#appsFilter').selectOption('active');
-  await page.locator('[data-work=trash]').first().click();await page.locator('#appsFilter').selectOption('trash');await page.locator('[data-work=restore-app]').click();
+  await appAction(page,'archive');await page.locator('#appsFilter').selectOption('active');
+  await appAction(page,'trash');await page.locator('#appsFilter').selectOption('trash');await page.locator('[data-work=restore-app]').click();
   await page.locator('#appsFilter').selectOption('active');await synced(page);
-  await page.locator('[data-work=history]').first().click();await page.locator('#workspaceVersions [data-work=restore-version]').first().waitFor();
+  await appAction(page,'history');await page.locator('#workspaceVersions [data-work=restore-version]').first().waitFor();
   await page.locator('#workspaceVersions [data-work=restore-version]').first().click();await page.locator('#workspaceHistory').waitFor({state:'detached'});assert.equal(await page.locator('.sessionCard').count(),originalCount+1);
   await page.locator('#appsSearch').fill('해당없음');assert.equal(await page.locator('.sessionCard').count(),0);await page.locator('#appsSearch').fill('');
  });

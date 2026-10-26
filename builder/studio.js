@@ -256,7 +256,7 @@ function setupWorkspace(){
  const ids=['scope-stage','autobuildHost','refineHost','verify-stage','deploy-stage'];
  const selected=(location.hash||'').slice(1);
  const current=selected==='phone-stage'?'deploy-stage':ids.includes(selected)?selected:'scope-stage';
- const groups={'scope-stage':['scope-stage','repair-stage'],'autobuildHost':['autobuildHost'],'refineHost':['refineHost','artifact-stage'],'verify-stage':['verify-stage'],'deploy-stage':['deploy-stage','phone-stage']};
+ const groups={'scope-stage':['scope-stage','repair-stage'],'autobuildHost':['autobuildHost'],'refineHost':['refineHost','artifact-stage'],'verify-stage':['verify-stage','repair-stage'],'deploy-stage':['deploy-stage','phone-stage']};
  root.querySelectorAll('.studioTabs a').forEach(a=>{const on=a.hash==='#'+current;if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
  for(const id of Object.values(groups).flat()){const el=document.getElementById(id);if(el)el.hidden=!groups[current].includes(id);}
  let empty=document.getElementById('studioEmptyPanel');if(empty)empty.remove();

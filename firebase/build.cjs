@@ -1,12 +1,13 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path');
-const root=path.resolve(__dirname,'..'),out=path.join(root,'.firebase-build');
+const root=path.resolve(__dirname,'..'),out=path.join(root,process.env.STARTUPOS_UI_ONLY==='true'?'.firebase-ui-build':'.firebase-build');
 for(const part of ['public','functions/app','functions/web'])fs.rmSync(path.join(out,part),{recursive:true,force:true});
 for(const dir of ['public','functions/app','functions/web'])fs.mkdirSync(path.join(out,dir),{recursive:true});
 const copy=(source,dest)=>fs.cpSync(path.join(root,source),path.join(out,dest),{recursive:true});
 for(const name of ['index.html','tool-ui.css','config.js','workspace-core.js','workspace-store.js','workspace-ui.js','workspace.css','cloud-sync.js','receipt-core.js','vendor','builder','capabilities'])copy(name,'functions/web/'+name);
 for(const name of ['api','lib','capabilities','fixtures'])copy(name,'functions/app/'+name);
 for(const name of ['index.cjs','router.cjs','config.cjs','web-config.json','access.cjs','jobs.cjs','web.cjs','apps.cjs'])copy('firebase/runtime/'+name,'functions/'+name);
+if(process.env.STARTUPOS_UI_ONLY==='true')copy('firebase/runtime/web-index.cjs','functions/index.cjs');
 fs.writeFileSync(path.join(out,'functions/app/package.json'),'{"type":"commonjs"}\n');
 fs.writeFileSync(path.join(out,'functions/package.json'),JSON.stringify({name:'startupos-firebase-api',private:true,main:'index.cjs',engines:{node:'22'},dependencies:{'firebase-functions':'^7.0.0','firebase-admin':'^13.0.0',jose:'^6.2.3'}},null,2)+'\n');
 if(fs.existsSync(path.join(root,'firebase/functions.package-lock.json')))copy('firebase/functions.package-lock.json','functions/package-lock.json');

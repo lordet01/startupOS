@@ -15,7 +15,7 @@ const server=http.createServer(async(req,res)=>{
   res.status=n=>{res.statusCode=n;return res;};res.json=value=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(value));return res;};await handler(req,res);return;
  }
  let file=url.pathname==='/'?'index.html':url.pathname==='/builder/'?'builder/index.html':url.pathname.slice(1);
- if(!['workspace-core.js','workspace-store.js','workspace-ui.js','workspace.css','cloud-sync.js','index.html','config.js','builder/index.html','builder/studio.js','capabilities/app.css'].includes(file)){res.writeHead(404);res.end();return;}
+ if(!['workspace-core.js','workspace-store.js','workspace-ui.js','workspace.css','tool-ui.css','cloud-sync.js','index.html','config.js','builder/index.html','builder/studio.js','capabilities/app.css'].includes(file)){res.writeHead(404);res.end();return;}
  res.setHeader('Content-Type',file.endsWith('.js')?'application/javascript':file.endsWith('.css')?'text/css':'text/html; charset=utf-8');res.end(fs.readFileSync(file));
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+server.address().port;
@@ -24,12 +24,12 @@ await context.addInitScript(({key,seed})=>{if(!localStorage.getItem(key))localSt
 const page=await context.newPage();page.setDefaultTimeout(10000);
 async function test(id,fn){try{await fn();checks.push({id,status:'passed'});console.log('PASS',id);}catch(e){checks.push({id,status:'failed',message:e.message});console.error('FAIL',id,e.message);}}
 try{
- await test('legacy_build_navigation_preserves_session',async()=>{await page.goto(base+'/');await page.locator('.side button[data-view="build"]').click();await page.waitForURL('**/builder/?sessionId=vs_studio_a#scope-stage');await page.getByRole('heading',{name:'Build',exact:true}).waitFor();assert.equal(new URL(page.url()).searchParams.get('sessionId'),'vs_studio_a');});
+ await test('legacy_build_navigation_preserves_session',async()=>{await page.goto(base+'/');await page.locator('.side button[data-view="build"]').click();await page.waitForURL('**/builder/?sessionId=vs_studio_a#scope-stage');await page.getByRole('heading',{name:'빌드 · 검증',exact:true}).waitFor();assert.equal(new URL(page.url()).searchParams.get('sessionId'),'vs_studio_a');});
  await test('capability_is_derived_from_session_and_scope_requires_approval',async()=>{assert.equal(await page.locator('#kind').count(),0);await page.getByText('영수증 OCR 가계부',{exact:true}).waitFor();assert.equal(await page.locator('#assemble').isDisabled(),true);await page.locator('#scope').check();assert.equal(await page.locator('#assemble').isEnabled(),true);});
  await test('in_flight_result_stays_on_original_session',async()=>{await page.locator('#assemble').click();await page.locator('#session').selectOption('vs_studio_b');await page.waitForFunction(key=>{const p=JSON.parse(localStorage.getItem(key));return !!p.sessions.find(x=>x._sessionId==='vs_studio_a').functionalBuild;},key);const pack=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),key);assert.equal(pack.sessions.find(x=>x._sessionId==='vs_studio_a').functionalBuild.sid,'vs_studio_a');assert.equal(pack.sessions.find(x=>x._sessionId==='vs_studio_b').functionalBuild,undefined);await page.locator('#session').selectOption('vs_studio_a');assert.equal(await page.locator('#publish').isDisabled(),true);});
- await test('refresh_keeps_artifact_and_no_false_verified_status',async()=>{await page.reload();await page.locator('#session').selectOption('vs_studio_a');await page.getByRole('heading',{name:'Build artifact',exact:true}).waitFor();assert.equal(await page.locator('#publish').isDisabled(),true);await page.getByText('PENDING',{exact:true}).first().waitFor();await page.screenshot({path:'test-results/build-studio-desktop.png',fullPage:true});});
+ await test('refresh_keeps_artifact_and_no_false_verified_status',async()=>{await page.reload();await page.locator('#session').selectOption('vs_studio_a');await page.locator('.studioTabs a[href="#refineHost"]').click();await page.getByRole('heading',{name:'빌드 결과',exact:true}).waitFor();assert.equal(await page.locator('#publish').isDisabled(),true);await page.locator('.studioTabs a[href="#verify-stage"]').click();await page.getByText('PENDING',{exact:true}).first().waitFor();await page.screenshot({path:'test-results/build-studio-desktop.png',fullPage:true});});
  await test('mobile_main_uses_bottom_icon_navigation_without_page_overflow',async()=>{await page.setViewportSize({width:390,height:844});await page.goto(base+'/');const pos=await page.locator('.side').evaluate(el=>getComputedStyle(el).position);assert.equal(pos,'fixed');assert.ok(await page.locator('.navIcon').count()>=8);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);});
- await test('mobile_build_uses_scrollable_icon_stepper',async()=>{await page.goto(base+'/builder/?sessionId=vs_studio_a');await page.getByRole('heading',{name:'Build',exact:true}).waitFor();assert.equal(await page.locator('.stagebox').count(),5);assert.equal(await page.locator('.stageIcon').count(),5);const scrollable=await page.locator('.stages').evaluate(el=>el.scrollWidth>el.clientWidth);assert.equal(scrollable,true);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);});
+ await test('mobile_build_uses_scrollable_icon_stepper',async()=>{await page.goto(base+'/builder/?sessionId=vs_studio_a');await page.getByRole('heading',{name:'빌드 · 검증',exact:true}).waitFor();assert.equal(await page.locator('.stagebox').count(),5);assert.equal(await page.locator('.stageIcon').count(),5);const scrollable=await page.locator('.stages').evaluate(el=>el.scrollWidth>el.clientWidth);assert.equal(scrollable,true);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);});
  await test('MySkin_session_maps_to_supported_skin_build',async()=>{
   await page.goto(base+'/builder/?sessionId=vs_studio_skin');
   await page.getByText('MySkin AI · 피부 사진 관찰',{exact:true}).waitFor();
@@ -37,7 +37,7 @@ try{
   assert.equal(await page.locator('#assemble').isDisabled(),true);
   await page.locator('#scope').check();
   await page.locator('#assemble').click();
-  await page.getByRole('heading',{name:'Build artifact'}).waitFor({timeout:8000});
+  await page.waitForFunction(key=>!!JSON.parse(localStorage.getItem(key)).sessions.find(s=>s._sessionId==='vs_studio_skin').functionalBuild,key);await page.locator('.studioTabs a[href="#refineHost"]').click();await page.getByRole('heading',{name:'빌드 결과'}).waitFor({timeout:8000});
   const record=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).sessions.find(s=>s._sessionId==='vs_studio_skin'),key);
   assert.equal(record.functionalBuild.kind,'skin');
   assert.equal(record.functionalBuild.status,'IMPLEMENTED');
@@ -61,14 +61,14 @@ try{
    p.functionalBuild.verification={status:'INTEGRATION_VERIFIED',artifactHash:p.functionalBuild.artifactHash,checks:[]};
    p.functionalRepair=null;localStorage.setItem(key,JSON.stringify(pack));
   },{key,sid});
-  await page.reload();await page.locator('#verify').waitFor();
+  await page.goto(base+'/builder/?sessionId='+sid+'#verify-stage');await page.locator('#verify').waitFor();
   assert.equal(await page.locator('#publish').isDisabled(),true);
   await page.evaluate(({key,sid})=>{
    const pack=JSON.parse(localStorage.getItem(key)),p=pack.sessions.find(x=>x._sessionId===sid);
    p.functionalBuild.verification.smoke={status:'PASSED',required_scenarios:['skin_web_face_fixture_full_journey']};
    localStorage.setItem(key,JSON.stringify(pack));
   },{key,sid});
-  await page.reload();await page.locator('#publish').waitFor();
+  await page.goto(base+'/builder/?sessionId='+sid+'#deploy-stage');await page.locator('#publish').waitFor();
   assert.equal(await page.locator('#publish').isEnabled(),true);
   assert.equal(await page.locator('#journeyPass').count(),0);
  });

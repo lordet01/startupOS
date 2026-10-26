@@ -26,7 +26,7 @@ const codeReply=()=>({ok:true,status:'code_patch',response:'촬영 버튼에 빨
 const checks=[],errors=[];let proposalCount=0,requests=[],fullCaptureSize=null,partialSize=null;
 function send(res,status,data,contentType='application/json'){res.statusCode=status;res.setHeader('Content-Type',contentType);res.end(contentType.includes('json')?JSON.stringify(data):data)}
 function handlerResult(res){return{setHeader:(k,v)=>res.setHeader(k,v),status(n){res.statusCode=n;return this},json(d){send(res,res.statusCode||200,d);return this},send(d){send(res,res.statusCode||200,d,'text/html; charset=utf-8');return this},end(){res.end();return this}}}
-const files=new Set(['workspace-core.js','workspace-store.js','workspace-ui.js','workspace.css','cloud-sync.js','index.html','config.js','builder/index.html','builder/studio.js','builder/refinement.js','builder/refinement.css','capabilities/app.css','vendor/html2canvas.min.js']);
+const files=new Set(['workspace-core.js','workspace-store.js','workspace-ui.js','workspace.css','tool-ui.css','cloud-sync.js','index.html','config.js','builder/index.html','builder/studio.js','builder/refinement.js','builder/refinement.css','capabilities/app.css','vendor/html2canvas.min.js']);
 const server=http.createServer(async(req,res)=>{
  try{
   const url=new URL(req.url,'http://127.0.0.1');
