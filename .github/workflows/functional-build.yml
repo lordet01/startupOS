@@ -43,14 +43,19 @@ jobs:
       - name: Account isolation, offline sync recovery and Growth workflows (mocked Firebase)
         run: npm run test:workspace:browser
       - name: Session continuity and keyless operator setup
+        if: ${{ !cancelled() }}
         run: node tests/studio.mjs && node tests/setup.mjs
       - name: All-page UI and responsive action audit
+        if: ${{ !cancelled() }}
         run: node tests/ui-audit.mjs
       - name: Agent Cycle browser integration and session isolation
+        if: ${{ !cancelled() }}
         run: node tests/agent-cycle.mjs
       - name: Idea Note microphone and new Venture form
+        if: ${{ !cancelled() }}
         run: node tests/idea-note-ui.mjs
       - name: Iteration chat mobile preview screenshot and two rebuild cycles
+        if: ${{ !cancelled() }}
         run: node tests/refinement-ui.mjs
       - name: Committed evidence check on main
         if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'

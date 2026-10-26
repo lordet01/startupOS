@@ -11,7 +11,7 @@ const server=http.createServer((req,res)=>{
     return;
   }
   const name=req.url==='/'?'builder/index.html':req.url.slice(1);
-  if(!['workspace-core.js','workspace-store.js','workspace-ui.js','workspace.css','tool-ui.css','cloud-sync.js','builder/index.html','builder/studio.js','capabilities/app.css'].includes(name)){res.writeHead(404);res.end();return;}
+  if(!['workspace-core.js','workspace-store.js','workspace-ui.js','workspace.css','tool-ui.css','cloud-sync.js','builder/index.html','builder/studio.js','builder/refinement.js','builder/refinement.css','vendor/html2canvas.min.js','builder/autobuild.js','builder/autobuild-core.js','builder/autobuild.css','capabilities/app.css'].includes(name)){res.writeHead(404);res.end();return;}
   res.setHeader('Content-Type',name.endsWith('.js')?'application/javascript':name.endsWith('.css')?'text/css':'text/html');res.end(fs.readFileSync(name));
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));

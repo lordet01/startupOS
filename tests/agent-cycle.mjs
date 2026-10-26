@@ -28,7 +28,7 @@ const allowed=new Set(['workspace-core.js','workspace-store.js','workspace-ui.js
 const server=http.createServer((req,res)=>{
  const url=new URL(req.url,'http://localhost'),file=url.pathname==='/'?'index.html':url.pathname.slice(1);
  if(!allowed.has(file)){res.writeHead(404);res.end();return;}
- res.setHeader('Content-Type',file.endsWith('.js')?'application/javascript':'text/html;charset=utf-8');
+ res.setHeader('Content-Type',file.endsWith('.js')?'application/javascript':file.endsWith('.css')?'text/css':'text/html;charset=utf-8');
  res.end(fs.readFileSync(file));
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));

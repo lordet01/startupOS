@@ -31,7 +31,7 @@ const server=http.createServer(async(req,res)=>{
  if(url.pathname==='/api/build')return json(200,{ok:true,configured:{ocr:false,publisher:false},contracts:{}});
  if(url.pathname==='/api/runtime'){if(req.method==='POST'&&runtimeDelayMs)await new Promise(r=>setTimeout(r,runtimeDelayMs));return json(200,{ok:true,model:'test',analysis:{executive_summary:'진행 중 생성한 분석 결과'}});}
  const file=url.pathname==='/'?'index.html':url.pathname==='/builder/'?'builder/index.html':url.pathname.slice(1);
- if(!/^(index.html|config.js|cloud-sync.js|tool-ui.css|workspace[-a-z.]+|builder\/(?:index.html|studio.js|refinement.js|refinement.css))$/.test(file)||!fs.existsSync(file)){res.writeHead(404);return res.end();}
+ if(!/^(index.html|config.js|cloud-sync.js|tool-ui.css|workspace[-a-z.]+|builder\/(?:index.html|studio.js|refinement.js|refinement.css|autobuild.js|autobuild-core.js|autobuild.css))$/.test(file)||!fs.existsSync(file)){res.writeHead(404);return res.end();}
  res.setHeader('Content-Type',file.endsWith('.js')?'application/javascript':file.endsWith('.css')?'text/css':'text/html;charset=utf-8');res.end(fs.readFileSync(file));
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+server.address().port;

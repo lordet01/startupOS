@@ -6,7 +6,7 @@ const allowed=new Set(['workspace-core.js','workspace-store.js','workspace-ui.js
 const server=http.createServer((req,res)=>{
  const path=new URL(req.url,'http://localhost').pathname.replace(/^\//,'')||'index.html';
  if(!allowed.has(path)){res.writeHead(404);res.end('not found');return;}
- res.setHeader('Content-Type',path.endsWith('.js')?'application/javascript':'text/html; charset=utf-8');
+ res.setHeader('Content-Type',path.endsWith('.js')?'application/javascript':path.endsWith('.css')?'text/css':'text/html; charset=utf-8');
  res.end(fs.readFileSync(path));
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));

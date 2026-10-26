@@ -19,7 +19,7 @@ const sample={
   costBreakdown:[],buildPlan:[],risks:[],agentNotes:{}
 };
 const pack={activeId:sample._sessionId,sessions:[sample]};
-const allowed=new Set(['workspace-core.js','workspace-store.js','workspace-ui.js','workspace.css','tool-ui.css','cloud-sync.js','index.html','config.js','builder/index.html','builder/studio.js','capabilities/app.css']);
+const allowed=new Set(['workspace-core.js','workspace-store.js','workspace-ui.js','workspace.css','tool-ui.css','cloud-sync.js','index.html','config.js','builder/index.html','builder/studio.js','builder/refinement.js','builder/refinement.css','vendor/html2canvas.min.js','builder/autobuild.js','builder/autobuild-core.js','builder/autobuild.css','capabilities/app.css']);
 const server=http.createServer(async(req,res)=>{
  const url=new URL(req.url,'http://127.0.0.1');
  if(url.pathname==='/api/build'){
@@ -98,7 +98,7 @@ try{
    await page.locator('#moreMobile').click();
    await page.locator('#moreSheet.open').waitFor();
    await page.locator('[data-more-view=growth]').click();
-   await page.getByRole('heading',{name:'Growth'}).waitFor();
+   await page.getByRole('heading',{name:'성과'}).waitFor();
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);
  });
  await check('mobile_new_venture_opens_once',async()=>{
@@ -109,7 +109,7 @@ try{
  });
  await check('mobile_build_routes_to_real_studio_stage',async()=>{
    await page.locator('.nav button[data-view=build]').click();
-   await page.waitForURL(/\/builder\/\?sessionId=vs_ui_audit_2026#scope-stage/);
+   await page.waitForURL(/\/builder\/\?sessionId=vs_ui_audit_2026#autobuildHost/);await page.locator('.studioTabs a[href="#scope-stage"]').click();
    await page.locator('#scope-stage').waitFor();
    assert.equal(await page.locator('#kind').count(),0);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);

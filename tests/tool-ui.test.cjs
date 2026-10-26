@@ -36,6 +36,7 @@ test('Verification failures show their recovery action in the verification tab',
  const {elements}=workspace('#verify-stage');
  assert.equal(elements.get('verify-stage').hidden,false);
  assert.equal(elements.get('repair-stage').hidden,false);
+ const scope=workspace('#scope-stage');assert.equal(scope.elements.get('repair-stage').hidden,false);
 });
 test('UI deployment discovers only the web function and leaves the API unpinned',()=>{
  require('node:child_process').execFileSync(process.execPath,['firebase/build-ui.cjs']);

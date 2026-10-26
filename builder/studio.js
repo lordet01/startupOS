@@ -258,7 +258,7 @@ function setupWorkspace(){
  const current=selected==='phone-stage'?'deploy-stage':ids.includes(selected)?selected:'scope-stage';
  const groups={'scope-stage':['scope-stage','repair-stage'],'autobuildHost':['autobuildHost'],'refineHost':['refineHost','artifact-stage'],'verify-stage':['verify-stage','repair-stage'],'deploy-stage':['deploy-stage','phone-stage']};
  root.querySelectorAll('.studioTabs a').forEach(a=>{const on=a.hash==='#'+current;if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
- for(const id of Object.values(groups).flat()){const el=document.getElementById(id);if(el)el.hidden=!groups[current].includes(id);}
+ for(const id of new Set(Object.values(groups).flat())){const el=document.getElementById(id);if(el)el.hidden=!groups[current].includes(id);}
  let empty=document.getElementById('studioEmptyPanel');if(empty)empty.remove();
  if(!groups[current].some(id=>document.getElementById(id))){empty=document.createElement('section');empty.id='studioEmptyPanel';empty.className='card toolEmpty';empty.innerHTML='<h2>먼저 앱을 빌드해 주세요</h2><p>범위를 확인한 뒤 빌드하면 이 단계가 열립니다.</p><a class="btn primary" href="#scope-stage">범위 확인하기 →</a>';root.appendChild(empty);}
  root.querySelectorAll('.stagebox').forEach((el,i)=>{el.setAttribute('role','link');el.tabIndex=0;el.setAttribute('aria-label',['범위 확인','AutoBuild','검증','배포','설치 확인'][i]);const go=()=>{location.hash=['scope-stage','autobuildHost','verify-stage','deploy-stage','phone-stage'][i];};el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}};});
