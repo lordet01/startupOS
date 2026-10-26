@@ -4,50 +4,50 @@
 <title>StartupOS · Build</title>
 <link rel="stylesheet" href="/capabilities/app.css">
 <style>
-:root{--bg:#081422;--ink:#f4f7fb;--muted:#91a4bf;--line:#29405e;--card:#102039;--accent:#6687ff;--accent2:#162d52;--danger:#ff7f96;background:var(--bg);color:var(--ink)}
-body{background:#081422;color:var(--ink)}
+:root{--bg:#ffffff;--ink:#17375e;--muted:#5e738d;--line:#dce5ef;--card:#ffffff;--accent:#5e738d;--accent2:#dce5ef;--danger:#b43650;background:var(--bg);color:var(--ink)}
+body{background:#ffffff;color:var(--ink)}
 .studio{max-width:1180px;margin:auto;padding:22px 24px 80px}
 .studio-head{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:18px}
-.studio-head select{max-width:420px;background:#102039;color:#fff;border:1px solid #29405e}
-.toplink{color:#dbe7f8;text-decoration:none;font-weight:850}
+.studio-head select{max-width:420px;background:#ffffff;color:#17375e;border:1px solid #dce5ef}
+.toplink{color:#17375e;text-decoration:none;font-weight:850}
 .pageTitle{display:flex;justify-content:space-between;align-items:end;gap:14px;margin:12px 0 18px}
 .pageTitle h1{font-size:28px;margin:0;letter-spacing:-.04em}.pageTitle .muted{margin-top:5px}
 .stages{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:0 0 16px}
-.stagebox{padding:12px 13px;border:1px solid #29405e;border-radius:13px;font-size:11px;background:#0d1b30;color:#7187a6}
-.stagebox strong{display:block;margin-bottom:4px;color:#b8c7db;font-size:12px}
-.stagebox.pass{background:#142b52;border-color:#5578d6;color:#a9bce0}.stagebox.pass strong{color:#fff}
-.card{background:#102039!important;border:1px solid #29405e!important;color:#f4f7fb;box-shadow:none!important}
-.scope{background:#102039!important;border:1px solid #29405e!important}
-h2{font-size:17px;margin-bottom:10px}h3{font-size:13px;color:#cbd8e9}
-.muted,.hint,.tiny{color:#8da1bd!important}
-.field span,.field>label{color:#9db0c9}
-input:not([type=checkbox]),textarea,select{background:#081522;color:#fff;border:1px solid #345070}
-input:focus,textarea:focus,select:focus{border-color:#6687ff;box-shadow:0 0 0 3px #6687ff20}
-.btn{background:#162842;color:#fff;border:1px solid #345070}.btn:hover{border-color:#6687ff}
-.btn.primary{background:linear-gradient(135deg,#6288ff,#765fff);border-color:transparent;color:white}
-.btn.danger{color:#ff9caf;border-color:#70404e;background:#2b1720}
-.badge{background:#0b1a2d;color:#bcd0e8;border:1px solid #345070}
-.notice{background:#122c48;color:#c5d7ef;border:1px solid #31577c}
-.notice.warn{background:#2b2417;color:#e7c880;border-color:#6b5932}.notice.error,.errorbox{background:#351822;color:#ffb7c2;border:1px solid #7b3e4d}
+.stagebox{padding:12px 13px;border:1px solid #dce5ef;border-radius:13px;font-size:11px;background:#ffffff;color:#5e738d}
+.stagebox strong{display:block;margin-bottom:4px;color:#17375e;font-size:12px}
+.stagebox.pass{background:#dce5ef;border-color:#5e738d;color:#5e738d}.stagebox.pass strong{color:#17375e}
+.card{background:#ffffff!important;border:1px solid #dce5ef!important;color:#17375e;box-shadow:none!important}
+.scope{background:#ffffff!important;border:1px solid #dce5ef!important}
+h2{font-size:17px;margin-bottom:10px}h3{font-size:13px;color:#17375e}
+.muted,.hint,.tiny{color:#5e738d!important}
+.field span,.field>label{color:#5e738d}
+input:not([type=checkbox]),textarea,select{background:#ffffff;color:#17375e;border:1px solid #dce5ef}
+input:focus,textarea:focus,select:focus{border-color:#5e738d;box-shadow:0 0 0 3px #5e738d20}
+.btn{background:#dce5ef;color:#17375e;border:1px solid #dce5ef}.btn:hover{border-color:#5e738d}
+.btn.primary{background:linear-gradient(135deg,#5e738d,#5e738d);border-color:transparent;color:white}
+.btn.danger{color:#b43650;border-color:#dce5ef;background:#fff1f3}
+.badge{background:#ffffff;color:#17375e;border:1px solid #dce5ef}
+.notice{background:#dce5ef;color:#17375e;border:1px solid #dce5ef}
+.notice.warn{background:#fff8e9;color:#8b5b13;border-color:#fff8e9}.notice.error,.errorbox{background:#fff1f3;color:#b43650;border:1px solid #dce5ef}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.scopeList{display:grid;gap:6px}.scopeItem{font-size:12px;color:#aabbd1;padding:7px 0;border-bottom:1px solid #223551}.scopeItem:last-child{border-bottom:0}
-.checkrow{display:grid;grid-template-columns:24px 1fr;gap:8px;padding:8px 0;border-bottom:1px solid #223551;font-size:12px}.checkrow .tiny{word-break:break-word}
-.preview-frame{width:100%;height:700px;border:1px solid #29405e;border-radius:16px;background:#fff}
-.trace{font-family:ui-monospace,monospace;font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere;background:#07111e;color:#c9d7e8;padding:14px;border-radius:12px;max-height:300px;overflow:auto}
-.state-label{font-size:12px;font-weight:800;color:#8db1ff}.toolbar{display:flex;gap:8px;flex-wrap:wrap}.studio .card{margin:12px 0}
+.scopeList{display:grid;gap:6px}.scopeItem{font-size:12px;color:#5e738d;padding:7px 0;border-bottom:1px solid #dce5ef}.scopeItem:last-child{border-bottom:0}
+.checkrow{display:grid;grid-template-columns:24px 1fr;gap:8px;padding:8px 0;border-bottom:1px solid #dce5ef;font-size:12px}.checkrow .tiny{word-break:break-word}
+.preview-frame{width:100%;height:700px;border:1px solid #dce5ef;border-radius:16px;background:#17375e}
+.trace{font-family:ui-monospace,monospace;font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere;background:#ffffff;color:#17375e;padding:14px;border-radius:12px;max-height:300px;overflow:auto}
+.state-label{font-size:12px;font-weight:800;color:#5e738d}.toolbar{display:flex;gap:8px;flex-wrap:wrap}.studio .card{margin:12px 0}
 .sectionHead{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}.sectionHead h2{margin:0}
-.metaRow{display:flex;gap:7px;flex-wrap:wrap}.metaChip{font-size:10px;padding:4px 7px;border-radius:999px;border:1px solid #345070;color:#a9bdd6}
+.metaRow{display:flex;gap:7px;flex-wrap:wrap}.metaChip{font-size:10px;padding:4px 7px;border-radius:999px;border:1px solid #dce5ef;color:#5e738d}
 .compactGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.busyline{background:#0a1728}.busyline:after{background:#6687ff}
-details{margin:8px 0}summary{cursor:pointer;font-size:12px;font-weight:750;color:#b9cae0}
+.busyline{background:#ffffff}.busyline:after{background:#5e738d}
+details{margin:8px 0}summary{cursor:pointer;font-size:12px;font-weight:750;color:#17375e}
 @media(max-width:760px){
   .studio{padding:14px 12px 88px;max-width:100%;overflow-x:hidden}
-  .studio-head{position:sticky;top:0;z-index:30;margin:-14px -12px 14px;padding:10px 12px;background:#081422ee;backdrop-filter:blur(12px);border-bottom:1px solid #203650;align-items:center;flex-direction:row}
+  .studio-head{position:sticky;top:0;z-index:30;margin:-14px -12px 14px;padding:10px 12px;background:#ffffffee;backdrop-filter:blur(12px);border-bottom:1px solid #dce5ef;align-items:center;flex-direction:row}
   .studio-head .toplink{font-size:0;min-width:42px}.studio-head .toplink:before{content:"‹";font-size:28px;line-height:1}
   .studio-head select{max-width:none;min-width:0;flex:1;height:44px;font-size:13px}
   .pageTitle{margin:10px 0 12px;align-items:flex-start;flex-direction:column;gap:8px}.pageTitle h1{font-size:23px}.pageTitle .metaRow{max-width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px}
   .stages{display:flex;grid-template-columns:none;overflow-x:auto;gap:8px;margin:0 -12px 14px;padding:0 12px 5px;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none}.stages::-webkit-scrollbar{display:none}
-  .stagebox{min-width:126px;display:flex;align-items:center;gap:9px;padding:10px 11px;scroll-snap-align:start}.stageIcon{width:28px;height:28px;display:grid;place-items:center;border-radius:9px;background:#0a1728;font-size:15px;flex:0 0 28px}.stagebox.pass .stageIcon{background:#264a73}.stagebox strong{margin:0;font-size:11px}.stageState{display:block;font-size:9px;margin-top:2px;color:#6f86a5}.stagebox.pass .stageState{color:#a9bce0}
+  .stagebox{min-width:126px;display:flex;align-items:center;gap:9px;padding:10px 11px;scroll-snap-align:start}.stageIcon{width:28px;height:28px;display:grid;place-items:center;border-radius:9px;background:#ffffff;font-size:15px;flex:0 0 28px}.stagebox.pass .stageIcon{background:#dce5ef}.stagebox strong{margin:0;font-size:11px}.stageState{display:block;font-size:9px;margin-top:2px;color:#5e738d}.stagebox.pass .stageState{color:#5e738d}
   .two,.compactGrid{grid-template-columns:1fr}.scopeList{gap:2px}.scopeItem{font-size:11px;padding:6px 0}
   .studio .card{padding:14px;margin:10px 0;border-radius:14px}.sectionHead h2{font-size:15px}.badge{font-size:9px;padding:4px 7px}
   .btn{min-height:46px;padding:11px 13px}.workBtn{width:100%;min-width:0}.toolbar{display:grid;grid-template-columns:1fr 1fr}.toolbar .btn,.toolbar a.btn{width:100%}
@@ -60,23 +60,23 @@ details{margin:8px 0}summary{cursor:pointer;font-size:12px;font-weight:750;color
 
 .workBtn{position:relative;overflow:hidden;min-width:132px}
 .workBtn .workLabel{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;gap:7px}
-.workBtn.running{background:#15284a;border-color:#567dff;color:#fff;cursor:progress}
-.workBtn.running:after{content:"";position:absolute;left:0;bottom:0;height:3px;width:36%;background:linear-gradient(90deg,#6f8dff,#9c75ff,#6f8dff);animation:btnrun 1.15s ease-in-out infinite}
-.workBtn.failed{background:#3a1821;border-color:#8a4558;color:#ffbcc8}
-.workBtn .tinySpinner{width:10px;height:10px;border-radius:50%;border:2px solid #7892bf;border-top-color:#fff;animation:spinBtn .8s linear infinite}
+.workBtn.running{background:#dce5ef;border-color:#5e738d;color:#17375e;cursor:progress}
+.workBtn.running:after{content:"";position:absolute;left:0;bottom:0;height:3px;width:36%;background:linear-gradient(90deg,#5e738d,#5e738d,#5e738d);animation:btnrun 1.15s ease-in-out infinite}
+.workBtn.failed{background:#fff1f3;border-color:#dce5ef;color:#b43650}
+.workBtn .tinySpinner{width:10px;height:10px;border-radius:50%;border:2px solid #5e738d;border-top-color:#17375e;animation:spinBtn .8s linear infinite}
 @keyframes btnrun{0%{transform:translateX(-110%)}100%{transform:translateX(320%)}}
 @keyframes spinBtn{to{transform:rotate(360deg)}}
 
-.repairCard{border-color:#8d455a!important;background:#132238!important}
+.repairCard{border-color:#dce5ef!important;background:#ffffff!important}
 .repairCard .notice.error{padding:12px}
 .repairCard .repairCompare{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
-.repairCompare>div{background:#0d1b30;border:1px solid #355376;border-radius:12px;padding:12px;min-width:0}
-.repairCompare>div:last-child{border-color:#3d8b79;background:#102d31}
-.repairCompare h3{font-size:12px;color:#b9cdef;margin:0 0 7px}
-.repairCompare p{font-size:12px;line-height:1.55;color:#d4dfed;margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.repairCompare>div{background:#ffffff;border:1px solid #dce5ef;border-radius:12px;padding:12px;min-width:0}
+.repairCompare>div:last-child{border-color:#dce5ef;background:#ffffff}
+.repairCompare h3{font-size:12px;color:#17375e;margin:0 0 7px}
+.repairCompare p{font-size:12px;line-height:1.55;color:#17375e;margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 .repairTimeline{display:grid;gap:2px;margin:10px 0}
 .repairTimeline .checkrow{margin:0;grid-template-columns:20px 1fr}
-.repairTimeline .checkrow strong{font-size:12px;color:#d4e6fc}
+.repairTimeline .checkrow strong{font-size:12px;color:#17375e}
 .repairTimeline .checkrow .tiny{font-size:11px;line-height:1.5}
 #fixBuild{min-width:210px}
 @media(max-width:760px){
@@ -88,5 +88,6 @@ details{margin:8px 0}summary{cursor:pointer;font-size:12px;font-weight:750;color
 </style>
 </head><body>
 <main id="studio" class="studio"><p class="muted">Loading…</p></main>
-<link rel="stylesheet" href="/builder/refinement.css"><script src="/workspace-core.js"></script><script src="/workspace-store.js"></script><script src="/cloud-sync.js"></script><script src="/builder/studio.js"></script><script src="/builder/refinement.js"></script>
+<link rel="stylesheet" href="/builder/autobuild.css"><link rel="stylesheet" href="/builder/refinement.css"><script src="/workspace-core.js"></script><script src="/workspace-store.js"></script><script src="/cloud-sync.js"></script><script src="/builder/studio.js"></script><script src="/builder/refinement.js"></script><script src="/builder/autobuild-core.js"></script><script src="/builder/autobuild.js"></script>
+<link rel="stylesheet" href="/tool-ui.css?v=20261025">
 </body></html>

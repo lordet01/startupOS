@@ -1,0 +1,79 @@
+{
+  "functions": [
+    {
+      "source": ".firebase-build/functions",
+      "codebase": "startupos",
+      "predeploy": [
+        "node firebase/build.cjs"
+      ]
+    }
+  ],
+  "hosting": {
+    "public": ".firebase-build/public",
+    "predeploy": [
+      "node firebase/build.cjs"
+    ],
+    "ignore": [
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/login",
+        "destination": "/login.html"
+      },
+      {
+        "source": "/api/**",
+        "function": {
+          "functionId": "startupApi",
+          "region": "asia-east1",
+          "pinTag": true
+        }
+      },
+      {
+        "source": "**",
+        "function": {
+          "functionId": "startupWeb",
+          "region": "asia-east1",
+          "pinTag": true
+        }
+      }
+    ],
+    "headers": [
+      {
+        "source": "/login{,/**,.html}",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-store"
+          }
+        ]
+      },
+      {
+        "source": "/api/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-store"
+          }
+        ]
+      },
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          },
+          {
+            "key": "Referrer-Policy",
+            "value": "no-referrer"
+          }
+        ]
+      }
+    ]
+  },
+  "firestore": {
+    "rules": "firebase/private.firestore.rules"
+  }
+}

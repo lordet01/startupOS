@@ -1,0 +1,72 @@
+# To be installed at .github/workflows/firebase-ui.yml after source reconciliation.
+name: Firebase UI production
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'tool-ui.css'
+      - 'workspace*.js'
+      - 'workspace.css'
+      - 'cloud-sync.js'
+      - 'config.js'
+      - 'builder/**'
+      - 'firebase/**'
+      - 'firebase.migration.json'
+      - 'package*.json'
+      - '.github/workflows/firebase-ui.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: firebase-ui-production
+  cancel-in-progress: false
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm test
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.repository == 'lordet01/startupOS'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: node firebase/build.cjs
+      - run: npm ci --ignore-scripts --prefix .firebase-build/functions
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: startupos-6b8d4
+          workload_identity_provider: projects/1041157645946/locations/global/workloadIdentityPools/startupos-github/providers/startup-os
+          service_account: startupos-github-deploy@startupos-6b8d4.iam.gserviceaccount.com
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Deploy authenticated UI and Hosting
+        run: npx -y firebase-tools@15.34.1 deploy --project startupos-6b8d4 --config firebase.migration.json --only functions:startupos:startupWeb,hosting --non-interactive
+      - name: Check login and account gate
+        run: |
+          python3 - <<'PY'
+          import urllib.request
+          base='https://startupos-6b8d4.web.app'
+          for route in ['/login','/']:
+              with urllib.request.urlopen(base+route,timeout=45) as response:
+                  assert '/login' in response.url, response.url
+                  assert 'StartupOS' in response.read().decode(), route
+          print('Login and private workspace gate verified')
+          PY

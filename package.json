@@ -4,11 +4,15 @@
   "private": true,
   "description": "StartupOS functional build harness",
   "scripts": {
+    "pretest": "node firebase/build.cjs",
     "test": "node --test tests/*.test.cjs",
+    "test:firebase": "node firebase/build.cjs && node --test tests/firebase*.test.cjs tests/account-sync.test.cjs",
     "test:browser": "node tests/browser.mjs",
     "test:all": "npm test && npm run test:browser && npm run test:workspace:browser",
     "test:workspace:browser": "node tests/workspace-browser.mjs",
-    "test:rules": "node tests/firestore-rules.mjs"
+    "test:rules": "node tests/firestore-rules.mjs",
+    "dev": "node tests/ui-preview.cjs",
+    "deploy:ui": "bash firebase/deploy-ui.sh"
   },
   "devDependencies": {
     "playwright": "1.63.0"

@@ -1,12 +1,18 @@
-# StartupOS — Workspace v5
+# StartupOS — Firebase Workspace
 
-Google/email account flows, account-isolated browser workspaces, durable sync retries/conflict recovery, revision restore, My Apps management, budget/approval records and Growth experiments are implemented. Existing Brief → Blueprint → Build → Deploy → Phone Test → Iterate remains session-scoped.
+비공개 앱 제작 도구. 내 앱 → 기획 → 빌드·검증 → 배포·설치로 작업하며, 빌드 화면에서 AutoBuild와 캡처·수정 채팅을 사용합니다. 화면은 흰 배경과 딥블루 디자인을 공유합니다.
 
-**Real login still requires Firebase activation.** The current production endpoint reports no Firebase web-app configuration. Vercel configuration access for the existing team returned 403 during this work, so provider setup and real-user login have not been activated or verified. See [Workspace v5 behavior, setup and verification](docs/ACCOUNT_SYNC_V5.md).
+운영 대상: `startupos-6b8d4`. 인증된 `startupWeb`이 작업 화면을 제공하고, `startupApi`와 `startupJob`이 API·장기 작업을 처리합니다. 계정·프로젝트 저장과 접근 제한은 기존 Firebase 구조를 유지합니다.
 
-The proposed hierarchical AutoBuild execution model is documented in [AutoBuild design](docs/AUTOBUILD_DESIGN.md); its orchestrator is not implemented yet.
+GitHub `main`의 UI 변경은 `.github/workflows/firebase-ui.yml`에서 코드 테스트 → Workload Identity 인증 → `startupWeb`·Hosting 배포 → 로그인·접근 제한 확인 순서로 처리합니다. 배포 전용 계정은 GitHub의 저장소 ID와 `main` 브랜치에 제한됩니다. 장기 서비스 계정 비밀키는 사용하지 않습니다. API·작업 워커·보안 규칙 변경은 해당 배포 범위를 검토한 별도 작업으로 처리합니다.
 
-Run npm test and npm run test:workspace:browser. The latter uses two browser contexts with mocked Firebase transport, and must not be confused with live provider acceptance.
+- UI 변경 내용: [작업 화면 개편](docs/WORKSPACE_UI_20261025.md)
+- Firebase 구성 및 운영 제한: [Firebase 이전](firebase/MIGRATION.md)
+- AutoBuild: [Build Studio 통합](docs/AUTOBUILD_INTEGRATION.md)
+- 검증: `npm test` (유료 모델 호출·실기기 설치 성공을 의미하지 않음)
+- 수동 UI 배포: `npm run deploy:ui` (로컬 배포 인증 필요)
+
+아래에는 기존 기능 계약과 구현 이력이 포함되어 있습니다.
 
 ---
 

@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Workspace envelopes and immutable versions follow the existing client schema.
+    // Operator access, server jobs and private app descriptors are Admin SDK only.
+    function operator() {
+      return request.auth != null
+        && request.auth.token.get('email_verified', false) == true
+        && request.auth.token.get('email', '') is string
+        && request.auth.token.get('email', '').size() > 0
+        && exists(/databases/$(database)/documents/startuposAccess/$(request.auth.token.email.lower()))
+        && get(/databases/$(database)/documents/startuposAccess/$(request.auth.token.email.lower())).data.enabled == true;
+    }
+    match /users/{userId}/ventures/{sessionId} {
+      function owner() { return operator() && request.auth.uid == userId; }
+      function valid() {
+        return request.resource.data.keys().hasAll(['ownerUid', 'name', 'updatedAt', 'payload', 'revision'])
+          && request.resource.data.keys().hasOnly(['ownerUid', 'name', 'updatedAt', 'payload', 'revision'])
+          && request.resource.data.ownerUid == userId
+          && request.resource.data.payload is map && request.resource.data.payload.size() <= 250
+          && request.resource.data.payload._sessionId == sessionId && sessionId.size() <= 110
+          && request.resource.data.payload.name is string && request.resource.data.payload.name.size() <= 300
+          && request.resource.data.name is string && request.resource.data.name.size() <= 300
+          && request.resource.data.updatedAt is string && request.resource.data.updatedAt.size() <= 40
+          && request.resource.data.revision is int && request.resource.data.revision > 0
+          && request.resource.data.revision <= 2147483647;
+      }
+      allow get, list: if owner();
+      allow create: if owner() && valid() && request.resource.data.revision == 1;
+      allow update: if owner() && valid() && request.resource.data.revision == resource.data.get('revision', 0) + 1;
+      allow delete: if owner();
+      match /versions/{versionId} {
+        allow get, list: if owner();
+        allow create: if owner() && valid() && versionId.size() <= 40
+          && request.resource.data == getAfter(/databases/$(database)/documents/users/$(userId)/ventures/$(sessionId)).data;
+      }
+    }
+    // No client read/write grants for startuposAccess, startupJobs or startupApps.
+  }
+}

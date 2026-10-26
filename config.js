@@ -1,6 +1,6 @@
 window.STARTUP_OS_CONFIG = {
   runtimeUrl: "/api/runtime",
-  runtimeProvider: "Vercel + OpenAI Responses API",
+  runtimeProvider: "Firebase + OpenAI Responses API",
   functionalBuildVersion: "3.1.0"
 };
 (function(){
@@ -11,7 +11,7 @@ window.STARTUP_OS_CONFIG = {
       var selected=window.StartupOSDashboard?.getSession()?._sessionId||pack?.activeId;
       if(selected)id="?sessionId="+encodeURIComponent(selected);
     } catch(e){}
-    var section=stage==="iterate"?"#refineHost":stage==="deploy"?"#deploy-stage":stage==="phone"?"#phone-stage":"#scope-stage";
+    var section=stage==="iterate"?"#refineHost":stage==="deploy"?"#deploy-stage":stage==="phone"?"#phone-stage":"#autobuildHost";
     return "/builder/"+id+section;
   }
   document.addEventListener("click",function(event){

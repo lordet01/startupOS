@@ -6,3 +6,9 @@ node_modules/
 test-results/
 playwright-report/
 .DS_Store
+.firebase-build/
+.firebase/
+firebase-debug.log*
+
+# Temporary GitHub OIDC credentials
+gha-creds-*.json

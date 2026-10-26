@@ -15,18 +15,18 @@ function saveMessage(sid,msg){
 function hostMarkup(p,stale){
  const build=p.functionalBuild,kind=build.kind;
  const id=escape(build.bid.slice(-10));
- return '<div class="refineHeader"><div><span class="refineEyebrow">ITERATE / '+id+'</span><h2>Preview & Improve</h2><p>앱을 써보면서 캡처하고, 채팅으로 수정하세요.</p></div><span class="refineVersion">Revision '+(build.refinementRevision||0)+'</span></div>'+
- (stale?'<div class="refineStale" role="status"><strong>이 Build는 이전 엔진 버전입니다.</strong><span>현재 소스로 New Build를 만든 후 미리보기와 채팅 수정을 진행하세요. 기존 대화·설정은 보존됩니다.</span><button id="refineRebase" type="button">↻ 현재 버전으로 New Build</button></div>':'')+'<div class="refineTabs"><button data-refine-tab="preview" class="on">📱 미리보기</button><button data-refine-tab="chat">💬 수정 채팅</button></div>'+
+ return '<div class="refineHeader"><div><span class="refineEyebrow">ITERATE / '+id+'</span><h2>미리보기 · 수정</h2><p>앱을 써보면서 캡처하고, 채팅으로 수정하세요.</p></div><span class="refineVersion">Revision '+(build.refinementRevision||0)+'</span></div>'+
+ (stale?'<div class="refineStale" role="status"><strong>이 Build는 이전 엔진 버전입니다.</strong><span>현재 소스로 새 빌드를 만든 후 미리보기와 채팅 수정을 진행하세요. 기존 대화·설정은 보존됩니다.</span><button id="refineRebase" type="button">↻ 현재 버전으로 새 빌드</button></div>':'')+'<div class="refineTabs"><button data-refine-tab="preview" class="on">📱 미리보기</button><button data-refine-tab="chat">💬 수정 채팅</button></div>'+
  '<div class="refineColumns"><div class="refinePreviewPane">'+
  '<div class="refinePreviewActions"><span>Mobile · 390px</span><div><button id="refineReload" class="refineSmall" type="button">↻</button><a class="refineSmall" target="_blank" rel="noopener noreferrer" href="'+escape(build.previewUrl)+'" title="별도 창으로 실행">↗</a></div></div>'+
- (stale?'<div class="refinePhone refinePhoneStale"><div>New Build가 필요합니다.</div></div>':'<div class="refinePhone"><iframe id="refineFrame" title="현재 Build의 모바일 앱 화면" allow="camera" src="'+escape(build.previewUrl)+'"></iframe></div>')+
+ (stale?'<div class="refinePhone refinePhoneStale"><div>새 빌드가 필요합니다.</div></div>':'<div class="refinePhone"><iframe id="refineFrame" title="현재 Build의 모바일 앱 화면" allow="camera" src="'+escape(build.previewUrl)+'"></iframe></div>')+
  (stale?'':'<div class="refinePhotoTools"><button id="refineCapture" class="refinePrimary" type="button">📸 전체 캡처</button><button id="refineCrop" class="refinePrimary refineCropButton" type="button" aria-pressed="false">✂ 부분 캡처</button><label for="refineScreenshotFile" class="refineUpload">이미지 첨부</label><input id="refineScreenshotFile" type="file" accept="image/png,image/jpeg,image/webp" hidden></div>')+
  '<div class="refineMiniNote">앱을 조작한 뒤 부분 캡처를 누르고 필요한 부분을 드래그하세요. 손가락·마우스 모두 지원합니다.</div></div>'+
  '<div class="refineChatPane"><div id="refineMessages" class="refineMessages"></div>'+
  '<div id="refineProposal" class="refineProposal"></div>'+
  '<div id="refineAnnotation" class="refineAnnotation"></div>'+
  '<div class="refineComposer"><label for="refineText">수정 요청</label><textarea id="refineText" rows="3" maxlength="2500" placeholder="예: 결과 카드가 너무 길어요. 관찰 항목을 먼저 보여주고 추천 성분은 3개만 표시해줘."></textarea>'+
- '<div class="refineSendRow"><span>캡처가 있으면 표시 영역과 설명을 함께 분석합니다.</span><button id="refineSend" class="refinePrimary" type="button">↗ AI에 수정 요청</button></div></div></div></div>';
+ '<div class="refineSendRow"><span>캡처가 있으면 표시 영역과 설명을 함께 분석합니다.</span><button id="refineAutoBuild" class="refineAutoBuild" type="button">AutoBuild</button><button id="refineSend" class="refinePrimary" type="button">↗ AI에 수정 요청</button></div></div></div></div>';
 }
 function messagesHtml(p){
  const msgs=(p.functionalChat||[]).slice(-24);
@@ -38,7 +38,7 @@ function proposalHtml(p,state){
  const proposal=p.functionalProposal;
  if(state.busy)return '<div class="refineHint" role="status">'+(state.phase==='build'?'수정 코드를 새 Build에 반영하고 자동 검증 중입니다.':'요청한 기능을 구현 중입니다. 코드 생성과 검증을 수행하며 실패한 코드는 자동 재작성합니다.')+'</div>';
  if(state.error)return '<div class="refineError" role="alert">'+escape(state.error)+'</div><div class="refineHint">요청은 입력창에 보존됩니다. 다시 실행하면 현재 앱 코드 기준으로 구현을 이어갑니다.</div>';
- if(!proposal)return '<div class="refineHint">현재 앱의 실제 JS/CSS 파일을 수정합니다. 화면 캡처 또는 설명을 입력하면 AI가 코드 변경안을 만들고 새 Build에 반영합니다.</div>';
+ if(!proposal)return '<div class="refineHint">원하는 변경을 입력하거나 화면을 캡처해 첨부하세요.</div>';
  const stale=proposal.baseBuildId!==p.functionalBuild?.bid;
  const supported=proposal.status==='config_patch'||proposal.status==='code_patch';
  const unsupported=!supported;
@@ -49,7 +49,7 @@ function proposalHtml(p,state){
  (proposal.external_steps?.length?'<div class="refineHint">외부 연동에 필요한 설정: '+escape(proposal.external_steps.join(' · '))+'</div>':'')+
  (proposal.unsupported_requests?.length?'<div class="refineHint">추가 검토: '+escape(proposal.unsupported_requests.join(' · '))+'</div>':'')+
  (proposal.manual_test?.length?'<details><summary>다음 검증 항목 ('+proposal.manual_test.length+')</summary><ul>'+proposal.manual_test.map(x=>'<li>'+escape(x)+'</li>').join('')+'</ul></details>':'')+
- (!unsupported&&!stale&&!built?'<button id="refineApprove" class="refinePrimary" type="button">✓ 코드 적용 · New Build</button>':built?'<div class="refineHint">✓ 새 Build '+escape(proposal.resultBuildId?.slice(-8)||'')+'에 반영됐습니다. 위 화면에서 다시 확인하고 추가 수정을 채팅하세요.</div>':stale?'<div class="refineHint">다른 Build로 전환됐습니다. 현재 화면 기준으로 다시 개선안을 요청하세요.</div>':'<button id="refineRetryAsCode" class="refinePrimary" type="button">🛠 이 요청을 코드 수정으로 다시 실행</button>')+'</div>';
+ (!unsupported&&!stale&&!built?'<button id="refineApprove" class="refinePrimary" type="button">✓ 코드 적용 · 새 빌드</button>':built?'<div class="refineHint">✓ 새 Build '+escape(proposal.resultBuildId?.slice(-8)||'')+'에 반영됐습니다. 위 화면에서 다시 확인하고 추가 수정을 채팅하세요.</div>':stale?'<div class="refineHint">다른 Build로 전환됐습니다. 현재 화면 기준으로 다시 개선안을 요청하세요.</div>':'<button id="refineRetryAsCode" class="refinePrimary" type="button">🛠 이 요청을 코드 수정으로 다시 실행</button>')+'</div>';
 }
 function getImageBuffer(sid){
  const d=local(sid);
@@ -293,7 +293,7 @@ async function captureScreen(sid){
 
 async function sendRequest(sid){
  const d=local(sid),b=Bridge(),p=b?.getSessionById(sid),current=p?.functionalBuild;
- if(d.busy||!p||!current)return;
+ if(d.busy||!p||!current)return;if(window.StartupOSAutoBuild?.isBusy(sid)){d.error='AutoBuild를 일시정지한 뒤 수정 채팅을 실행하세요.';updateChat(sid);return;}
  const text=limit(d.text.trim()),screenshot=getImageBuffer(sid);
  if(text.length<3){d.error='어떤 부분을 바꾸고 싶은지 3자 이상 설명해 주세요.';updateChat(sid);return}
  d.busy=true;d.phase='code';d.error='';d.text='';let autoApply=false;const before=current.bid;
@@ -314,7 +314,7 @@ async function sendRequest(sid){
 }
 async function approveBuild(sid){
  const d=local(sid),b=Bridge(),p=b?.getSessionById(sid),proposal=p?.functionalProposal;
- if(d.busy||!proposal||!['config_patch','code_patch'].includes(proposal.status)||proposal.baseBuildId!==p.functionalBuild.bid)return;
+ if(d.busy||!proposal||!['config_patch','code_patch'].includes(proposal.status)||proposal.baseBuildId!==p.functionalBuild.bid)return;if(window.StartupOSAutoBuild?.isBusy(sid)){d.error='AutoBuild 진행 중';updateChat(sid);return;}
  d.busy=true;d.phase='build';d.error='';updateChat(sid);
  try{
   const changes=proposal.status==='code_patch'?{codeEdits:proposal.codeEdits,config:proposal.config}:{config:proposal.config};
@@ -325,6 +325,7 @@ async function approveBuild(sid){
  }catch(e){d.error=e.message;updateChat(sid)}
  finally{d.busy=false;updateChat(sid)}
 }
+document.addEventListener('click',event=>{if(!event.target.closest('#refineAutoBuild'))return;const sid=Bridge()?.getActiveId(),d=local(sid);try{if(!d.text.trim())throw Error('수정 요청을 입력하세요.');window.StartupOSAutoBuild.startFromFeedback(sid,{message:d.text,screenshot:getImageBuffer(sid)})}catch(e){d.error=e.message;updateChat(sid)}});
 window.StartupOSRefinement={mount,captureScreen};
 if(Bridge())mount();
 })();
