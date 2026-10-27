@@ -32,9 +32,9 @@ async function execute(sid,r,p,d){const b=B(),f=p.functionalBuild,desc=f?.descri
  throw Error('실행할 수 없는 단계');
 }
 async function step(sid){
- if(running.has(sid)||B()?.isBusy(sid))return;const owner=window.StartupOSStore.owner(),epoch=accountEpoch,p=project(sid),d=draft(sid);let claimed,lease;
+ if(running.has(sid)||B()?.isBusy(sid))return;const owner=window.StartupOSStore.owner(),epoch=accountEpoch,p=project(sid),d=draft(sid);let claimed,lease,loading;
  try{mutate(sid,p=>{claimed=C.claim(p.functionalAutoBuild,{ownerKey:owner,sessionId:sid,buildId:p.functionalBuild?.bid||null,sourceHash:B().getInfo()?.sourceHash});p.functionalAutoBuild=claimed});
-  if(!claimed.lease){mount();return}lease=claimed.lease;running.set(sid,lease.id);B().refresh();
+  if(!claimed.lease){mount();return}lease=claimed.lease;running.set(sid,lease.id);loading=window.StartupOSLoading?.start("AutoBuild · "+(stages[lease.stage]||lease.stage),"현재 단계를 처리하고 있습니다. 완료 후 다음 상태를 확인하세요.");B().refresh();
   const result=await execute(sid,claimed,p,d);
   if(owner!==window.StartupOSStore.owner()||epoch!==accountEpoch)return;
   let accepted=false;
@@ -52,7 +52,7 @@ async function step(sid){
    accepted=true;
   });if(accepted)d.error='';
  }catch(e){if(owner!==window.StartupOSStore.owner()||epoch!==accountEpoch)return;d.error=e.message;if(!lease)enabled.delete(current(sid)?.id);try{mutate(sid,p=>{const r=p.functionalAutoBuild;if(lease&&r?.lease?.id===lease.id)p.functionalAutoBuild=C.reject(r,lease.id,{code:e.code,message:e.message});else if(!lease&&r?.status==='RUNNING'&&!r.lease)p.functionalAutoBuild=C.command(r,'interrupt',{reason:(e.code||'AUTOBUILD_PRECONDITION')+': '+e.message})})}catch{}
- }finally{if(running.get(sid)===lease?.id)running.delete(sid);if(owner===window.StartupOSStore.owner()&&epoch===accountEpoch){B()?.refresh();queue(sid)}}
+ }finally{window.StartupOSLoading?.end(loading);if(running.get(sid)===lease?.id)running.delete(sid);if(owner===window.StartupOSStore.owner()&&epoch===accountEpoch){B()?.refresh();queue(sid)}}
 }
 function fields(o,settings){return '<div class="abLimits">'+[['maxTurns','최대 반복',50],['maxSameFailure','동일 실패',10],['maxMinutes','시간 (분)',180],['maxModelCalls','AI 호출',150]].map(([key,label,max])=>'<label>'+label+'<input data-ab-option="'+key+'" type="number" min="1" max="'+max+'" value="'+esc(o[key])+'"></label>').join('')+'</div><div class="abPolicy">'+[['allowModel','AI 코드 생성'],['autoApply','코드 변경 자동 적용'],['liveConsent','실제 API 검증 · 비용 발생']].map(([key,label])=>'<label><input data-ab-option="'+key+'" type="checkbox" '+(o[key]?'checked':'')+'>'+label+'</label>').join('')+'</div>'+(settings?'<button class="btn" id="abSaveSettings">설정 저장</button>':'');}
 function formHtml(p,d){return '<form id="abNewForm"><div class="abInput"><label for="abInstruction">구현 지시</label><textarea id="abInstruction" maxlength="2500" rows="3" placeholder="현재 기획대로 구현하거나 이번에 바꿀 기능을 입력하세요.">'+esc(d.instruction)+'</textarea>'+(p.functionalScopeApproved!==B().getKind(p)?'<a class="abLink" href="#scope-stage">Build scope 승인 →</a>':'')+(d.screenshot?'<span class="abTag">캡처 첨부 1</span>':'')+'</div>'+'<details class="abAdvanced"><summary>반복 한도 · AI 사용 설정</summary>'+fields(d.options,false)+'</details>'+'<div class="abFormActions"><span>현재 기획 기준으로 구현 · 검증 반복</span><button class="btn primary" id="abStart" '+(p.functionalScopeApproved!==B().getKind(p)?'disabled':'')+'>AutoBuild 시작</button></div></form>';}

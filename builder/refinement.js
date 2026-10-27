@@ -296,7 +296,7 @@ async function sendRequest(sid){
  if(d.busy||!p||!current)return;if(window.StartupOSAutoBuild?.isBusy(sid)){d.error='AutoBuild를 일시정지한 뒤 수정 채팅을 실행하세요.';updateChat(sid);return;}
  const text=limit(d.text.trim()),screenshot=getImageBuffer(sid);
  if(text.length<3){d.error='어떤 부분을 바꾸고 싶은지 3자 이상 설명해 주세요.';updateChat(sid);return}
- d.busy=true;d.phase='code';d.error='';d.text='';let autoApply=false;const before=current.bid;
+ const loading=window.StartupOSLoading?.start('수정안 생성 중','요청과 화면을 분석해 변경안을 준비하고 있습니다.');d.busy=true;d.phase='code';d.error='';d.text='';let autoApply=false;const before=current.bid;
  saveMessage(sid,{role:'user',text,screenshotAttached:!!screenshot,buildId:before});updateChat(sid);
  try{
   const history=(p.functionalChat||[]).slice(-8).map(x=>({role:x.role==='assistant'?'assistant':'user',text:x.text}));
@@ -309,7 +309,7 @@ async function sendRequest(sid){
   autoApply=res.status==='code_patch'&&b.getSessionById(sid)?.functionalBuild?.bid===before;
   d.screenshot=null;d.strokes=[];
  }catch(e){d.error=e.message||'AI 개선 요청 실패';d.text=text}
- finally{d.busy=false;updateChat(sid)}
+ finally{window.StartupOSLoading?.end(loading);d.busy=false;updateChat(sid)}
  if(autoApply){await approveBuild(sid);if(d.error){d.text=text;updateChat(sid);}}
 }
 async function approveBuild(sid){

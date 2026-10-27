@@ -83,8 +83,8 @@ document.addEventListener('click',async ev=>{
   if(cmd==='restore-app')B.mutate(sid,p=>{delete p._deletedAt;delete p._archivedAt;});
   if(cmd==='resume'){
    const p=B.getPack().sessions.find(x=>x._sessionId===sid);
-   if(p.functionalAutoBuild&&!['COMPLETE','CANCELED'].includes(p.functionalAutoBuild.status))location.assign('/builder/?sessionId='+encodeURIComponent(sid)+'#autobuildHost');
-   else if(p.functionalBuild){const hash=p.functionalBuild.deployment?.readyState==='READY'?'#phone-stage':'#refineHost';location.assign('/builder/?sessionId='+encodeURIComponent(sid)+hash);}
+   if(p.functionalAutoBuild&&!['COMPLETE','CANCELED'].includes(p.functionalAutoBuild.status)){window.StartupOSLoading?.start('빌드 화면을 여는 중','저장된 실행 정보를 불러오고 있습니다.');requestAnimationFrame(()=>location.assign('/builder/?sessionId='+encodeURIComponent(sid)+'#autobuildHost'));}
+   else if(p.functionalBuild){const hash=p.functionalBuild.deployment?.readyState==='READY'?'#phone-stage':'#refineHost';window.StartupOSLoading?.start('빌드 화면을 여는 중','저장된 빌드 정보를 불러오고 있습니다.');requestAnimationFrame(()=>location.assign('/builder/?sessionId='+encodeURIComponent(sid)+hash));}
    else B.open(sid,p._lastView||'venture');
   }
   if(cmd==='history')await history(sid);

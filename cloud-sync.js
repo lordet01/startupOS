@@ -217,3 +217,24 @@ function status(){return{phase,user:user?.uid||null,email:user?.email||'',config
 window.StartupOSCloud={connect(a){adapter=a;mount();if(user)replace(S.read());},localSaved,open,status,fetch:apiFetch,exportLocal,importFile,versions,restore,sync:flush};
 const booted=boot();mount();
 })();
+
+// Shared progress dialog for user-initiated long operations on dashboard and studio.
+(function(){
+ 'use strict';
+ const jobs=new Map();let sequence=0,dialog=null,previousFocus=null,timer=null,hidden=false;
+ function draw(){
+  const job=Array.from(jobs.values()).at(-1);
+  if(!job){if(dialog){dialog.remove();dialog=null}if(timer){clearInterval(timer);timer=null}if(previousFocus?.isConnected)previousFocus.focus({preventScroll:true});previousFocus=null;hidden=false;return}
+  if(!dialog){
+   previousFocus=document.activeElement;dialog=document.createElement('div');dialog.id='startupLoading';
+   dialog.innerHTML='<style>#startupLoading{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;background:rgba(15,32,57,.48);padding:20px}#startupLoading[hidden]{display:none}#startupLoading .loadingDialog{width:min(100%,380px);box-sizing:border-box;background:#fff;color:#17375e;padding:28px;border-radius:18px;box-shadow:0 18px 60px #0f203944;text-align:center;font:15px/1.55 system-ui,sans-serif}#startupLoading .loadingSpinner{width:34px;height:34px;margin:0 auto 16px;border:4px solid #dce5ef;border-top-color:#173d73;border-radius:50%;animation:startup-spin .8s linear infinite}#startupLoading h2{font-size:19px;margin:0 0 8px;color:#17375e}#startupLoading p{margin:0;color:#526b89}#startupLoading .loadingElapsed{font-size:12px;margin:14px 0}#startupLoading button{border:1px solid #c9d7e8;border-radius:9px;background:white;color:#17375e;padding:10px 16px;cursor:pointer;font:inherit}@keyframes startup-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){#startupLoading .loadingSpinner{animation-duration:2s}}</style><div class="loadingDialog" role="dialog" aria-modal="true" aria-labelledby="startupLoadingTitle" aria-describedby="startupLoadingMessage"><div class="loadingSpinner" aria-hidden="true"></div><h2 id="startupLoadingTitle"></h2><p id="startupLoadingMessage" role="status" aria-live="polite"></p><p class="loadingElapsed"></p><button type="button">백그라운드에서 계속</button></div>';
+   document.body.appendChild(dialog);dialog.querySelector('button').onclick=()=>{hidden=true;dialog.hidden=true;if(previousFocus?.isConnected)previousFocus.focus({preventScroll:true})};
+   dialog.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();dialog.querySelector('button').click()}else if(e.key==='Tab'){e.preventDefault();dialog.querySelector('button').focus()}});
+   if(!hidden)dialog.querySelector('button').focus();
+  }
+  dialog.hidden=hidden;dialog.querySelector('h2').textContent=job.title;dialog.querySelector('#startupLoadingMessage').textContent=job.message;
+  dialog.querySelector('.loadingElapsed').textContent='진행 시간 '+Math.floor((Date.now()-job.started)/1000)+'초 · 작업을 중복 실행하지 마세요';
+  if(!timer)timer=setInterval(draw,1000);
+ }
+ window.StartupOSLoading={start(title,message){const id=++sequence;jobs.set(id,{title,message:message||'잠시만 기다려 주세요.',started:Date.now()});if(jobs.size===1)hidden=false;draw();return id},update(id,message){const job=jobs.get(id);if(job){job.message=message;draw()}},end(id){jobs.delete(id);draw()}};
+})();

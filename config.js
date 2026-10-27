@@ -21,7 +21,8 @@ window.STARTUP_OS_CONFIG = {
     if(["build","deploy","phone","iterate"].includes(stage)||["generateMvp","publishMvp","openPrototype","testPublishAuth"].includes(button.id)){
       event.preventDefault();
       event.stopImmediatePropagation();
-      location.assign(destination(stage||"build"));
+      window.StartupOSLoading?.start("빌드 화면을 여는 중", "작업 화면과 현재 앱 정보를 불러오고 있습니다.");
+      requestAnimationFrame(function(){location.assign(destination(stage||"build"));});
     }
   },true);
 })();

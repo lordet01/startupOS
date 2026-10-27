@@ -554,7 +554,7 @@ function item(a,b){return '<div class="item"><div><b>'+esc(a)+'</b><div>'+esc(b)
 function runStageIndex(){return {prepare:0,request:1,waiting:2,apply:3,done:4,error:4}[state.runStage]||0}
 function elapsedSeconds(){return state.runStartedAt?Math.max(0,(Date.now()-state.runStartedAt)/1000):0}
 function runPanel(){if(!state.running&&state.runStage!=="done"&&state.runStage!=="error")return "";var idx=runStageIndex(),done=state.runStage==="done",err=state.runStage==="error";var cycle=state.runMode==="cycle"||state.view==="agents";var steps=cycle?[["Session","컨텍스트"],["Runtime","API 요청"],["Committee","역할별 검토"],["Decision","세션 저장"]]:[["Founder brief","입력값 준비"],["Runtime","서버 요청"],["OpenAI","응답 대기"],["Blueprint","검증·반영"]];var html=steps.map(function(x,i){var cls=(done||(!err&&i<idx))?"done":(!err&&i===idx?"active":"");return '<div class="runStep '+cls+'"><b>'+(done||i<idx?"✓ ":"")+x[0]+'</b>'+x[1]+'</div>'}).join("");var title=err?"GPT 요청 실패":done?(cycle?"의사결정 완료":"Blueprint 완료"):(cycle?"GPT 역할별 검토 진행 중":"Blueprint 분석 중");var detail=err?state.runError:(state.runMessage||"StartupOS Runtime과 연결 중");var cls=err?"runError":done?"runDone":"";var tail=done&&state.p.runtimeLast?'<strong>'+esc(state.p.runtimeLast.model)+' · '+esc(state.p.runtimeLast.tokens)+' tokens · '+esc(state.p.runtimeLast.latency)+'</strong>':'<strong id="runElapsed">'+elapsedSeconds().toFixed(1)+'s</strong>';return '<section class="runPanel '+cls+'"><div class="runTop"><h3>'+title+'</h3><span class="tag '+(done?"ok":"")+'">'+(err?"ERROR":done?"COMPLETED":"LIVE REQUEST")+'</span></div>'+(!done&&!err?'<div class="runBar"><i></i></div>':'')+'<div class="runSteps">'+html+'</div><div class="runDetail"><span id="runMessage">'+esc(detail)+'</span>'+tail+'</div></section>'}
-function setRunStage(stage,message){state.runStage=stage;state.runMessage=message||"";var msg=document.getElementById("runMessage");if(msg)msg.textContent=state.runMessage;var el=document.getElementById("runElapsed");if(el)el.textContent=elapsedSeconds().toFixed(1)+"s"}
+function setRunStage(stage,message){if(state.loadingRun)window.StartupOSLoading?.update(state.loadingRun,message);state.runStage=stage;state.runMessage=message||"";var msg=document.getElementById("runMessage");if(msg)msg.textContent=state.runMessage;var el=document.getElementById("runElapsed");if(el)el.textContent=elapsedSeconds().toFixed(1)+"s"}
 function startRunClock(){stopRunClock();state.runTimer=setInterval(function(){var t=elapsedSeconds().toFixed(1)+"s";var el=document.getElementById("runElapsed");if(el)el.textContent=t;document.querySelectorAll(".mainRunElapsed").forEach(function(x){x.textContent=t})},100)}
 function stopRunClock(){if(state.runTimer){clearInterval(state.runTimer);state.runTimer=null}}
 function serviceFlowView(p){var flow=p.serviceFlow||[];if(!flow.length)return '<div class="loadingPanel"><b>'+(state.running?"OpenAI 응답을 기다리는 중입니다.":"아직 서비스 흐름이 생성되지 않았습니다.")+'</b>'+(state.running?"응답이 도착하면 실제 사용자 동작과 시스템 처리를 단계별로 채웁니다.":"기획 분석하기를 실행하면 단계별 흐름을 생성합니다.")+'</div>';return '<div class="flowList">'+flow.map(function(x,i){return '<div class="flowStep"><div class="flowNum">'+esc(x.step||i+1)+'</div><div><h3>'+esc(x.title)+'</h3><div class="flowCols"><div><b>사용자</b>'+esc(x.user_action)+'</div><div><b>시스템</b>'+esc(x.system_action)+'</div></div></div></div>'}).join("")+'</div>'}
@@ -744,6 +744,7 @@ async function run(mode){
   state.runStartedAt=Date.now();
   state.runMessage=mode==="cycle"?"세션 컨텍스트 준비":"Founder brief 확인";
   state.runError="";render();startRunClock();
+  var loadingRun=window.StartupOSLoading?.start(mode==="cycle"?"AI 검토 중":"기획 분석 중",state.runMessage);state.loadingRun=loadingRun;
   try{
     var data=await callRuntime(mode,p);
     if(window.StartupOSStore.owner()!==owner||state.runNonce!==nonce)return;
@@ -759,6 +760,7 @@ async function run(mode){
     if(window.StartupOSStore.owner()!==owner||state.runNonce!==nonce)return;
     state.runtimeStatus="error";state.runStage="error";state.runError=e.message;state.runMessage=e.message;toast(e.message);
   }finally{
+    window.StartupOSLoading?.end(loadingRun);if(state.loadingRun===loadingRun)state.loadingRun=null;
     if(state.runNonce===nonce){state.running=false;state.runSid=null;state.runMode="";stopRunClock();render();}
   }
 }
@@ -851,6 +853,7 @@ async function ideaNoteStructure(){
  var note=el.value.trim();
  if(note.length<20){ideaNoteStatus("아이디어를 최소 20자 이상 입력하거나 마이크로 말해주세요.","error");return}
  if(note.length>15000){ideaNoteStatus("아이디어 노트는 15,000자 이내로 입력해주세요.","error");return}
+ var noteLoading=window.StartupOSLoading?.start("아이디어 정리 중","입력하신 내용을 기획 항목으로 분류하고 있습니다.");
  button.disabled=true;button.textContent="⏳ GPT 분석 중…";ideaNoteStatus("서술형 내용을 세션 입력항목으로 분류 중입니다.");
  try{
   var data=await ideaNoteRequest({action:"structure",note:note},48),draft=data.draft||{};
@@ -862,7 +865,7 @@ async function ideaNoteStructure(){
   ideaNoteStatus("✓ 항목을 채웠습니다. 내용을 수정·확인한 후 만들고 기획 분석를 누르세요.","success");
   document.getElementById("newIdea").focus({preventScroll:true});
  }catch(e){ideaNoteStatus("분류 실패: "+e.message,"error")}
- finally{button.disabled=false;button.textContent="AI로 항목 채우기"}
+ finally{window.StartupOSLoading?.end(noteLoading);button.disabled=false;button.textContent="AI로 항목 채우기"}
 }
 async function ideaNoteMic(){
  var button=document.getElementById("ideaNoteMic"),recordingOwner=window.StartupOSStore.owner();
