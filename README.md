@@ -8,7 +8,7 @@ GitHub `main`의 UI 변경은 `.github/workflows/firebase-ui.yml`에서 코드 �
 
 - UI 변경 내용: [작업 화면 개편](docs/WORKSPACE_UI_20261025.md)
 - Firebase 구성 및 운영 제한: [Firebase 이전](firebase/MIGRATION.md)
-- AutoBuild: [Build Studio 통합](docs/AUTOBUILD_INTEGRATION.md)
+- AutoBuild: [Build Studio 통합](docs/AUTOBUILD_INTEGRATION.md) · [에이전트 팀 설계](docs/LEGION_AGENT_TEAM.md)
 - 검증: `npm test` (유료 모델 호출·실기기 설치 성공을 의미하지 않음)
 - 수동 UI 배포: `npm run deploy:ui` (로컬 배포 인증 필요)
 

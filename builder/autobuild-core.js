@@ -24,7 +24,7 @@ function create(project,info,options={}){
  const r={version:VERSION,id:uid,sessionId:project._sessionId,ownerKey:String(options.ownerKey||'guest'),name:project.name,kind,sourceHash:info.sourceHash,contractVersion:1,requirements:req,
  status:'NEEDS_APPROVAL',stage:current?(instruction?'propose':'verify'):'assemble',revision:0,createdAt:ts,updatedAt:ts,startedAt:null,deadline:null,
  limits:{maxTurns:limit(options.maxTurns,8,50),maxSameFailure:limit(options.maxSameFailure,3,10),maxMinutes:limit(options.maxMinutes,20,180),maxModelCalls:limit(options.maxModelCalls,12,150)},
- turn:0,modelCalls:0,autoApply:options.autoApply===true,allowModel:options.allowModel===true,liveConsent:options.liveConsent===true,
+ turn:0,modelCalls:0,autoApply:options.autoApply===true,allowModel:options.allowModel===true,liveConsent:options.liveConsent===true,teamMode:options.teamMode===true,
  instruction,nextInstruction:instruction||'Build scope 조립 후 자동 검증',currentBuildId:current?.bid||null,currentArtifactHash:current?.artifactHash||null,bestBuildId:null,
  verification:null,proposal:null,repairPlan:null,issue:null,lease:null,pauseRequested:false,attempts:[],events:[],failureSignature:'',sameFailure:0,stopReason:'',costUsd:0,costUnknown:false,approvalNote:''};
  event(r,'plan','Venture → 사용자 여정 → 기능 → 구현 시도');return r;
@@ -38,7 +38,7 @@ function command(input,action,payload={}){
   if(r.status==='RUNNING'||END.includes(r.status)||r.lease)fail('실행을 정지한 뒤 설정을 변경하세요.');
   for(const [key,max] of Object.entries({maxTurns:50,maxSameFailure:10,maxMinutes:180,maxModelCalls:150})){if(payload[key]!==undefined){const n=Number(payload[key]);if(!Number.isInteger(n)||n<1||n>max)fail('실행 한도 범위 오류');r.limits[key]=n;}}
   if(r.limits.maxTurns<r.turn||r.limits.maxModelCalls<r.modelCalls)fail('사용한 회차·호출보다 한도를 작게 설정할 수 없습니다.');
-  for(const key of ['autoApply','allowModel','liveConsent'])if(typeof payload[key]==='boolean')r[key]=payload[key];event(r,'configure','실행 한도·승인 정책 변경');return touch(r);
+  for(const key of ['autoApply','allowModel','liveConsent','teamMode'])if(typeof payload[key]==='boolean')r[key]=payload[key];event(r,'configure','실행 한도·승인 정책 변경');return touch(r);
  }
  if(action==='approve'||action==='resume'||action==='retry'){
   if(action==='approve'&&r.status!=='NEEDS_APPROVAL')fail('승인 대기 상태가 아닙니다.');
@@ -79,9 +79,10 @@ function claim(input,context={}){
  if(['assemble','apply','propose'].includes(r.stage)&&r.turn>=r.limits.maxTurns){r.status='LIMIT';r.stopReason='최대 반복 한도';event(r,'limit',r.stopReason);return touch(r)}
  if(r.stage==='propose'&&!r.allowModel){r.status='NEEDS_DECISION';r.stopReason='AI 코드 생성 승인 필요';event(r,'approval',r.stopReason);return touch(r)}
  if(r.stage==='verify'&&r.kind!=='travel'&&!r.liveConsent){r.status='NEEDS_DECISION';r.stopReason='실제 API 검증 사용 승인 필요';event(r,'approval',r.stopReason);return touch(r)}
- if(r.stage==='propose'&&r.modelCalls+3>r.limits.maxModelCalls){r.status='LIMIT';r.stopReason='AI 호출 한도 (내부 재작성 최대 3회 예약)';event(r,'limit',r.stopReason);return touch(r)}
- const id=context.leaseId||'step_'+Date.now()+'_'+Math.random().toString(36).slice(2);r.lease={id,stage:r.stage,until:Date.now()+120000,baseBuildId:r.currentBuildId,priorCalls:r.modelCalls};
- if(r.stage==='propose')r.modelCalls+=3;
+ const reservation=r.teamMode?5:3;
+ if(r.stage==='propose'&&r.modelCalls+reservation>r.limits.maxModelCalls){r.status='LIMIT';r.stopReason='AI 호출 한도 (역할 및 재작성 예약)';event(r,'limit',r.stopReason);return touch(r)}
+ const id=context.leaseId||'step_'+Date.now()+'_'+Math.random().toString(36).slice(2);r.lease={id,stage:r.stage,until:Date.now()+120000,baseBuildId:r.currentBuildId,priorCalls:r.modelCalls,reservation};
+ if(r.stage==='propose')r.modelCalls+=reservation;
  if(['assemble','apply'].includes(r.stage)){const earlier=r.attempts.at(-1);if(earlier?.status==='verifying'&&!earlier.checks.length)earlier.status='superseded';r.turn++;r.attempts.push({turn:r.turn,instruction:r.nextInstruction.slice(0,3000),inputBuildId:r.currentBuildId,status:'building',at:now(),checks:[],changes:[]})}
  event(r,'step',r.stage+' · '+id);return touch(r);
 }
@@ -98,7 +99,8 @@ function receive(input,leaseId,data){
   a.buildId=b.bid;a.artifactHash=b.artifactHash;a.sourceHash=b.sourceHash;a.status='verifying';a.changes=(b.refinementChanges||[]).slice(0,6).map(c=>({file:String(c.file||c.key||'').slice(0,120),from:String(c.from||'').slice(0,1800),to:String(c.to||'').slice(0,1800)}));
   event(r,'build','v'+r.turn+' · '+b.bid+' · '+b.artifactHash.slice(0,12));
  }else if(stage==='propose'){
-  r.modelCalls=lease.priorCalls+Math.min(3,Math.max(1,Number(data.attempts)||3));
+  r.modelCalls=lease.priorCalls+Math.min(lease.reservation||3,Math.max(1,Number(data.attempts)||lease.reservation||3));
+  if(data.team){r.teamResult=data.team;event(r,'team','계획 → 구현 → 검토: '+String(data.team.review||'').slice(0,60));}
   if(data.external_steps?.length){r.status='BLOCKED_EXTERNAL';r.stopReason=data.external_steps.slice(0,5).join('\n');r.nextInstruction=r.stopReason;event(r,'external',r.stopReason)}
   else if(!['code_patch','config_patch'].includes(data.status)){r.status='NEEDS_DECISION';r.stopReason=String(data.reason||data.response||'실행 가능한 수정안 없음').slice(0,1500);event(r,'decision',r.stopReason)}
   else{r.proposal={status:data.status,codeEdits:data.codeEdits,config:data.config,changes:data.changes,manual_test:data.manual_test,response:data.response};r.stage='apply';if(!r.autoApply)r.status='NEEDS_APPROVAL';event(r,'proposal',String(data.response||'코드 변경안').slice(0,700));}

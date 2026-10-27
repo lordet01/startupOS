@@ -75,7 +75,7 @@ module.exports=async function handler(req,res){
   let body=req.body;if(typeof body==='string'){try{body=JSON.parse(body)}catch{throw fail('Invalid JSON')}}
   if(!body||typeof body!=='object')throw fail('Request body missing');
   const answer=body.action==='code'?await CodeAgent.proposeCode(body):await propose(body);
-  console.log(JSON.stringify({event:'refinement_proposed',sessionId:body.sessionId,buildId:body.buildId,changes:answer.changes.length,status:answer.status,image:answer.screenshot_used,response_id:answer.response_id,codeMode:body.action==='code'}));
+  console.log(JSON.stringify({event:'refinement_proposed',sessionId:body.sessionId,buildId:body.buildId,changes:(answer.changes||[]).length,status:answer.status,image:answer.screenshot_used,response_id:answer.response_id,codeMode:body.action==='code'}));
   return res.status(200).json(answer);
  }catch(e){return res.status(e.status||500).json({ok:false,error:e.message||'요청 실패',code:e.code||'INTERNAL_ERROR'});}
 };

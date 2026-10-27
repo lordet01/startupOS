@@ -1,8 +1,8 @@
 {
   "suite": "functional-build-browser-v3",
-  "sourceHash": "ad7238d04a4764e51707d5f70ff93f1f04d8ff4eba216c907dd06668b60715a5",
-  "checkedAt": "2026-10-21T11:54:45.052Z",
-  "browser": "153.0.8010.0",
+  "sourceHash": "87e606668d76640a0a3bba4ba08e167863a6520ecc8fbd4963c1ec4234ad5c68",
+  "checkedAt": "2026-10-27T10:01:13.512Z",
+  "browser": "153.0.8010.12",
   "viewport": {
     "width": 390,
     "height": 844
