@@ -78,7 +78,7 @@ function claim(input,context={}){
  if(r.deadline&&Date.now()>r.deadline){r.status='LIMIT';r.stopReason='실행 시간 한도';event(r,'limit',r.stopReason);return touch(r)}
  if(['assemble','apply','propose'].includes(r.stage)&&r.turn>=r.limits.maxTurns){r.status='LIMIT';r.stopReason='최대 반복 한도';event(r,'limit',r.stopReason);return touch(r)}
  if(r.stage==='propose'&&!r.allowModel){r.status='NEEDS_DECISION';r.stopReason='AI 코드 생성 승인 필요';event(r,'approval',r.stopReason);return touch(r)}
- if(r.stage==='verify'&&r.kind!=='travel'&&!r.liveConsent){r.status='NEEDS_DECISION';r.stopReason='실제 API 검증 사용 승인 필요';event(r,'approval',r.stopReason);return touch(r)}
+ if(r.stage==='verify'&&['skin','receipt'].includes(r.kind)&&!r.liveConsent){r.status='NEEDS_DECISION';r.stopReason='실제 API 검증 사용 승인 필요';event(r,'approval',r.stopReason);return touch(r)}
  if(r.stage==='propose'&&r.modelCalls+3>r.limits.maxModelCalls){r.status='LIMIT';r.stopReason='AI 호출 한도 (내부 재작성 최대 3회 예약)';event(r,'limit',r.stopReason);return touch(r)}
  const id=context.leaseId||'step_'+Date.now()+'_'+Math.random().toString(36).slice(2);r.lease={id,stage:r.stage,until:Date.now()+120000,baseBuildId:r.currentBuildId,priorCalls:r.modelCalls};
  if(r.stage==='propose')r.modelCalls+=3;

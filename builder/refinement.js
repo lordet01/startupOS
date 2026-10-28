@@ -100,7 +100,7 @@ function updateChat(sid){
  if(text){text.value=d.text;text.oninput=()=>{d.text=text.value}}
  const send=document.getElementById('refineSend');
  const info=Bridge()?.getInfo(),stale=!!(info&&p.functionalBuild&&(p.functionalBuild.sid!==p._sessionId||p.functionalBuild.sourceHash!==info.sourceHash||p.functionalBuild.version!==info.version));
- if(send){send.disabled=d.busy||stale||!['skin','receipt','travel'].includes(p.functionalBuild?.kind);send.innerText=d.busy?(d.phase==='build'?'⏳ Build · 검증 중…':'⏳ 코드 구현 중…'):'↗ AI에 수정 요청';send.onclick=()=>sendRequest(sid)}
+ if(send){send.disabled=d.busy||stale||!['skin','receipt','travel','food'].includes(p.functionalBuild?.kind);send.innerText=d.busy?(d.phase==='build'?'⏳ Build · 검증 중…':'⏳ 코드 구현 중…'):'↗ AI에 수정 요청';send.onclick=()=>sendRequest(sid)}
  const approve=document.getElementById('refineApprove');
  if(approve){approve.disabled=d.busy;approve.onclick=()=>approveBuild(sid)}
  const retry=document.getElementById('refineRetryAsCode');

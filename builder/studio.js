@@ -16,7 +16,7 @@ function ingestVerifyIssue(){
   if(raw.length>1800)throw new Error('Report too large');
   const issue=JSON.parse(raw),p=session();
   if(!p||issue.source!=='user_report'||issue.sessionId!==p._sessionId||!p.functionalBuild||issue.buildId!==p.functionalBuild.bid)throw new Error('Session/Build mismatch');
-  const allowed=['skin','receipt','travel'];
+  const allowed=['skin','receipt','travel','food'];
   if(!allowed.includes(issue.kind))throw new Error('Unsupported capability');
   patch(p._sessionId,x=>{
    const now=new Date().toISOString();
@@ -56,6 +56,7 @@ function selectKind(p){
   var tech=(p.techStack||[]).map(x=>typeof x==="string"?x:[x.area,x.service,x.reason].filter(Boolean).join(" "));
   var flow=(p.serviceFlow||[]).map(x=>[x.title,x.user_action,x.system_action].filter(Boolean).join(" "));
   var text=[p.name,p.idea,p.problem,p.desiredOutcome].concat(p.mvpFeatures||[],tech,flow).filter(Boolean).join(" ");
+  if(/(음식|메뉴|밥|식사|food|meal).{0,30}(추천|결정|고르|먹|recommend)|(?:추천|결정|고르|먹).{0,30}(음식|메뉴|밥|식사|food|meal)|뭐\s*먹|뭘\s*먹/i.test(text))return "food";
   if(/영수증|receipt|ocr\s*가계부|품목.{0,12}ocr|ocr.{0,12}품목/i.test(text))return "receipt";
   if(/여행|travel|trip|packing|준비물|예약.{0,10}일정/i.test(text))return "travel";
   if(/피부|화장품|skin|skincare|모공|피부톤|스킨케어|피부 분석/i.test(text))return "skin";
@@ -70,7 +71,7 @@ function workButton(id,label,key,disabled){
 function stateText(f){if(!f)return '아직 기능 Build 없음';if(f.verification&&f.verification.status==='INTEGRATION_VERIFIED')return '연동 검증 통과 · 폰 실사용 미검증';if(f.verification&&f.verification.status==='FAILED')return '검증 실패 · 배포 차단';return '구현됨 · 실제 검증 대기';}
 function checks(rows){return (rows||[]).map(x=>'<div class="checkrow"><span>'+(x.status==='passed'?'✓':'✕')+'</span><div><strong>'+esc(x.id)+'</strong><div class="tiny">'+esc(x.message||x.evidence||x.status)+'</div>'+(x.responseId?'<div class="tiny">'+esc(x.model)+' · '+esc(x.responseId)+' · '+Math.round(x.latencyMs||0)+'ms</div>':'')+'</div></div>').join('');}
 function trace(p){const d=p.functionalDiagnostics;if(!d)return '<div class="hint">실행 이력이 없습니다.</div>';return '<pre class="trace">'+esc(JSON.stringify(d,null,2))+'</pre>';}
-const brandOptions={skin:[['GlowNote','#7c3aed'],['피부로그','#0f766e'],['SkinBloom','#db2777']],receipt:[['PocketLedger','#2563eb'],['한눈가계부','#0f766e'],['ReceiptFlow','#ea580c']],travel:[['TripNest','#2563eb'],['여행주머니','#7c3aed'],['ReadyGo','#0f766e']]};
+const brandOptions={food:[['오늘의 한 끼','#13795b'],['뭐 먹지','#2563eb'],['한 끼 추천','#ea580c']],skin:[['GlowNote','#7c3aed'],['피부로그','#0f766e'],['SkinBloom','#db2777']],receipt:[['PocketLedger','#2563eb'],['한눈가계부','#0f766e'],['ReceiptFlow','#ea580c']],travel:[['TripNest','#2563eb'],['여행주머니','#7c3aed'],['ReadyGo','#0f766e']]};
 function brandingPanel(p,kind){const opts=brandOptions[kind]||brandOptions.travel,b=p.appBranding||{name:p.name,variant:0};return '<h3>앱 이름과 아이콘</h3><p class="tiny">추천 스타일을 선택하거나 이름을 직접 입력하세요. 변경 후 Deploy하면 홈 화면 아이콘에 반영됩니다.</p><div style="display:flex;gap:8px;flex-wrap:wrap">'+opts.map((o,i)=>'<button class="btn" data-brand="'+i+'" aria-pressed="'+(b.variant===i)+'" style="flex:1;min-width:90px"><span style="display:block;font-size:30px;background:'+o[1]+';color:white;border-radius:18px;padding:14px;margin-bottom:8px">'+['◆','▤','✦'][i]+'</span>'+esc(o[0])+'</button>').join('')+'</div><label class="field"><span>설치할 앱 이름</span><input id="brand-name" maxlength="40" value="'+esc(b.name||opts[0][0])+'"></label><p class="tiny">배포 완료 → Open app → 홈 화면에 설치. Android는 설치 버튼, iPhone은 Safari 공유 → 홈 화면에 추가 안내가 앱 안에 표시됩니다.</p>';}
 function render(){
  const p=session();

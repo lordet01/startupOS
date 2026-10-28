@@ -63,7 +63,7 @@ const throttle=new Map();
 module.exports=async function handler(req,res){
  res.setHeader('Cache-Control','no-store');
  try{
-  if(req.method==='GET')return res.status(200).json({ok:true,feature:'session_refinement',mode:'real_source_code_builder',supported:['skin','receipt','travel'],screenshot:true,codeEdits:true});
+  if(req.method==='GET')return res.status(200).json({ok:true,feature:'session_refinement',mode:'real_source_code_builder',supported:['skin','receipt','travel','food'],screenshot:true,codeEdits:true});
   if(req.method!=='POST')return res.status(405).json({ok:false,error:'POST only'});
   await require('../lib/account-auth').requireAccount(req);
   const header=req.headers||{};

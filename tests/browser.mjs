@@ -10,6 +10,7 @@ const B=require('../lib/build-contract'),A=require('../lib/assemble'),F=require(
 const root=path.resolve('.');fs.mkdirSync('test-results',{recursive:true});
 const receipt=B.descriptor({_sessionId:'vs_browser_receipt_a',name:'ReceiptLens · 기능 검증'},'receipt',true);
 const other=B.descriptor({_sessionId:'vs_browser_receipt_b',name:'Other Session'},'receipt',true);
+const food=B.descriptor({_sessionId:'vs_browser_food_a',name:'오늘의 한 끼'},'food',true);
 const travel=B.descriptor({_sessionId:'vs_browser_travel_a',name:'TripTodo · 여행 준비'},'travel',true);
 const skin=B.descriptor({_sessionId:'vs_browser_skin_a',name:'MySkin AI · 사진 관찰'},'skin',true);
 const Repair=require('../lib/repair'),Fixtures=require('../lib/smoke-fixtures');
@@ -49,7 +50,7 @@ const server=http.createServer(async(req,res)=>{
   if(mode==='failure'){res.writeHead(503,{'Content-Type':'application/json'});res.end(JSON.stringify({ok:false,error:'TEST provider unavailable'}));return;}
   res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(ocrResult));return;
  }
- const doc={'/receipt/':receipt,'/receipt-b/':other,'/travel/':travel,'/skin/':skin,'/skin-repair/':repairedSkin}[url.pathname];
+ const doc={'/receipt/':receipt,'/receipt-b/':other,'/travel/':travel,'/food/':food,'/skin/':skin,'/skin-repair/':repairedSkin}[url.pathname];
  if(doc){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(A.html(doc,true));return;}
  if(url.pathname.startsWith('/installed/')){
   const name=url.pathname.slice('/installed/'.length)||'index.html';
@@ -173,6 +174,8 @@ try{
   await page.locator('#saveResult').click();
   await visible(page.getByText('사진상 표면 광택 및 일부 피부톤 차이가 관찰됩니다.'));
  });
+ await check('food_recommendation_filters',async()=>{await page.goto(base+'/food/');await page.locator('#foodType').selectOption({label:'한식'});await page.locator('#foodBudget').selectOption('10000');await page.locator('#foodNoSpicy').check();await page.getByRole('button',{name:'메뉴 추천받기'}).click();await visible(page.locator('#foodResult h2'));assert.match(await page.locator('#foodResult').innerText(),/한식/);assert.doesNotMatch(await page.locator('#foodResult').innerText(),/김치찌개/);});
+ await check('food_empty_and_reload',async()=>{await page.locator('#foodType').selectOption({label:'중식'});await page.locator('#foodVeg').check();await page.getByRole('button',{name:'메뉴 추천받기'}).click();assert.match(await page.locator('#foodResult').innerText(),/조건에 맞는 메뉴가 없어요/);await page.reload();assert.ok(await page.evaluate(()=>!!localStorage.getItem('startup-os:app:v3:vs_browser_food_a:food')));});
  await check('travel_trip_dates_and_creation',async()=>{await page.goto(base+'/travel/');await page.getByRole('button',{name:'첫 여행 만들기',exact:true}).click();await page.locator('[name="destination"]').fill('부산');await page.locator('[name="start"]').fill('2026-10-20');await page.locator('[name="end"]').fill('2026-10-22');await page.getByRole('button',{name:'여행 저장',exact:true}).click();await visible(page.getByRole('heading',{name:'부산',exact:true}));});
  await check('travel_task_completion_and_reload',async()=>{await page.getByRole('button',{name:'+ 항목',exact:true}).click();await page.locator('[name="title"]').fill('기차표 예약');await page.locator('[name="due"]').fill('2026-10-18');await page.getByRole('button',{name:'항목 저장',exact:true}).click();await page.getByLabel('기차표 예약 완료',{exact:true}).check();await page.reload();assert.equal(await page.getByLabel('기차표 예약 완료',{exact:true}).isChecked(),true);assert.match(await page.locator('#app').innerText(),/1 \/ 1 완료/);});
  await check('packing_template_is_idempotent',async()=>{await page.getByRole('button',{name:'기본 준비물 추가',exact:true}).click();await page.getByRole('button',{name:'기본 준비물 추가',exact:true}).click();assert.equal(await page.locator('.task').count(),4);});

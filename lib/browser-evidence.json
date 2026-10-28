@@ -1,8 +1,8 @@
 {
   "suite": "functional-build-browser-v3",
-  "sourceHash": "ad7238d04a4764e51707d5f70ff93f1f04d8ff4eba216c907dd06668b60715a5",
-  "checkedAt": "2026-10-21T11:54:45.052Z",
-  "browser": "153.0.8010.0",
+  "sourceHash": "3c5abb37111904a4adaa3065fcd5537b00388309824df669f5f833e8c956d997",
+  "checkedAt": "2026-10-28T10:52:44.341Z",
+  "browser": "153.0.8010.12",
   "viewport": {
     "width": 390,
     "height": 844
@@ -93,6 +93,14 @@
     },
     {
       "id": "skin_repair_consent_to_analysis",
+      "status": "passed"
+    },
+    {
+      "id": "food_recommendation_filters",
+      "status": "passed"
+    },
+    {
+      "id": "food_empty_and_reload",
       "status": "passed"
     },
     {

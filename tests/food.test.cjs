@@ -1,0 +1,5 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const Build=require('../api/build'),B=require('../lib/build-contract'),Editor=require('../lib/code-editor');
+async function invoke(body){let status=200,data;await Build({method:'POST',headers:{},body},{setHeader(){},status(n){status=n;return this},json(x){data=x}});assert.equal(status,200,JSON.stringify(data));return data}
+test('food scope assembles and verifies against executed food browser evidence without paid calls',async()=>{const project={_sessionId:'vs_food_unit_test',name:'뭘 먹을지 추천'};const {build}=await invoke({action:'assemble',project,kind:'food',acceptedScope:true});const {verification,cost}=await invoke({action:'verify',descriptor:build.descriptor,sessionId:project._sessionId});assert.equal(verification.status,'INTEGRATION_VERIFIED');assert.ok(verification.checks.find(x=>x.id==='browser_e2e_scenarios'&&x.status==='passed'));assert.equal(cost.provider_usd,0);assert.equal(Editor.verify('food',[]).smoke.status,'passed');assert.equal(B.contracts.food.exclusions.includes('실시간 식당·가격·배달 정보'),true)});
