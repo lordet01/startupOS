@@ -1,7 +1,7 @@
 {
   "suite": "functional-build-browser-v3",
-  "sourceHash": "3c5abb37111904a4adaa3065fcd5537b00388309824df669f5f833e8c956d997",
-  "checkedAt": "2026-10-28T10:52:44.341Z",
+  "sourceHash": "2545432403082a20856dbc8419a03de2f70a9b47feb124f9d0818a2379ef3e43",
+  "checkedAt": "2026-10-28T11:02:35.434Z",
   "browser": "153.0.8010.12",
   "viewport": {
     "width": 390,
@@ -97,6 +97,10 @@
     },
     {
       "id": "food_recommendation_filters",
+      "status": "passed"
+    },
+    {
+      "id": "food_nearby_and_preferences",
       "status": "passed"
     },
     {

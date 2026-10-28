@@ -33,6 +33,9 @@ const contentType=file=>file.endsWith('.js')?'application/javascript':file.endsW
 const server=http.createServer(async(req,res)=>{
  try{
  const url=new URL(req.url,'http://localhost');
+ if(url.pathname==='/api/nearby-restaurants'){
+  let raw='';for await(const chunk of req)raw+=chunk;const body=JSON.parse(raw);assert.equal(body.radius,1000);res.writeHead(200,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:true,places:[{name:'추천 식당',lat:37.5,lng:127,types:['korean'],mapUrl:'https://www.openstreetmap.org/node/123'}]}));
+ }
  if(url.pathname==='/api/skin-analysis'){
   let raw='';for await(const chunk of req)raw+=chunk;
   const body=JSON.parse(raw);
@@ -175,6 +178,7 @@ try{
   await visible(page.getByText('사진상 표면 광택 및 일부 피부톤 차이가 관찰됩니다.'));
  });
  await check('food_recommendation_filters',async()=>{await page.goto(base+'/food/');await page.locator('#foodType').selectOption({label:'한식'});await page.locator('#foodBudget').selectOption('10000');await page.locator('#foodNoSpicy').check();await page.getByRole('button',{name:'메뉴 추천받기'}).click();await visible(page.locator('#foodResult h2'));assert.match(await page.locator('#foodResult').innerText(),/한식/);assert.doesNotMatch(await page.locator('#foodResult').innerText(),/김치찌개/);});
+ await check('food_nearby_and_preferences',async()=>{await context.grantPermissions(['geolocation']);await context.setGeolocation({latitude:37.5,longitude:127});await page.locator('#usualCuisine').selectOption('korean');await page.getByRole('button',{name:'내 주변 식당 찾기'}).click();await visible(page.getByRole('heading',{name:'추천 식당'}));assert.match(await page.locator('#nearbyResult').innerText(),/실시간 대기시간/);assert.equal(await page.getByRole('link',{name:'지도에서 위치 확인 ↗'}).getAttribute('href'),'https://www.openstreetmap.org/node/123');await page.reload();assert.equal(await page.locator('#usualCuisine').inputValue(),'korean');});
  await check('food_empty_and_reload',async()=>{await page.locator('#foodType').selectOption({label:'중식'});await page.locator('#foodVeg').check();await page.getByRole('button',{name:'메뉴 추천받기'}).click();assert.match(await page.locator('#foodResult').innerText(),/조건에 맞는 메뉴가 없어요/);await page.reload();assert.ok(await page.evaluate(()=>!!localStorage.getItem('startup-os:app:v3:vs_browser_food_a:food')));});
  await check('travel_trip_dates_and_creation',async()=>{await page.goto(base+'/travel/');await page.getByRole('button',{name:'첫 여행 만들기',exact:true}).click();await page.locator('[name="destination"]').fill('부산');await page.locator('[name="start"]').fill('2026-10-20');await page.locator('[name="end"]').fill('2026-10-22');await page.getByRole('button',{name:'여행 저장',exact:true}).click();await visible(page.getByRole('heading',{name:'부산',exact:true}));});
  await check('travel_task_completion_and_reload',async()=>{await page.getByRole('button',{name:'+ 항목',exact:true}).click();await page.locator('[name="title"]').fill('기차표 예약');await page.locator('[name="due"]').fill('2026-10-18');await page.getByRole('button',{name:'항목 저장',exact:true}).click();await page.getByLabel('기차표 예약 완료',{exact:true}).check();await page.reload();assert.equal(await page.getByLabel('기차표 예약 완료',{exact:true}).isChecked(),true);assert.match(await page.locator('#app').innerText(),/1 \/ 1 완료/);});

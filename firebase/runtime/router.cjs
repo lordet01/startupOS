@@ -1,5 +1,5 @@
 'use strict';
-const ROUTES=new Set(['runtime','idea-note','refine','build','build-preview','cloud-config','session','skin-analysis','receipt-ocr','publish','jobs','auth-session']);
+const ROUTES=new Set(['runtime','idea-note','refine','build','build-preview','cloud-config','session','skin-analysis','receipt-ocr','nearby-restaurants','publish','jobs','auth-session']);
 function createRouter(load,{access,jobs}={}){return async(req,res)=>{
  res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
  const path=new URL(req.originalUrl||req.url,'https://firebase.invalid').pathname;
